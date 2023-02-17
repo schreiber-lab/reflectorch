@@ -1,0 +1,86 @@
+general:
+  name: l2q109_exp_1
+  root_dir: null
+dset:
+  prior_sampler:
+    cls: UniformSubPriorSampler
+    kwargs:
+      thickness_range: [0., 1000.]
+      roughness_range: [0., 40.]
+      sld_range: [0., 60.]
+      num_layers: 2
+      use_drho: false
+      scale_by_subpriors: true
+      logdist: true
+      smaller_roughnesses: true
+      relative_min_bound_width: 1.0e-5
+  q_generator:
+    cls: ConstantQ
+    kwargs:
+      q: [0.02, 0.15, 109]
+      remove_zero: false
+      fixed_zero: true
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.05, 0.2]
+      abs_errors: 1.0e-8
+      consistent_rel_err: false
+      logdist: true
+      apply_shift: true
+      scale_range: [-0.01, 0.01]
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 5.0e-4
+      noise_std: [0., 0.001]
+  smearing:
+    cls: Smearing
+    kwargs:
+      sigma_range: [8.0e-4, 5.0e-3]
+      gauss_num: 31
+      share_smeared: 0.2
+model:
+  encoder:
+    cls: SubPriorConvFCEncoder
+    pretrained_name: null
+    kwargs:
+       hidden_dims: [32, 64, 128, 256, 512]
+       latent_dim: 8
+       conv_latent_dim: 128
+       avpool: 4
+       use_batch_norm: true
+       in_features: 109
+       prior_in_features: 16
+       hidden_features: 1024
+       num_blocks: 3
+       pass_bounds: false
+       pretrained_conv: null
+training:
+  num_iterations: 400000
+  batch_size: 4096
+  lr: 1.0e-5
+  update_tqdm_freq: 10
+  grad_accumulation_steps: 1
+  logger:
+    use_neptune: false
+  optimizer: AdamW
+
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+    lr_scheduler:
+      cls: LogCyclicLR
+      kwargs:
+        base_lr: 1.0e-5
+        max_lr: 1.0e-3
+        period: 4000
+        gamma: 0.95
+        log: false
+        start_period: 20
+slurm:
+  time: 04-00:00:00
+  partition: upex
+  reservation: false
+  chdir: '~/maxwell_output'

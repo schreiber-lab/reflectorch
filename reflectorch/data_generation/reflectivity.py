@@ -1,0 +1,235 @@
+# -*- coding: utf-8 -*-
+#
+#
+# This source code is licensed under the GPL license found in the
+# LICENSE file in the root directory of this source tree.
+
+from math import pi, sqrt, log
+
+import torch
+from torch import Tensor
+from torch.nn.functional import conv1d, pad
+
+
+def reflectivity(
+        q: Tensor,
+        thickness: Tensor,
+        roughness: Tensor,
+        sld: Tensor,
+        dq: Tensor = None,
+        gauss_num: int = 51,
+        constant_dq: bool = True,
+        log: bool = False,
+):
+    q = torch.atleast_2d(q)
+
+    if dq is None:
+        reflectivity_curves = abeles(q, thickness, roughness, sld)
+    else:
+        reflectivity_curves = abeles_constant_smearing(
+            q, thickness, roughness, sld,
+            dq=dq, gauss_num=gauss_num, constant_dq=constant_dq,
+        )
+
+    if log:
+        reflectivity_curves = torch.log10(reflectivity_curves)
+    return reflectivity_curves
+
+
+def abeles_constant_smearing(
+        q: Tensor,
+        thickness: Tensor,
+        roughness: Tensor,
+        sld: Tensor,
+        dq: Tensor = None,
+        gauss_num: int = 51,
+        constant_dq: bool = True,
+):
+    q_lin = _get_q_axes(q, dq, gauss_num, constant_dq=constant_dq)
+    kernels = _get_t_gauss_kernels(dq, gauss_num)
+
+    curves = abeles(q_lin, thickness, roughness, sld)
+
+    padding = (kernels.shape[-1] - 1) // 2
+    smeared_curves = conv1d(
+        pad(curves[None], (padding, padding), 'reflect'), kernels[:, None], groups=kernels.shape[0],
+    )[0]
+
+    if q.shape[0] != smeared_curves.shape[0]:
+        q = q.expand(smeared_curves.shape[0], *q.shape[1:])
+
+    smeared_curves = _batch_linear_interp1d(q_lin, smeared_curves, q)
+
+    return smeared_curves
+
+
+def abeles(
+        q: Tensor,
+        thickness: Tensor,
+        roughness: Tensor,
+        sld: Tensor,
+):
+    c_dtype = torch.complex128 if q.dtype is torch.float64 else torch.complex64
+
+    batch_size, num_layers = thickness.shape
+
+    sld = sld * 1e-6 + 1e-30j
+
+    num_interfaces = num_layers + 1
+
+    k_z0 = (q / 2).to(c_dtype)
+
+    if len(k_z0.shape) == 1:
+        k_z0.unsqueeze_(0)
+
+    thickness_prev_layer = 1.  # ambient
+
+    for interface_num in range(num_interfaces):
+
+        prev_layer_idx = interface_num - 1
+        next_layer_idx = interface_num
+
+        if interface_num == 0:
+            k_z_previous_layer = _get_relative_k_z(k_z0, torch.zeros(batch_size, 1).to(sld))
+        else:
+            thickness_prev_layer = thickness[:, prev_layer_idx].unsqueeze(1)
+            k_z_previous_layer = _get_relative_k_z(k_z0, sld[:, prev_layer_idx].unsqueeze(1))
+
+        k_z_next_layer = _get_relative_k_z(k_z0, sld[:, next_layer_idx].unsqueeze(1))  # (batch_num, q_num)
+
+        reflection_matrix = _make_reflection_matrix(
+            k_z_previous_layer, k_z_next_layer, roughness[:, interface_num].unsqueeze(1)
+        )
+
+        if interface_num == 0:
+            total_reflectivity_matrix = reflection_matrix
+        else:
+            translation_matrix = _make_translation_matrix(k_z_previous_layer, thickness_prev_layer)
+
+            total_reflectivity_matrix = torch.einsum(
+                'bnmr, bmlr, bljr -> bnjr', total_reflectivity_matrix, translation_matrix, reflection_matrix
+            )
+
+    r = total_reflectivity_matrix[:, 0, 1] / total_reflectivity_matrix[:, 1, 1]
+
+    reflectivity = torch.clamp_max_(torch.abs(r) ** 2, 1.).flatten(1)
+
+    return reflectivity
+
+
+def _get_relative_k_z(k_z0, scattering_length_density):
+    return torch.sqrt(k_z0 ** 2 - 4 * pi * scattering_length_density)
+
+
+def _make_reflection_matrix(k_z_previous_layer, k_z_next_layer, interface_roughness):
+    p = _safe_div((k_z_previous_layer + k_z_next_layer), (2 * k_z_previous_layer)) * \
+        torch.exp(-(k_z_previous_layer - k_z_next_layer) ** 2 * 0.5 * interface_roughness ** 2)
+
+    m = _safe_div((k_z_previous_layer - k_z_next_layer), (2 * k_z_previous_layer)) * \
+        torch.exp(-(k_z_previous_layer + k_z_next_layer) ** 2 * 0.5 * interface_roughness ** 2)
+
+    return _stack_mtx(p, m, m, p)
+
+
+def _stack_mtx(a11, a12, a21, a22):
+    return torch.stack([
+        torch.stack([a11, a12], dim=1),
+        torch.stack([a21, a22], dim=1),
+    ], dim=1)
+
+
+def _make_translation_matrix(k_z, thickness):
+    return _stack_mtx(
+        torch.exp(-1j * k_z * thickness), torch.zeros_like(k_z),
+        torch.zeros_like(k_z), torch.exp(1j * k_z * thickness)
+    )
+
+
+def _safe_div(numerator, denominator):
+    return torch.where(denominator == 0, numerator, torch.divide(numerator, denominator))
+
+
+_FWHM = 2 * sqrt(2 * log(2.0))
+_2PI_SQRT = 1. / sqrt(2 * pi)
+
+
+def _batch_linspace(start: Tensor, end: Tensor, num: int):
+    return torch.linspace(0, 1, int(num), device=end.device, dtype=end.dtype)[None] * (end - start) + start
+
+
+def _torch_gauss(x, s):
+    return _2PI_SQRT / s * torch.exp(-0.5 * x ** 2 / s / s)
+
+
+def _get_t_gauss_kernels(resolutions: Tensor, gaussnum: int = 51):
+    gauss_x = _batch_linspace(-1.7 * resolutions, 1.7 * resolutions, gaussnum)
+    gauss_y = _torch_gauss(gauss_x, resolutions / _FWHM) * (gauss_x[:, 1] - gauss_x[:, 0])[:, None]
+    return gauss_y
+
+
+def _get_q_axes(q: Tensor, resolutions: Tensor, gaussnum: int = 51, constant_dq: bool = True):
+    if constant_dq:
+        return _get_q_axes_for_constant_dq(q, resolutions, gaussnum)
+    else:
+        return _get_q_axes_for_linear_dq(q, resolutions, gaussnum)
+
+
+def _get_q_axes_for_linear_dq(q: Tensor, resolutions: Tensor, gaussnum: int = 51):
+    gaussgpoint = (gaussnum - 1) / 2
+
+    lowq = torch.clamp_min_(q.min(1).values, 1e-6)
+    highq = q.max(1).values
+
+    start = torch.log10(lowq) - 6 * resolutions / _FWHM
+    end = torch.log10(highq * (1 + 6 * resolutions / _FWHM))
+
+    interpnums = torch.abs(
+        (torch.abs(end - start)) / (1.7 * resolutions / _FWHM / gaussgpoint)
+    ).round().to(int)
+
+    q_lin = 10 ** _batch_linspace_with_padding(start, end, interpnums)
+
+    return q_lin
+
+
+def _get_q_axes_for_constant_dq(q: Tensor, resolutions: Tensor, gaussnum: int = 51) -> Tensor:
+    gaussgpoint = (gaussnum - 1) / 2
+
+    start = q.min(1).values[:, None] - resolutions * 1.7
+    end = q.max(1).values[:, None] + resolutions * 1.7
+
+    interpnums = torch.abs(
+        (torch.abs(end - start)) / (1.7 * resolutions / gaussgpoint)
+    ).round().to(int)
+
+    q_lin = _batch_linspace_with_padding(start, end, interpnums)
+    q_lin = torch.clamp_min_(q_lin, 1e-6)
+
+    return q_lin
+
+
+def _batch_linspace_with_padding(start: Tensor, end: Tensor, nums: Tensor) -> Tensor:
+    max_num = nums.max().int().item()
+
+    deltas = 1 / (nums - 1)
+
+    x = torch.clamp_min_(_batch_linspace(deltas * (nums - max_num), torch.ones_like(deltas), max_num), 0)
+
+    x = x * (end - start) + start
+
+    return x
+
+
+def _batch_linear_interp1d(x: Tensor, y: Tensor, x_new: Tensor) -> Tensor:
+    eps = torch.finfo(y.dtype).eps
+
+    ind = torch.searchsorted(x.contiguous(), x_new.contiguous())
+
+    ind = torch.clamp_(ind - 1, 0, x.shape[-1] - 2)
+    slopes = (y[..., 1:] - y[..., :-1]) / (eps + (x[..., 1:] - x[..., :-1]))
+    ind_y = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * y.shape[1]
+    ind_slopes = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * slopes.shape[1]
+
+    y_new = y.flatten()[ind_y] + slopes.flatten()[ind_slopes] * (x_new - x.flatten()[ind_y])
+
+    return y_new
