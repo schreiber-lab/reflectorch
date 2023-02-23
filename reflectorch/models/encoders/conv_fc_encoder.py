@@ -3,8 +3,7 @@
 import math
 from torch import nn, cat, split
 
-from nflows.nn.nets import ResidualNet
-
+from reflectorch.models.encoders.residual_net import ResidualNet
 from reflectorch.models.encoders.conv_encoder import ConvEncoder
 from reflectorch.models.utils import activation_by_name
 

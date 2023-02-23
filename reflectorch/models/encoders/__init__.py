@@ -4,8 +4,6 @@
 # This source code is licensed under the GPL license found in the
 # LICENSE file in the root directory of this source tree.
 
-from nflows.nn.nets import ResidualNet
-
 from reflectorch.models.encoders.conv_encoder import (
     ConvEncoder,
     ConvDecoder,
@@ -19,6 +17,8 @@ from reflectorch.models.encoders.conv_fc_encoder import (
     SubPriorConvFCEncoder,
     SeqConvFCEncoder,
 )
+from reflectorch.models.encoders.residual_net import ResidualNet
+
 
 __all__ = [
     "TransformerEncoder",
