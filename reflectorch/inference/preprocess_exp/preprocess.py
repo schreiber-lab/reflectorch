@@ -38,17 +38,17 @@ def standard_preprocessing(
     curve_interp = interp_reflectivity(q_interp, q, curve)
 
     return {
-        'curve_interp': curve_interp, 'curve': curve,
+        "curve_interp": curve_interp, "curve": curve, "q_values": q,
     }
 
 
 @dataclass
 class StandardPreprocessing:
-    q_interp: np.ndarray
-    wavelength: float
-    beam_width: float
-    sample_length: float
-    beam_shape: BEAM_SHAPE = "gauss",
+    q_interp: np.ndarray = None
+    wavelength: float = 1.
+    beam_width: float = None
+    sample_length: float = None
+    beam_shape: BEAM_SHAPE = "gauss"
     normalize_mode: NORMALIZE_MODE = "max"
 
     def preprocess(self,
@@ -57,15 +57,24 @@ class StandardPreprocessing:
                    attenuation: np.ndarray,
                    **kwargs
                    ) -> dict:
+        attrs = self._get_updated_attrs(**kwargs)
         return standard_preprocessing(
             intensity,
             scattering_angle,
             attenuation,
-            q_interp=self.q_interp,
-            wavelength=self.wavelength,
-            beam_width=self.beam_width,
-            sample_length=self.sample_length,
-            beam_shape=self.beam_shape,
-            normalize_mode=self.normalize_mode,
-            **kwargs
+            **attrs
         )
+
+    __call__ = preprocess
+
+    def set_parameters(self, **kwargs) -> None:
+        for k, v in kwargs.items():
+            if k in self.__annotations__:
+                setattr(self, k, v)
+            else:
+                raise KeyError(f'Unknown parameter {k}.')
+
+    def _get_updated_attrs(self, **kwargs):
+        current_attrs = {k: getattr(self, k) for k in self.__annotations__.keys()}
+        current_attrs.update(kwargs)
+        return current_attrs
