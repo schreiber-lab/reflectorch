@@ -22,7 +22,7 @@ from reflectorch.data_generation.priors.utils import (
     generate_roughnesses,
     params_within_bounds,
 )
-
+from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
 from reflectorch.data_generation.priors.base import PriorSampler
 from reflectorch.data_generation.priors.params import Params
 
@@ -48,7 +48,7 @@ DEFAULT_DTYPE: torch.dtype = torch.float64
 DEFAULT_SCALED_RANGE: Tuple[float, float] = (-sqrt(3.), sqrt(3.))
 
 
-class BasicPriorSampler(PriorSampler):
+class BasicPriorSampler(PriorSampler, ScalerMixin):
     def __init__(self,
                  thickness_range: Tuple[float, float] = DEFAULT_THICKNESS_RANGE,
                  roughness_range: Tuple[float, float] = DEFAULT_ROUGHNESS_RANGE,
@@ -108,12 +108,6 @@ class BasicPriorSampler(PriorSampler):
     def delta_vector(self, layers_num, drho: bool = False):
         return self._get_delta_vector(self.min_vector(layers_num, drho), self.max_vector(layers_num, drho))
 
-    @staticmethod
-    def _get_delta_vector(min_vector: Tensor, max_vector: Tensor):
-        delta_vector = max_vector - min_vector
-        delta_vector[delta_vector == 0.] = 1.
-        return delta_vector
-
     def restore_params(self, scaled_params: Tensor) -> Params:
         layers_num = self.PARAM_CLS.size2layers_num(scaled_params.shape[-1])
 
@@ -139,20 +133,6 @@ class BasicPriorSampler(PriorSampler):
             self.max_vector(layers_num, drho=self.use_drho).to(params.thicknesses),
         )
 
-    def _scale(self, params_t: Tensor, min_vector: Tensor, max_vector: Tensor):
-        delta_vector = max_vector - min_vector
-        delta_vector[delta_vector == 0.] = 1.
-        scaled_params = (
-                                params_t - min_vector
-                        ) / self._get_delta_vector(min_vector, max_vector) * self._length + self._bias
-        return scaled_params
-
-    def _restore(self, scaled_params: Tensor, min_vector: Tensor, max_vector: Tensor):
-        params_t = (
-                           scaled_params - self._bias
-                   ) / self._length * self._get_delta_vector(min_vector, max_vector) + min_vector
-        return params_t
-
     def get_indices_within_bounds(self, params: Params) -> Tensor:
         layer_num = params.max_layer_num
 
@@ -161,17 +141,6 @@ class BasicPriorSampler(PriorSampler):
             self.min_vector(layer_num),
             self.max_vector(layer_num),
         )
-
-    @property
-    def scaled_range(self) -> Tuple[float, float]:
-        return self._scaled_range
-
-    @scaled_range.setter
-    def scaled_range(self, scaled_range: Tuple[float, float]):
-        self._scaled_range = scaled_range
-        self._length = scaled_range[1] - scaled_range[0]
-        self._init_bias = (scaled_range[0] + scaled_range[1]) / 2
-        self._bias = (self._init_bias - 0.5 * self._length)
 
     def get_indices_within_domain(self, params: Params) -> Tensor:
         if self.restrict_roughnesses:

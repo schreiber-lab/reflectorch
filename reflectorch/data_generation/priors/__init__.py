@@ -20,6 +20,7 @@ from reflectorch.data_generation.priors.subprior_sampler import (
     UniformSubPriorSampler,
     NarrowSldUniformSubPriorSampler,
 )
+from reflectorch.data_generation.priors.exp_subprior_sampler import ExpUniformSubPriorSampler
 
 __all__ = [
     "SingleParamPrior",
@@ -33,4 +34,5 @@ __all__ = [
     "UniformSubPriorParams",
     "UniformSubPriorSampler",
     "NarrowSldUniformSubPriorSampler",
+    "ExpUniformSubPriorSampler",
 ]

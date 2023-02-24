@@ -18,7 +18,6 @@ from reflectorch.data_generation.utils import (
 )
 
 from reflectorch.data_generation.priors.params import Params
-
 from reflectorch.data_generation.priors.no_constraints import (
     BasicPriorSampler,
     DEFAULT_ROUGHNESS_RANGE,
@@ -298,6 +297,15 @@ class UniformSubPriorSampler(BasicPriorSampler):
         min_bounds, max_bounds = prior_centers - prior_widths / 2, prior_centers + prior_widths / 2
 
         return min_bounds, max_bounds
+
+    def scale_bounds(self, bounds: Tensor) -> Tensor:
+        layers_num = bounds.shape[-1] // 2
+
+        return self._scale(
+            bounds,
+            self.min_vector(layers_num, drho=self.use_drho).to(bounds),
+            self.max_vector(layers_num, drho=self.use_drho).to(bounds),
+        )
 
 
 class NarrowSldUniformSubPriorSampler(UniformSubPriorSampler):
