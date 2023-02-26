@@ -24,7 +24,7 @@ def reflectivity(
     q = torch.atleast_2d(q)
 
     if dq is None:
-        reflectivity_curves = abeles_fast(q, thickness, roughness, sld)
+        reflectivity_curves = abeles(q, thickness, roughness, sld)
     else:
         reflectivity_curves = abeles_constant_smearing(
             q, thickness, roughness, sld,
