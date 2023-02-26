@@ -62,7 +62,7 @@ model:
        in_features: 256
        prior_in_features: 24
        hidden_features: 1024
-       num_blocks: 3
+       num_blocks: 2
        pass_bounds: false
        pretrained_conv: null
 training:
@@ -85,9 +85,9 @@ training:
         base_lr: 1.0e-5
         max_lr: 1.0e-3
         period: 4000
-        gamma: 0.95
+        gamma: 0.97
         log: false
-        start_period: 20
+        start_period: 5
 slurm:
   time: 04-00:00:00
   partition: upex
