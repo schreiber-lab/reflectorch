@@ -3,7 +3,7 @@
 #
 # This source code is licensed under the GPL license found in the
 # LICENSE file in the root directory of this source tree.
-
+import math
 from math import pi, sqrt, log
 
 import torch
@@ -24,7 +24,7 @@ def reflectivity(
     q = torch.atleast_2d(q)
 
     if dq is None:
-        reflectivity_curves = abeles(q, thickness, roughness, sld)
+        reflectivity_curves = abeles_fast(q, thickness, roughness, sld)
     else:
         reflectivity_curves = abeles_constant_smearing(
             q, thickness, roughness, sld,
@@ -115,6 +115,62 @@ def abeles(
     reflectivity = torch.clamp_max_(torch.abs(r) ** 2, 1.).flatten(1)
 
     return reflectivity
+
+
+@torch.jit.script
+def abeles_fast(
+        q: Tensor,
+        thickness: Tensor,
+        roughness: Tensor,
+        sld: Tensor,
+):
+    c_dtype = torch.complex128 if q.dtype is torch.float64 else torch.complex64
+
+    batch_size, num_layers = thickness.shape
+
+    sld = torch.cat([torch.zeros(batch_size, 1).to(sld), sld], -1)[:, None]
+    thickness = torch.cat([torch.zeros(batch_size, 1).to(thickness), thickness], -1)[:, None]
+    roughness = roughness[:, None] ** 2
+
+    sld = sld * 1e-6 + 1e-30j
+
+    k_z0 = (q / 2).to(c_dtype)
+
+    if k_z0.dim() == 1:
+        k_z0.unsqueeze_(0)
+
+    if k_z0.dim() == 2:
+        k_z0.unsqueeze_(-1)
+
+    k_n = torch.sqrt(k_z0 ** 2 - 4 * math.pi * sld)
+
+    # k_n.shape - (batch, q, layers)
+
+    k_n, k_np1 = k_n[..., :-1], k_n[..., 1:]
+
+    beta = 1j * thickness * k_n
+
+    exp_beta = torch.exp(beta)
+    exp_m_beta = torch.exp(-beta)
+
+    rn = (k_n - k_np1) / (k_n + k_np1) * torch.exp(- 2 * k_n * k_np1 * roughness)
+
+    c_matrices = torch.stack([
+        torch.stack([exp_beta, rn * exp_m_beta], -1),
+        torch.stack([rn * exp_beta, exp_m_beta], -1),
+    ], -1)
+
+    c_matrices = [c.squeeze(-3) for c in c_matrices.split(1, -3)]
+
+    m, c_matrices = c_matrices[0], c_matrices[1:]
+
+    for c in c_matrices:
+        m = m @ c
+
+    r = (m[..., 1, 0] / m[..., 0, 0]).abs() ** 2
+    r = torch.clamp_max_(r, 1.)
+
+    return r
 
 
 def _get_relative_k_z(k_z0, scattering_length_density):
