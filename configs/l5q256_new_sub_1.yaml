@@ -27,7 +27,7 @@ dset:
         19.,
         20.
       ]
-      logdist: false
+      logdist: true
       relative_min_bound_width: 1.0e-2
   q_generator:
     cls: ConstantQ
