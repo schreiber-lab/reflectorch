@@ -4,7 +4,7 @@
 # This source code is licensed under the GPL license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import torch
 from torch import Tensor
@@ -12,7 +12,6 @@ from torch import Tensor
 from reflectorch.data_generation.utils import (
     uniform_sampler,
     logdist_sampler,
-    triangular_sampler,
 )
 
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
@@ -28,56 +27,55 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
     PARAM_CLS = UniformSubPriorParams
 
     def __init__(self,
-                 *params: Union[float, Tuple[float, float], Tuple[float, float, float]],
+                 params: List[Union[float, Tuple[float, float], Tuple[float, float, float]]],
                  device: torch.device = DEFAULT_DEVICE,
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  scaled_range: Tuple[float, float] = (-1, 1),
                  logdist: bool = False,
-                 relative_min_bound_width: float = 1e-3,
-                 smaller_roughnesses: bool = False,
+                 relative_min_bound_width: float = 1e-4,
                  ):
         self.device = device
         self.dtype = dtype
         self.scaled_range = scaled_range
-        self.logdist = logdist
         self.relative_min_bound_width = relative_min_bound_width
-        self.smaller_roughnesses = smaller_roughnesses
+        self.logdist = logdist
         self._init_params(*params)
 
     @property
     def max_num_layers(self) -> int:
         return self.num_layers
 
-    def _init_params(self, *params: Union[float, Tuple[float, float], Tuple[float, float, float]]):
+    def _init_params(self, *params: Union[float, Tuple[float, float], Tuple[float, float, float, float]]):
         self.num_layers = (len(params) - 2) // 3
         self._total_num_params = len(params)
 
         fixed_mask = []
         bounds = []
-        max_deltas = []
+        delta_bounds = []
         param_dim = 0
 
         for param in params:
             if isinstance(param, (float, int)):
-                max_delta = 0
+                deltas = (0, 0)
                 param = (param, param)
                 fixed_mask.append(True)
             else:
                 param_dim += 1
                 fixed_mask.append(False)
 
-                if len(param) == 3:
-                    param, max_delta = param[:-1], param[-1]
+                if len(param) == 4:
+                    param, deltas = param[:2], param[2:]
                 else:
                     max_delta = param[1] - param[0]
+                    deltas = (max_delta * self.relative_min_bound_width, max_delta)
 
             bounds.append(param)
-            max_deltas.append(max_delta)
+            delta_bounds.append(deltas)
 
         self.fixed_mask = torch.tensor(fixed_mask).to(self.device)
         self.fitted_mask = ~self.fixed_mask
         self.min_bounds, self.max_bounds = torch.tensor(bounds).to(self.device).to(self.dtype).T
-        self.max_deltas = torch.tensor(max_deltas).to(self.min_bounds)
+        self.min_deltas, self.max_deltas = map(torch.atleast_2d, torch.tensor(delta_bounds).to(self.min_bounds).T)
         self._param_dim = param_dim
 
         self.fixed_params = self.min_bounds[self.fixed_mask]
@@ -187,9 +185,9 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         return self.get_indices_within_bounds(params)
 
     def sample_bounds(self, batch_size: int):
-        min_vector, max_vector, delta_vector = self.min_bounds, self.max_bounds, self.max_deltas
-
-        delta_vector = torch.atleast_2d(delta_vector)
+        min_vector, max_vector, min_deltas, max_deltas = (
+            self.min_bounds, self.max_bounds, self.min_deltas, self.max_deltas
+        )
 
         if self.logdist:
             widths_sampler_func = logdist_sampler
@@ -197,10 +195,10 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
             widths_sampler_func = uniform_sampler
 
         prior_widths = widths_sampler_func(
-            self.relative_min_bound_width, 1.,
-            batch_size, delta_vector.shape[-1],
+            min_deltas, max_deltas,
+            batch_size, max_deltas.shape[-1],
             device=self.device, dtype=self.dtype
-        ) * delta_vector
+        )
 
         prior_centers = uniform_sampler(
             min_vector + prior_widths / 2, max_vector - prior_widths / 2,
@@ -208,14 +206,14 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
             device=self.device, dtype=self.dtype
         )
 
-        if self.smaller_roughnesses:
-            idx_min, idx_max = self.num_layers, self.num_layers * 2 + 1
-            prior_centers[:, idx_min:idx_max] = triangular_sampler(
-                min_vector[:, idx_min:idx_max] + prior_widths[:, idx_min:idx_max] / 2,
-                max_vector[:, idx_min:idx_max] - prior_widths[:, idx_min:idx_max] / 2,
-                batch_size, self.num_layers + 1,
-                device=self.device, dtype=self.dtype
-            )
+        # if self.smaller_roughnesses:
+        #     idx_min, idx_max = self.num_layers, self.num_layers * 2 + 1
+        #     prior_centers[:, idx_min:idx_max] = triangular_sampler(
+        #         min_vector[:, idx_min:idx_max] + prior_widths[:, idx_min:idx_max] / 2,
+        #         max_vector[:, idx_min:idx_max] - prior_widths[:, idx_min:idx_max] / 2,
+        #         batch_size, self.num_layers + 1,
+        #         device=self.device, dtype=self.dtype
+        #     )
 
         min_bounds, max_bounds = prior_centers - prior_widths / 2, prior_centers + prior_widths / 2
 
