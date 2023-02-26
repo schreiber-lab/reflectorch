@@ -49,12 +49,6 @@ dset:
     kwargs:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
-  smearing:
-    cls: Smearing
-    kwargs:
-      sigma_range: [8.0e-4, 5.0e-3]
-      gauss_num: 31
-      share_smeared: 0.2
 model:
   encoder:
     cls: SubPriorConvFCEncoder
