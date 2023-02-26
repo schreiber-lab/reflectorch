@@ -3,7 +3,10 @@ import torch
 from torch import Tensor
 
 from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler
-from reflectorch.runs.utils import get_trainer_by_name
+from reflectorch.runs.utils import (
+    get_trainer_by_name, train_from_config
+)
+from reflectorch.runs.config import load_config
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.ml.trainers import PointEstimatorTrainer
 
@@ -24,6 +27,10 @@ class InferenceModel(object):
     def load_model(self, name: str) -> None:
         self.model_name = name
         self.trainer = get_trainer_by_name(name)
+
+    def train_model(self, name: str):
+        self.model_name = name
+        self.trainer = train_from_config(load_config(name))
 
     def set_preprocessing_parameters(self, **kwargs) -> None:
         self.preprocessing.set_parameters(**kwargs)

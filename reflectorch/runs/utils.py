@@ -52,6 +52,8 @@ def train_from_config(config: dict):
         'params': config,
     }, folder_paths['losses'])
 
+    return trainer
+
 
 def get_paths_from_config(config: dict, mkdir: bool = False):
     root_dir = Path(config['general']['root_dir'] or ROOT_DIR)
