@@ -114,6 +114,9 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
 
         return scaled_params
 
+    def scale_bounds(self, bounds: Tensor) -> Tensor:
+        return self._scale(bounds, self.min_bounds, self.max_bounds)[..., self.fitted_mask]
+
     def restore_params(self, scaled_params: Tensor) -> UniformSubPriorParams:
         scaled_params, scaled_min_bounds, scaled_max_bounds = torch.split(
             scaled_params, [self.param_dim, self.param_dim, self.param_dim], dim=1
