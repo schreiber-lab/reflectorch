@@ -44,7 +44,7 @@ class MLServer(object):
         return responses
 
     def process_request(self, request):
-        refl_input = {key: request.get_input_tensor_by_name(request, key).as_numpy() for key in self.REFL_KEYS}
+        refl_input = {key: pb_utils.get_input_tensor_by_name(request, key).as_numpy() for key in self.REFL_KEYS}
 
         preprocessing_input = {key: pb_utils.get_input_tensor_by_name(request, key).as_numpy()[0] for key in
                                self.PREPROCESS_KEYS}

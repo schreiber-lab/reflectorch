@@ -38,7 +38,7 @@ class MLServer(object):
         return responses
 
     def process_request(self, request):
-        refl_input = {key: request.get_input_tensor_by_name(request, key).as_numpy() for key in self.REFL_KEYS}
+        refl_input = {key: pb_utils.get_input_tensor_by_name(request, key).as_numpy() for key in self.REFL_KEYS}
 
         preprocessing_input = {key: pb_utils.get_input_tensor_by_name(request, key).as_numpy()[0] for key in
                                self.PREPROCESS_KEYS}
@@ -49,7 +49,7 @@ class MLServer(object):
 
         self.model.set_preprocessing_parameters(**preprocessing_input)
 
-        res = self.model.predict(**refl_input, )
+        res = self.model.predict(**refl_input)
 
         response_tensors = pb_utils.InferenceResponse(
             output_tensors=[pb_utils.Tensor(key, value.astype(np.float32)) for key, value in res.items()]
