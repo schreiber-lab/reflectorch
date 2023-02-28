@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -13,23 +15,26 @@ from reflectorch.ml.trainers import PointEstimatorTrainer
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None):
+        self.log = logging.getLogger(__name__)
         self.model_name = name
         self.trainer = trainer
         self.q = None
         self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
 
         if trainer is None and self.model_name is not None:
-            self.load_model(self.model_name, preprocessing_parameters=preprocessing_parameters)
+            self.load_model(self.model_name)
         elif trainer is not None:
             self._set_trainer(trainer, preprocessing_parameters)
 
     ### API methods ###
 
     def load_model(self, name: str) -> None:
-        if self.model_name == name:
+        self.log.debug(f"loading model {name}")
+        if self.model_name == name and self.trainer is not None:
             return
         self.model_name = name
         self._set_trainer(get_trainer_by_name(name))
+        self.log.info(f"Model {name} is loaded.")
 
     def train_model(self, name: str):
         self.model_name = name
@@ -114,11 +119,13 @@ class InferenceModel(object):
         self._update_preprocessing(preprocessing_parameters)
 
     def _update_preprocessing(self, preprocessing_parameters: dict = None):
+        self.log.debug(f"setting preprocessing_parameters {preprocessing_parameters}.")
         self.q = self.trainer.loader.q_generator.q
         self.preprocessing = StandardPreprocessing(
             self.q.cpu().squeeze().numpy(),
             **(preprocessing_parameters or {})
         )
+        self.log.info(f"preprocessing params are set: {preprocessing_parameters}.")
 
 
 def _get_prediction_array(params: Params) -> np.ndarray:
