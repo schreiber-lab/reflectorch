@@ -38,7 +38,7 @@ def standard_preprocessing(
     curve_interp = interp_reflectivity(q_interp, q, curve)
 
     return {
-        "curve_interp": curve_interp, "curve": curve, "q_values": q,
+        "curve_interp": curve_interp, "curve": curve, "q_values": q, "q_interp": q_interp,
     }
 
 
