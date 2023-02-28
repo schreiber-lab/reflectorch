@@ -1,0 +1,23 @@
+name: "dummy_model2"
+backend: "python"
+max_batch_size: 1
+input [
+  {
+    name: "curve"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "priors"
+    data_type: TYPE_FP32
+    dims: [ -1, 2 ]
+  }
+]
+
+output [
+  {
+    name: "parameters"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+]
