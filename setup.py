@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 from pathlib import Path
+import os
 
 
 def read_file(filename: str) -> str:
@@ -33,6 +34,8 @@ long_description_content_type = 'text/markdown'
 python_requires = '>=3.7'
 install_requires = read_file('requirements.txt').splitlines()
 
+if os.environ.get('ML_SERVER', None) is not None:
+    install_requires = install_requires[2:]
 
 setup(
     name=PACKAGE_NAME,
