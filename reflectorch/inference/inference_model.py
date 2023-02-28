@@ -25,9 +25,11 @@ class InferenceModel(object):
 
     ### API methods ###
 
-    def load_model(self, name: str, preprocessing_parameters: dict = None) -> None:
+    def load_model(self, name: str) -> None:
+        if self.model_name == name:
+            return
         self.model_name = name
-        self._set_trainer(get_trainer_by_name(name), preprocessing_parameters)
+        self._set_trainer(get_trainer_by_name(name))
 
     def train_model(self, name: str):
         self.model_name = name
