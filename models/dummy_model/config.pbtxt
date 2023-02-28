@@ -6,38 +6,37 @@ input [
     name: "intensity"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "scattering_angle"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "attenuation"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "priors"
     data_type: TYPE_FP32
     dims: [ -1, 2 ]
-  }
-
+  },
   {
     name: "wavelength"
     data_type: TYPE_FP32
     dims: [ -1]
-  }
+  },
   {
     name: "beam_width"
     data_type: TYPE_FP32
     dims: [ -1]
-  }
+  },
   {
     name: "sample_length"
     data_type: TYPE_FP32
     dims: [ -1]
-  }
+  },
   {
     name: "model_name"
     data_type: TYPE_STRING
@@ -50,22 +49,22 @@ output [
     name: "q_values"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "q_interp"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "parameters"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "curve"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  }
+  },
   {
     name: "curve_interp"
     data_type: TYPE_FP32
