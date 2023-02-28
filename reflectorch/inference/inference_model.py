@@ -91,7 +91,7 @@ class InferenceModel(object):
         if not isinstance(curve, Tensor):
             curve = torch.from_numpy(curve).float().to(self.q)[None]
         scaled_curve = self.trainer.loader.curves_scaler.scale(curve)
-        return scaled_curve
+        return scaled_curve.float()
 
     def _scale_priors(self, priors: np.ndarray or Tensor):
         if not isinstance(priors, Tensor):
@@ -100,9 +100,9 @@ class InferenceModel(object):
         min_bounds, max_bounds = priors.T[:, None].to(self.q)
         prior_sampler = self._prior_sampler
         scaled_bounds = torch.cat([
-            prior_sampler.scale_bounds(min_bounds), prior_sampler.scale_bounds(min_bounds)
+            prior_sampler.scale_bounds(min_bounds), prior_sampler.scale_bounds(max_bounds)
         ], -1)
-        return scaled_bounds
+        return scaled_bounds.float()
 
     @property
     def _prior_sampler(self) -> ExpUniformSubPriorSampler:
