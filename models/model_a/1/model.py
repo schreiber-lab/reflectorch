@@ -24,7 +24,7 @@ class MLServer(object):
     )
 
     def initialize(self):
-        self.model = InferenceModel()
+        self.model = InferenceModel('l2q64_new_sub_1')
 
     def execute(self, requests):
         """
