@@ -20,7 +20,7 @@ input [
   {
     name: "priors"
     data_type: TYPE_FP32
-    dims: [ -1, 2 ]
+    dims: [ -1]
   },
   {
     name: "wavelength"
