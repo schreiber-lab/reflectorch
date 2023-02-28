@@ -12,21 +12,22 @@ from reflectorch.ml.trainers import PointEstimatorTrainer
 
 
 class InferenceModel(object):
-    def __init__(self, name: str, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None):
+    def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None):
         self.model_name = name
-        self.trainer = trainer or get_trainer_by_name(name)
-        self.trainer.model.eval()
-        self.q = trainer.loader.q_generator.q
-        self.preprocessing = StandardPreprocessing(
-            self.q.cpu().squeeze().numpy(),
-            **(preprocessing_parameters or {})
-        )
+        self.trainer = trainer
+        self.q = None
+        self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
+
+        if trainer is None and self.model_name is not None:
+            self.load_model(self.model_name, preprocessing_parameters=preprocessing_parameters)
+        elif trainer is not None:
+            self._set_trainer(trainer, preprocessing_parameters)
 
     ### API methods ###
 
-    def load_model(self, name: str) -> None:
+    def load_model(self, name: str, preprocessing_parameters: dict = None) -> None:
         self.model_name = name
-        self.trainer = get_trainer_by_name(name)
+        self._set_trainer(get_trainer_by_name(name), preprocessing_parameters)
 
     def train_model(self, name: str):
         self.model_name = name
@@ -102,6 +103,18 @@ class InferenceModel(object):
     @property
     def _prior_sampler(self) -> ExpUniformSubPriorSampler:
         return self.trainer.loader.prior_sampler
+
+    def _set_trainer(self, trainer, preprocessing_parameters: dict = None):
+        self.trainer = trainer
+        self.trainer.model.eval()
+        self._update_preprocessing(preprocessing_parameters)
+
+    def _update_preprocessing(self, preprocessing_parameters: dict = None):
+        self.q = self.trainer.loader.q_generator.q
+        self.preprocessing = StandardPreprocessing(
+            self.q.cpu().squeeze().numpy(),
+            **(preprocessing_parameters or {})
+        )
 
 
 def _get_prediction_array(params: Params) -> np.ndarray:
