@@ -9,8 +9,7 @@ except ImportError:
     warnings.warn("triton_python_backend_utils is not installed!")
     pb_utils = None
 
-
-class MLServer(object):
+class TritonPythonModel:
     REFL_KEYS = (
         "intensity",
         "scattering_angle",
