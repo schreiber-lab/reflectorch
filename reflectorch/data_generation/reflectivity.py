@@ -185,8 +185,8 @@ def abeles_np(
 
     batch_size, num_layers = thickness.shape
 
-    sld = np.concatenate([np.zeros(batch_size, 1).astype(sld.dtype), sld], -1)[:, None]
-    thickness = np.concatenate([np.zeros(batch_size, 1).astype(thickness.dtype), thickness], -1)[:, None]
+    sld = np.concatenate([np.zeros((batch_size, 1)).astype(sld.dtype), sld], -1)[:, None]
+    thickness = np.concatenate([np.zeros((batch_size, 1)).astype(thickness.dtype), thickness], -1)[:, None]
     roughness = roughness[:, None] ** 2
 
     sld = sld * 1e-6 + 1e-30j
@@ -217,14 +217,14 @@ def abeles_np(
         np.stack([rn * exp_beta, exp_m_beta], -1),
     ], -1)
 
-    c_matrices = [c.squeeze(-3) for c in np.split(c_matrices, 1, -3)]
+    c_matrices = np.moveaxis(c_matrices, -3, 0)
 
     m, c_matrices = c_matrices[0], c_matrices[1:]
 
     for c in c_matrices:
         m = m @ c
 
-    r = (m[..., 1, 0] / m[..., 0, 0]).abs() ** 2
+    r = np.abs(m[..., 1, 0] / m[..., 0, 0]) ** 2
     r = np.clip(r, None, 1.)
 
     return r
