@@ -69,14 +69,16 @@ class InferenceModel(object):
         with torch.no_grad():
             scaled_params = self.trainer.model(context)
 
-        prediction = self._scaled_params2prediction_arr(scaled_params)
+        prediction = self._scaled_params2prediction_arr(scaled_params, context)
         return prediction
 
     ### some shortcut methods for data processing ###
 
-    def _scaled_params2prediction_arr(self, scaled_params: Tensor):
-        params: Params = self._prior_sampler.restore_params(scaled_params)
-        prediction = _get_prediction_array(params)
+    def _scaled_params2prediction_arr(self, scaled_params: Tensor, context: Tensor):
+        predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
+            self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
+        )
+        prediction = _get_prediction_array(predicted_params)
         return prediction
 
     def _input2context(self, curve: np.ndarray, priors: np.ndarray):
