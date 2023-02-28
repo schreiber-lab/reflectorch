@@ -26,22 +26,22 @@ input [
   {
     name: "wavelength"
     data_type: TYPE_FP32
-    dims: [ - 1]
+    dims: [ -1]
   }
   {
     name: "beam_width"
     data_type: TYPE_FP32
-    dims: [ - 1]
+    dims: [ -1]
   }
   {
     name: "sample_length"
     data_type: TYPE_FP32
-    dims: [ - 1]
+    dims: [ -1]
   }
   {
     name: "model_name"
     data_type: TYPE_STRING
-    dims: [ - 1]
+    dims: [ -1]
   }
 ]
 
