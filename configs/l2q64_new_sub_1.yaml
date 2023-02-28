@@ -1,23 +1,35 @@
 general:
-  name: l2q128_new_sub_1
+  name: l2q64_new_sub_1
   root_dir: null
 dset:
   prior_sampler:
     cls: ExpUniformSubPriorSampler
     kwargs:
-      params: [[10., 100., ], 5., [0., 10.], 2., 1., [2., 17., 0.1, 4.], 19., 20.]
+      params: [
+        # d
+        [10., 500.],
+        [0., 10.],
+        # sigma
+        [0., 50.],
+        [0., 5.],
+        [0., 5.],
+        # rho
+        [2., 17., 0.1, 4.],
+        [17., 21., 0.001, 1.],
+        [19., 21., 0.001, 1.],
+      ]
       logdist: false
       relative_min_bound_width: 1.0e-2
   q_generator:
     cls: ConstantQ
     kwargs:
-      q: [0.02, 0.15, 128]
+      q: [0.02, 0.15, 64]
       remove_zero: false
       fixed_zero: true
   intensity_noise:
     cls: BasicExpIntensityNoise
     kwargs:
-      relative_errors: [0.05, 0.2]
+      relative_errors: [0.05, 0.3]
       abs_errors: 1.0e-8
       consistent_rel_err: false
       logdist: true
@@ -28,32 +40,26 @@ dset:
     kwargs:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
-  smearing:
-    cls: Smearing
-    kwargs:
-      sigma_range: [8.0e-4, 5.0e-3]
-      gauss_num: 31
-      share_smeared: 0.2
 model:
   encoder:
     cls: SubPriorConvFCEncoder
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]
-       latent_dim: 3
+       latent_dim: 8
        conv_latent_dim: 128
        avpool: 4
        use_batch_norm: true
-       in_features: 128
-       prior_in_features: 6
-       hidden_features: 1024
-       num_blocks: 3
+       in_features: 64
+       prior_in_features: 16
+       hidden_features: 256
+       num_blocks: 2
        pass_bounds: false
        pretrained_conv: null
 training:
-  num_iterations: 400000
+  num_iterations: 10000
   batch_size: 4096
-  lr: 1.0e-5
+  lr: 1.0e-3
   update_tqdm_freq: 1
   grad_accumulation_steps: 1
   logger:
@@ -64,15 +70,6 @@ training:
     save_best_model:
       enable: true
       freq: 500
-    lr_scheduler:
-      cls: LogCyclicLR
-      kwargs:
-        base_lr: 1.0e-5
-        max_lr: 1.0e-3
-        period: 4000
-        gamma: 0.95
-        log: false
-        start_period: 20
 slurm:
   time: 04-00:00:00
   partition: upex
