@@ -77,6 +77,7 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         self.min_bounds, self.max_bounds = torch.tensor(bounds).to(self.device).to(self.dtype).T
         self.min_deltas, self.max_deltas = map(torch.atleast_2d, torch.tensor(delta_bounds).to(self.min_bounds).T)
         self._param_dim = param_dim
+        self._num_fixed = self.fixed_mask.sum()
 
         self.fixed_params = self.min_bounds[self.fixed_mask]
 
@@ -144,13 +145,18 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         return params
 
     def _cat_restored_with_fixed_vector(self, restored_t: Tensor) -> Tensor:
-        batch_size = restored_t.shape[0]
-        param_t = torch.empty(
-            batch_size, self._total_num_params, device=restored_t.device, dtype=restored_t.dtype
+        return self._cat_fitted_fixed_t(restored_t, self.fixed_params)
+
+    def _cat_fitted_fixed_t(self, fitted_t: Tensor, fixed_t: Tensor) -> Tensor:
+        batch_size = fitted_t.shape[0]
+
+        concat_t = torch.empty(
+            batch_size, self._total_num_params, device=fitted_t.device, dtype=fitted_t.dtype
         )
-        param_t[:, self.fitted_mask] = restored_t
-        param_t[:, self.fixed_mask] = self.fixed_params[None].expand(batch_size, -1)
-        return param_t
+        concat_t[:, self.fitted_mask] = fitted_t
+        concat_t[:, self.fixed_mask] = fixed_t[None].expand(batch_size, -1)
+
+        return concat_t
 
     def log_prob(self, params: UniformSubPriorParams) -> Tensor:
         log_prob = torch.zeros(params.batch_size, device=params.device, dtype=params.dtype)
@@ -193,15 +199,17 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         )
 
         if self.logdist:
-            widths_sampler_func = logdist_sampler
+            widths_sampler_func = logdist_sampler  # TODO: fix zero width for logdist issus
         else:
             widths_sampler_func = uniform_sampler
 
         prior_widths = widths_sampler_func(
-            min_deltas, max_deltas,
-            batch_size, max_deltas.shape[-1],
+            min_deltas[..., self.fitted_mask], max_deltas[..., self.fitted_mask],
+            batch_size, self.param_dim,
             device=self.device, dtype=self.dtype
         )
+
+        prior_widths = self._cat_fitted_fixed_t(prior_widths, torch.zeros(self._num_fixed).to(prior_widths))
 
         prior_centers = uniform_sampler(
             min_vector + prior_widths / 2, max_vector - prior_widths / 2,
