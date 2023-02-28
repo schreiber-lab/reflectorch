@@ -28,7 +28,7 @@ class TritonPythonModel:
         res['model_name'] = 'model_1'
         return res
 
-    def initialize(self):
+    def initialize(self, args):
         self.model = InferenceModel()
 
     def execute(self, requests):
