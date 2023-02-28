@@ -6,6 +6,8 @@
 import math
 from math import pi, sqrt, log
 
+import numpy as np
+
 import torch
 from torch import Tensor
 from torch.nn.functional import conv1d, pad
@@ -24,7 +26,7 @@ def reflectivity(
     q = torch.atleast_2d(q)
 
     if dq is None:
-        reflectivity_curves = abeles_fast(q, thickness, roughness, sld)
+        reflectivity_curves = abeles(q, thickness, roughness, sld)
     else:
         reflectivity_curves = abeles_constant_smearing(
             q, thickness, roughness, sld,
@@ -169,6 +171,61 @@ def abeles_fast(
 
     r = (m[..., 1, 0] / m[..., 0, 0]).abs() ** 2
     r = torch.clamp_max_(r, 1.)
+
+    return r
+
+
+def abeles_np(
+        q: np.ndarray,
+        thickness: np.ndarray,
+        roughness: np.ndarray,
+        sld: np.ndarray,
+):
+    c_dtype = np.complex128 if q.dtype is np.float64 else np.complex64
+
+    batch_size, num_layers = thickness.shape
+
+    sld = np.concatenate([np.zeros(batch_size, 1).astype(sld.dtype), sld], -1)[:, None]
+    thickness = np.concatenate([np.zeros(batch_size, 1).astype(thickness.dtype), thickness], -1)[:, None]
+    roughness = roughness[:, None] ** 2
+
+    sld = sld * 1e-6 + 1e-30j
+
+    k_z0 = (q / 2).astype(c_dtype)
+
+    if len(k_z0.shape) == 1:
+        k_z0 = k_z0[None]
+
+    if len(k_z0.shape) == 2:
+        k_z0 = k_z0[..., None]
+
+    k_n = np.sqrt(k_z0 ** 2 - 4 * math.pi * sld)
+
+    # k_n.shape - (batch, q, layers)
+
+    k_n, k_np1 = k_n[..., :-1], k_n[..., 1:]
+
+    beta = 1j * thickness * k_n
+
+    exp_beta = np.exp(beta)
+    exp_m_beta = np.exp(-beta)
+
+    rn = (k_n - k_np1) / (k_n + k_np1) * np.exp(- 2 * k_n * k_np1 * roughness)
+
+    c_matrices = np.stack([
+        np.stack([exp_beta, rn * exp_m_beta], -1),
+        np.stack([rn * exp_beta, exp_m_beta], -1),
+    ], -1)
+
+    c_matrices = [c.squeeze(-3) for c in np.split(c_matrices, 1, -3)]
+
+    m, c_matrices = c_matrices[0], c_matrices[1:]
+
+    for c in c_matrices:
+        m = m @ c
+
+    r = (m[..., 1, 0] / m[..., 0, 0]).abs() ** 2
+    r = np.clip(r, None, 1.)
 
     return r
 
