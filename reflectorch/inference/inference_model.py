@@ -110,8 +110,8 @@ class InferenceModel(object):
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
         )
 
-        prediction_dict['sld_profile'] = sld_profile
-        prediction_dict['sld_x_axis'] = sld_x_axis
+        prediction_dict['sld_profile'] = sld_profile.squeeze().cpu().numpy()
+        prediction_dict['sld_x_axis'] = sld_x_axis.squeeze().cpu().numpy()
 
         if polish:
             polished_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
@@ -119,11 +119,10 @@ class InferenceModel(object):
             prediction_dict['curve_polished'] = polished_params.reflectivity(raw_q).squeeze().cpu().numpy()
 
             sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
-                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, num=1024,
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
             )
 
-            prediction_dict['sld_profile_polished'] = sld_profile_polished
-            prediction_dict['sld_x_axis_polished'] = sld_x_axis_polished
+            prediction_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
 
         return prediction_dict
 
