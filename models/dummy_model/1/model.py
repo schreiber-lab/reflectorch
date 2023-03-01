@@ -6,8 +6,10 @@ try:
     import triton_python_backend_utils as pb_utils
 except ImportError:
     import warnings
+
     warnings.warn("triton_python_backend_utils is not installed!")
     pb_utils = None
+
 
 class TritonPythonModel:
     REFL_KEYS = (
