@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 
 from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler
+from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
 )
@@ -65,26 +66,42 @@ class InferenceModel(object):
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
         )
         preprocessed_curve = preprocessed_dict["curve_interp"]
-        preprocessed_dict["parameters"] = self.predict_from_preprocessed_curve(preprocessed_curve, priors)
+        preprocessed_dict.update(self.predict_from_preprocessed_curve(preprocessed_curve, priors))
         return preprocessed_dict
 
-    def predict_from_preprocessed_curve(self, curve: np.ndarray, priors: np.ndarray) -> np.ndarray:
+    def predict_from_preprocessed_curve(self, curve: np.ndarray, priors: np.ndarray) -> dict:
         context = self._input2context(curve, priors)
 
         with torch.no_grad():
             scaled_params = self.trainer.model(context)
 
-        prediction = self._scaled_params2prediction_arr(scaled_params, context)
-        return prediction
+        prediction_dict = self._scaled_params2prediction_dict(scaled_params, context)
+        return prediction_dict
 
     ### some shortcut methods for data processing ###
 
-    def _scaled_params2prediction_arr(self, scaled_params: Tensor, context: Tensor):
+    def _scaled_params2prediction_dict(self, scaled_params: Tensor, context: Tensor) -> dict:
         predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
             self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
         )
-        prediction = _get_prediction_array(predicted_params)
-        return prediction
+
+        sld_x_axis, sld_profile, _ = get_density_profiles(
+            predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
+        )
+
+        prediction_dict = {
+            "params": _get_prediction_array(predicted_params),
+            "sld_x_axis": sld_x_axis.squeeze().cpu().numpy(),
+            "sld_profile": sld_profile.squeeze().cpu().numpy(),
+            "param_names": get_param_labels(
+                predicted_params.max_layer_num,
+                thickness_name='d',
+                roughness_name='sigma',
+                sld_name='rho',
+            )
+        }
+
+        return prediction_dict
 
     def _input2context(self, curve: np.ndarray, priors: np.ndarray):
         scaled_curve = self._scale_curve(curve)
