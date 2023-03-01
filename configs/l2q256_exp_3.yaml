@@ -7,10 +7,10 @@ dset:
     kwargs:
       params: [
         # d
-        [10., 700.],
+        [10., 1000.],
         [0., 50.],
         # sigma
-        [0., 50.],
+        [0., 100.],
         [0., 30.],
         [0., 20.],
         # rho
@@ -20,7 +20,7 @@ dset:
       ]
       logdist: false
       relative_min_bound_width: 1.0e-2
-      smaller_roughnesses: false
+      smaller_roughnesses: true
   q_generator:
     cls: ConstantAngle
     kwargs:
@@ -34,12 +34,20 @@ dset:
       consistent_rel_err: false
       logdist: true
       apply_shift: true
-      scale_range: [-0.01, 0.01]
+      scale_range: [-0.02, 0.02]
   q_noise:
     cls: BasicQNoiseGenerator
     kwargs:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
+  smearing:
+    cls: Smearing
+    kwargs:
+      sigma_range: [ 5.0e-4, 5.0e-2 ]
+      gauss_num: 31
+      share_smeared: 0.2
+      constant_dq: true
+
 model:
   encoder:
     cls: SubPriorConvFCEncoder
@@ -53,7 +61,7 @@ model:
        in_features: 256
        prior_in_features: 16
        hidden_features: 512
-       num_blocks: 2
+       num_blocks: 3
        pass_bounds: false
        pretrained_conv: null
 training:
