@@ -183,6 +183,15 @@ def abeles_np(
 ):
     c_dtype = np.complex128 if q.dtype is np.float64 else np.complex64
 
+    if q.ndim == thickness.ndim == roughness.ndim == sld.ndim == 1:
+        zero_batch = True
+    else:
+        zero_batch = False
+
+    thickness = np.atleast_2d(thickness)
+    roughness = np.atleast_2d(roughness)
+    sld = np.atleast_2d(sld)
+
     batch_size, num_layers = thickness.shape
 
     sld = np.concatenate([np.zeros((batch_size, 1)).astype(sld.dtype), sld], -1)[:, None]
@@ -227,8 +236,10 @@ def abeles_np(
     r = np.abs(m[..., 1, 0] / m[..., 0, 0]) ** 2
     r = np.clip(r, None, 1.)
 
-    return r
+    if zero_batch:
+        r = r[0]
 
+    return r
 
 def _get_relative_k_z(k_z0, scattering_length_density):
     return torch.sqrt(k_z0 ** 2 - 4 * pi * scattering_length_density)
