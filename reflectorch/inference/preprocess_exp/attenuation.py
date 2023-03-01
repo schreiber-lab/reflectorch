@@ -7,7 +7,7 @@ def apply_attenuation_correction(
         scattering_angle: np.ndarray = None,
         correct_discontinuities: bool = True
 ) -> np.ndarray:
-    intensity = intensity * attenuation
+    intensity = intensity / attenuation
     if correct_discontinuities:
         if scattering_angle is None:
             raise ValueError("correct_discontinuities options requires scattering_angle, but scattering_angle is None.")
