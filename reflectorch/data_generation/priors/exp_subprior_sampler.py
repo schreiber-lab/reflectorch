@@ -12,6 +12,7 @@ from torch import Tensor
 from reflectorch.data_generation.utils import (
     uniform_sampler,
     logdist_sampler,
+    triangular_sampler,
 )
 
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
@@ -33,12 +34,14 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
                  scaled_range: Tuple[float, float] = (-1, 1),
                  logdist: bool = False,
                  relative_min_bound_width: float = 1e-4,
+                 smaller_roughnesses: bool = True,
                  ):
         self.device = device
         self.dtype = dtype
         self.scaled_range = scaled_range
         self.relative_min_bound_width = relative_min_bound_width
         self.logdist = logdist
+        self.smaller_roughnesses = smaller_roughnesses
         self._init_params(*params)
 
     @property
@@ -217,14 +220,14 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
             device=self.device, dtype=self.dtype
         )
 
-        # if self.smaller_roughnesses:
-        #     idx_min, idx_max = self.num_layers, self.num_layers * 2 + 1
-        #     prior_centers[:, idx_min:idx_max] = triangular_sampler(
-        #         min_vector[:, idx_min:idx_max] + prior_widths[:, idx_min:idx_max] / 2,
-        #         max_vector[:, idx_min:idx_max] - prior_widths[:, idx_min:idx_max] / 2,
-        #         batch_size, self.num_layers + 1,
-        #         device=self.device, dtype=self.dtype
-        #     )
+        if self.smaller_roughnesses:
+            idx_min, idx_max = self.num_layers, self.num_layers * 2 + 1
+            prior_centers[:, idx_min:idx_max] = triangular_sampler(
+                min_vector[idx_min:idx_max] + prior_widths[:, idx_min:idx_max] / 2,
+                max_vector[idx_min:idx_max] - prior_widths[:, idx_min:idx_max] / 2,
+                batch_size, self.num_layers + 1,
+                device=self.device, dtype=self.dtype
+            )
 
         min_bounds, max_bounds = prior_centers - prior_widths / 2, prior_centers + prior_widths / 2
 
