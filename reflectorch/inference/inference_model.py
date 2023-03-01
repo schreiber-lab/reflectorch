@@ -62,6 +62,7 @@ class InferenceModel(object):
                 attenuation: np.ndarray,
                 priors: np.ndarray,
                 preprocessing_parameters: dict = None,
+                polish: bool = True,
                 ) -> dict:
         preprocessed_dict = self.preprocess(
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
@@ -70,7 +71,7 @@ class InferenceModel(object):
         raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
 
         preprocessed_dict.update(self.predict_from_preprocessed_curve(
-            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q,
+            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish,
         ))
 
         return preprocessed_dict
@@ -89,15 +90,40 @@ class InferenceModel(object):
 
         predicted_params = self._restore_predicted_params(scaled_params, context)
 
+        prediction_dict = {
+            "params": _get_prediction_array(predicted_params),
+            "param_names": get_param_labels(
+                predicted_params.max_layer_num,
+                thickness_name='d',
+                roughness_name='sigma',
+                sld_name='rho',
+            )
+        }
+
         if raw_curve is None:
             raw_curve = curve
         if raw_q is None:
             raw_q = self.q.squeeze().cpu().numpy()
 
-        if polish:
-            predicted_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
+        prediction_dict['curve_predicted'] = predicted_params.reflectivity(raw_q).squeeze().cpu().numpy()
+        sld_x_axis, sld_profile, _ = get_density_profiles(
+            predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
+        )
 
-        prediction_dict = self._scaled_params2prediction_dict(predicted_params, raw_q)
+        prediction_dict['sld_profile'] = sld_profile
+        prediction_dict['sld_x_axis'] = sld_x_axis
+
+        if polish:
+            polished_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
+            prediction_dict['params_polished'] = _get_prediction_array(polished_params)
+            prediction_dict['curve_polished'] = polished_params.reflectivity(raw_q).squeeze().cpu().numpy()
+
+            sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, num=1024,
+            )
+
+            prediction_dict['sld_profile_polished'] = sld_profile_polished
+            prediction_dict['sld_x_axis_polished'] = sld_x_axis_polished
 
         return prediction_dict
 
@@ -119,37 +145,6 @@ class InferenceModel(object):
         polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
 
         return polished_params
-
-    def _scaled_params2prediction_dict(self,
-                                       predicted_params: Params,
-                                       raw_q: np.ndarray = None
-                                       ) -> dict:
-
-        sld_x_axis, sld_profile, _ = get_density_profiles(
-            predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
-        )
-
-        if raw_q is not None:
-            raw_q = torch.from_numpy(np.atleast_2d(raw_q)).to(self.q)
-        else:
-            raw_q = self.q
-
-        predicted_curve = predicted_params.reflectivity(raw_q).squeeze().cpu().numpy()
-
-        prediction_dict = {
-            "params": _get_prediction_array(predicted_params),
-            "sld_x_axis": sld_x_axis.squeeze().cpu().numpy(),
-            "sld_profile": sld_profile.squeeze().cpu().numpy(),
-            "curve_predicted": predicted_curve,
-            "param_names": get_param_labels(
-                predicted_params.max_layer_num,
-                thickness_name='d',
-                roughness_name='sigma',
-                sld_name='rho',
-            )
-        }
-
-        return prediction_dict
 
     def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> Params:
         predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
