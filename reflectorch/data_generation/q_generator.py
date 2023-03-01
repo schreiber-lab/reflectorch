@@ -19,6 +19,7 @@ __all__ = [
     "QGenerator",
     "ConstantQ",
     "EquidistantQ",
+    "ConstantAngle",
 ]
 
 
@@ -46,6 +47,23 @@ class ConstantQ(QGenerator):
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
+
+
+class ConstantAngle(QGenerator):
+    def __init__(self,
+                 angle_range: Tuple[float, float, int] = (0., 0.2, 257),
+                 wavelength: float = 1.,
+                 device=DEFAULT_DEVICE,
+                 dtype=DEFAULT_DTYPE,
+                 ):
+        self.q = torch.from_numpy(angle2q(np.linspace(*angle_range), wavelength)).to(device).to(dtype)
+
+    def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        return self.q.clone()[None].expand(batch_size, self.q.shape[0])
+
+
+def angle2q(scattering_angle: np.ndarray, wavelength: float):
+    return 4 * np.pi / wavelength * np.sin(scattering_angle / 2 * np.pi / 180)
 
 
 class EquidistantQ(QGenerator):

@@ -22,6 +22,7 @@ from reflectorch.data_generation.priors import (
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
     QGenerator,
+    ConstantAngle,
     ConstantQ,
     EquidistantQ,
 )
@@ -99,4 +100,5 @@ __all__ = [
     "PoissonLogLikelihood",
     "BasicExpIntensityNoise",
     "BasicQNoiseGenerator",
+    "ConstantAngle",
 ]
