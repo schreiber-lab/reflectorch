@@ -68,7 +68,11 @@ class InferenceModel(object):
         )
         preprocessed_curve = preprocessed_dict["curve_interp"]
         raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
-        preprocessed_dict.update(self.predict_from_preprocessed_curve(preprocessed_curve, priors))
+
+        preprocessed_dict.update(self.predict_from_preprocessed_curve(
+            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q,
+        ))
+
         return preprocessed_dict
 
     def predict_from_preprocessed_curve(self,
