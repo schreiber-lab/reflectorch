@@ -1,6 +1,5 @@
 name: "dummy_model2"
 backend: "python"
-
 input [
   {
     name: "preprocessed_curve"
@@ -34,5 +33,5 @@ output [
     name: "sld_profile"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  },
+  }
 ]
