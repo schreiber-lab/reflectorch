@@ -67,13 +67,17 @@ class InferenceModel(object):
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
         )
         preprocessed_curve = preprocessed_dict["curve_interp"]
+        raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
         preprocessed_dict.update(self.predict_from_preprocessed_curve(preprocessed_curve, priors))
         return preprocessed_dict
 
     def predict_from_preprocessed_curve(self,
                                         curve: np.ndarray,
                                         priors: np.ndarray, *,
-                                        polish: bool = True) -> dict:
+                                        polish: bool = True,
+                                        raw_curve: np.ndarray = None,
+                                        raw_q: np.ndarray = None,
+                                        ) -> dict:
         context = self._input2context(curve, priors)
 
         with torch.no_grad():
@@ -81,36 +85,52 @@ class InferenceModel(object):
 
         predicted_params = self._restore_predicted_params(scaled_params, context)
 
-        if polish:
-            predicted_params = self._polish_prediction(curve, predicted_params, priors)
+        if raw_curve is None:
+            raw_curve = curve
+        if raw_q is None:
+            raw_q = self.q.squeeze().cpu().numpy()
 
-        prediction_dict = self._scaled_params2prediction_dict(predicted_params)
+        if polish:
+            predicted_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
+
+        prediction_dict = self._scaled_params2prediction_dict(predicted_params, raw_q)
 
         return prediction_dict
 
     ### some shortcut methods for data processing ###
 
-    def _polish_prediction(self, curve: np.ndarray, predicted_params: Params, priors: np.ndarray) -> Params:
+    def _polish_prediction(self,
+                           q: np.ndarray,
+                           curve: np.ndarray,
+                           predicted_params: Params,
+                           priors: np.ndarray
+                           ) -> Params:
         params = torch.cat([
             predicted_params.thicknesses.squeeze(),
             predicted_params.roughnesses.squeeze(),
             predicted_params.slds.squeeze()
         ]).cpu().numpy()
 
-        polished_params = standard_refl_fit(self.q.squeeze().cpu().numpy(), curve, params, bounds=priors.T)
+        polished_params = standard_refl_fit(q, curve, params, bounds=priors.T)
         polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
 
         return polished_params
 
     def _scaled_params2prediction_dict(self,
                                        predicted_params: Params,
+                                       raw_q: np.ndarray = None
                                        ) -> dict:
 
         sld_x_axis, sld_profile, _ = get_density_profiles(
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
         )
 
-        predicted_curve = predicted_params.reflectivity(self.q).squeeze().cpu().numpy()
+        if raw_q is not None:
+            raw_q = torch.from_numpy(np.atleast_2d(raw_q)).to(self.q)
+        else:
+            raw_q = self.q
+
+        predicted_curve = predicted_params.reflectivity(raw_q).squeeze().cpu().numpy()
 
         prediction_dict = {
             "params": _get_prediction_array(predicted_params),
