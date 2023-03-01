@@ -12,6 +12,7 @@ from reflectorch.runs.utils import (
 from reflectorch.runs.config import load_config
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.ml.trainers import PointEstimatorTrainer
+from reflectorch.inference.scipy_fitter import standard_refl_fit
 
 
 class InferenceModel(object):
@@ -69,21 +70,41 @@ class InferenceModel(object):
         preprocessed_dict.update(self.predict_from_preprocessed_curve(preprocessed_curve, priors))
         return preprocessed_dict
 
-    def predict_from_preprocessed_curve(self, curve: np.ndarray, priors: np.ndarray) -> dict:
+    def predict_from_preprocessed_curve(self,
+                                        curve: np.ndarray,
+                                        priors: np.ndarray, *,
+                                        polish: bool = True) -> dict:
         context = self._input2context(curve, priors)
 
         with torch.no_grad():
             scaled_params = self.trainer.model(context)
 
-        prediction_dict = self._scaled_params2prediction_dict(scaled_params, context)
+        predicted_params = self._restore_predicted_params(scaled_params, context)
+
+        if polish:
+            predicted_params = self._polish_prediction(curve, predicted_params, priors)
+
+        prediction_dict = self._scaled_params2prediction_dict(predicted_params)
+
         return prediction_dict
 
     ### some shortcut methods for data processing ###
 
-    def _scaled_params2prediction_dict(self, scaled_params: Tensor, context: Tensor) -> dict:
-        predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
-            self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
-        )
+    def _polish_prediction(self, curve: np.ndarray, predicted_params: Params, priors: np.ndarray) -> Params:
+        params = torch.cat([
+            predicted_params.thicknesses.squeeze(),
+            predicted_params.roughnesses.squeeze(),
+            predicted_params.slds.squeeze()
+        ]).cpu().numpy()
+
+        polished_params = standard_refl_fit(self.q.squeeze().cpu().numpy(), curve, params, bounds=priors.T)
+        polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
+
+        return polished_params
+
+    def _scaled_params2prediction_dict(self,
+                                       predicted_params: Params,
+                                       ) -> dict:
 
         sld_x_axis, sld_profile, _ = get_density_profiles(
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
@@ -105,6 +126,12 @@ class InferenceModel(object):
         }
 
         return prediction_dict
+
+    def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> Params:
+        predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
+            self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
+        )
+        return predicted_params
 
     def _input2context(self, curve: np.ndarray, priors: np.ndarray):
         scaled_curve = self._scale_curve(curve)
