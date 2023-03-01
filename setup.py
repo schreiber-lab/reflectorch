@@ -1,3 +1,4 @@
+import sys
 from setuptools import setup, find_packages
 from pathlib import Path
 import os
@@ -36,6 +37,9 @@ install_requires = read_file('requirements.txt').splitlines()
 
 if os.environ.get('ML_SERVER', None) is not None:
     install_requires = install_requires[2:]
+
+if sys.version_info.minor < 8:
+    install_requires.append('typing_extensions')
 
 setup(
     name=PACKAGE_NAME,

@@ -1,4 +1,7 @@
-from typing import Literal
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 import numpy as np
 from numpy import ndarray
