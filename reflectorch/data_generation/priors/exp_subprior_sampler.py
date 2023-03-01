@@ -199,7 +199,7 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         )
 
         if self.logdist:
-            widths_sampler_func = logdist_sampler  # TODO: fix zero width for logdist issus
+            widths_sampler_func = logdist_sampler
         else:
             widths_sampler_func = uniform_sampler
 
