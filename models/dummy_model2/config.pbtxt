@@ -1,9 +1,9 @@
 name: "dummy_model2"
 backend: "python"
-max_batch_size: 1
+
 input [
   {
-    name: "curve"
+    name: "preprocessed_curve"
     data_type: TYPE_FP32
     dims: [ -1 ]
   },
@@ -20,7 +20,7 @@ output [
     data_type: TYPE_FP32
     dims: [ -1 ]
   },
-    {
+  {
     name: "curve_predicted"
     data_type: TYPE_FP32
     dims: [ -1 ]
