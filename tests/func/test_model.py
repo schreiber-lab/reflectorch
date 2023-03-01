@@ -13,4 +13,5 @@ def test_inference_model(inference_model, preprocessed_data):
     assert np.all(max_bounds >= predicted_params)
     assert np.all(min_bounds <= predicted_params)
     assert predicted_dict['sld_profile'].shape == predicted_dict['sld_x_axis'].shape
+    assert predicted_dict['curve_predicted'].shape == preprocessed_data['preprocessed_curve'].shape
 

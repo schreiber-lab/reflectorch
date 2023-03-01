@@ -89,10 +89,13 @@ class InferenceModel(object):
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
         )
 
+        predicted_curve = predicted_params.reflectivity(self.q).squeeze().cpu().numpy()
+
         prediction_dict = {
             "params": _get_prediction_array(predicted_params),
             "sld_x_axis": sld_x_axis.squeeze().cpu().numpy(),
             "sld_profile": sld_profile.squeeze().cpu().numpy(),
+            "curve_predicted": predicted_curve,
             "param_names": get_param_labels(
                 predicted_params.max_layer_num,
                 thickness_name='d',
