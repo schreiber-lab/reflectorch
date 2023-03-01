@@ -8,24 +8,23 @@ dset:
       params: [
         # d
         [10., 500.],
-        [0., 10.],
+        [0., 20.],
         # sigma
         [0., 50.],
-        [0., 5.],
+        [0., 10.],
         [0., 5.],
         # rho
         [2., 17., 0.1, 4.],
-        [17., 21., 0.001, 1.],
-        [19., 21., 0.001, 1.],
+        [17., 21., 0.001, 2.],
+        [19., 21., 0.001, 2.],
       ]
       logdist: false
       relative_min_bound_width: 1.0e-2
   q_generator:
-    cls: ConstantQ
+    cls: ConstantAngle
     kwargs:
-      q: [0.02, 0.5, 256]
-      remove_zero: false
-      fixed_zero: true
+      angle_range: [0.05, 2.6, 256]
+      wavelength: 0.729322
   intensity_noise:
     cls: BasicExpIntensityNoise
     kwargs:
@@ -50,7 +49,7 @@ model:
        conv_latent_dim: 128
        avpool: 4
        use_batch_norm: true
-       in_features: 64
+       in_features: 256
        prior_in_features: 16
        hidden_features: 512
        num_blocks: 2
