@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler
+from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
@@ -82,13 +82,17 @@ class InferenceModel(object):
                                         polish: bool = True,
                                         raw_curve: np.ndarray = None,
                                         raw_q: np.ndarray = None,
+                                        clip_prediction: bool = True,
                                         ) -> dict:
         context = self._input2context(curve, priors)
 
         with torch.no_grad():
             scaled_params = self.trainer.model(context)
 
-        predicted_params = self._restore_predicted_params(scaled_params, context)
+        predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
+
+        if clip_prediction:
+            predicted_params = self._prior_sampler.clamp_params(predicted_params)
 
         prediction_dict = {
             "params": _get_prediction_array(predicted_params),
@@ -148,8 +152,8 @@ class InferenceModel(object):
 
         return polished_params
 
-    def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> Params:
-        predicted_params: Params = self.trainer.loader.prior_sampler.restore_params(
+    def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> UniformSubPriorParams:
+        predicted_params: UniformSubPriorParams = self.trainer.loader.prior_sampler.restore_params(
             self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
         )
         return predicted_params
