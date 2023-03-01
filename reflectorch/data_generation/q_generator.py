@@ -13,6 +13,7 @@ from torch import Tensor
 
 from reflectorch.data_generation.utils import uniform_sampler
 from reflectorch.data_generation.priors import Params
+from reflectorch.utils import angle_to_q
 from reflectorch.data_generation.priors.no_constraints import DEFAULT_DEVICE, DEFAULT_DTYPE
 
 __all__ = [
@@ -56,14 +57,10 @@ class ConstantAngle(QGenerator):
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
-        self.q = torch.from_numpy(angle2q(np.linspace(*angle_range), wavelength)).to(device).to(dtype)
+        self.q = torch.from_numpy(angle_to_q(np.linspace(*angle_range), wavelength)).to(device).to(dtype)
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
-
-
-def angle2q(scattering_angle: np.ndarray, wavelength: float):
-    return 4 * np.pi / wavelength * np.sin(scattering_angle / 2 * np.pi / 180)
 
 
 class EquidistantQ(QGenerator):

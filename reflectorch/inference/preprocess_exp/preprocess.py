@@ -6,7 +6,7 @@ from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivi
 from reflectorch.inference.preprocess_exp.footprint import apply_footprint_correction, BEAM_SHAPE
 from reflectorch.inference.preprocess_exp.normalize import intensity2reflectivity, NORMALIZE_MODE
 from reflectorch.inference.preprocess_exp.attenuation import apply_attenuation_correction
-from reflectorch.inference.preprocess_exp.utils import angle2q
+from reflectorch.utils import angle_to_q
 
 
 def standard_preprocessing(
@@ -33,7 +33,7 @@ def standard_preprocessing(
 
     curve = intensity2reflectivity(intensity, normalize_mode, incoming_intensity)
 
-    q = angle2q(scattering_angle, wavelength)
+    q = angle_to_q(scattering_angle, wavelength)
 
     curve_interp = interp_reflectivity(q_interp, q, curve)
 
