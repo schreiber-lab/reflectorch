@@ -104,8 +104,11 @@ class InferenceModel(object):
             raw_curve = curve
         if raw_q is None:
             raw_q = self.q.squeeze().cpu().numpy()
+            raw_q_t = self.q
+        else:
+            raw_q_t = torch.from_numpy(raw_q).to(self.q)
 
-        prediction_dict['curve_predicted'] = predicted_params.reflectivity(raw_q).squeeze().cpu().numpy()
+        prediction_dict['curve_predicted'] = predicted_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
         sld_x_axis, sld_profile, _ = get_density_profiles(
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
         )
@@ -116,7 +119,7 @@ class InferenceModel(object):
         if polish:
             polished_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
             prediction_dict['params_polished'] = _get_prediction_array(polished_params)
-            prediction_dict['curve_polished'] = polished_params.reflectivity(raw_q).squeeze().cpu().numpy()
+            prediction_dict['curve_polished'] = polished_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
 
             sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
                 polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
