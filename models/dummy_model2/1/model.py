@@ -41,7 +41,9 @@ class TritonPythonModel:
     def process_request(self, request):
         refl_input = {key: pb_utils.get_input_tensor_by_name(request, key).as_numpy() for key in self.REFL_KEYS}
 
-        parameter_dict = self.model.predict_from_preprocessed_curve(**refl_input)
+        parameter_dict = self.model.predict_from_preprocessed_curve(
+            curve=refl_input["preprocessed_curve"], priors=refl_input["priors"], polish=True
+        )
 
         response_tensors = pb_utils.InferenceResponse(
             output_tensors=[pb_utils.Tensor(key, parameter_dict[key].astype(np.float32)) for key in self.OUTPUT_KEYS]
