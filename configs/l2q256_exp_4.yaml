@@ -1,5 +1,5 @@
 general:
-  name: l2q256_exp_3
+  name: l2q256_exp_4
   root_dir: null
 dset:
   prior_sampler:
@@ -14,9 +14,9 @@ dset:
         [0., 30.],
         [0., 20.],
         # rho
-        [5., 20., 0.1, 8.],
-        [17., 24., 0.001, 2.],
-        [17., 24., 0.001, 2.],
+        [5., 120., 1., 60.],
+        [17., 170., 0.001, 10.],
+        [17., 170., 0.001, 10.],
       ]
       logdist: false
       relative_min_bound_width: 1.0e-2
@@ -40,14 +40,6 @@ dset:
     kwargs:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
-  smearing:
-    cls: Smearing
-    kwargs:
-      sigma_range: [ 5.0e-4, 5.0e-2 ]
-      gauss_num: 31
-      share_smeared: 0.2
-      constant_dq: true
-
 model:
   encoder:
     cls: SubPriorConvFCEncoder
@@ -56,12 +48,12 @@ model:
        hidden_dims: [32, 64, 128, 256, 512]
        latent_dim: 8
        conv_latent_dim: 128
-       avpool: 4
+       avpool: 8
        use_batch_norm: true
        in_features: 256
        prior_in_features: 16
-       hidden_features: 512
-       num_blocks: 3
+       hidden_features: 1024
+       num_blocks: 2
        pass_bounds: false
        pretrained_conv: null
 training:
