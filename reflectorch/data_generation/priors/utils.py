@@ -15,13 +15,13 @@ from reflectorch.data_generation.utils import (
 )
 
 
-def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None):
+def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef: float = 0.5):
     batch_size, layers_num = thicknesses.shape
     max_roughness = torch.ones(
         batch_size, layers_num + 1, device=thicknesses.device, dtype=thicknesses.dtype
     ) * float('inf')
 
-    boundary = thicknesses / 2
+    boundary = thicknesses * coef
     if mask is not None:
         boundary[get_thickness_mask_from_sld_mask(mask)] = float('inf')
 
