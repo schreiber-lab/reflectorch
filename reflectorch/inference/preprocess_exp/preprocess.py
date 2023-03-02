@@ -6,6 +6,7 @@ from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivi
 from reflectorch.inference.preprocess_exp.footprint import apply_footprint_correction, BEAM_SHAPE
 from reflectorch.inference.preprocess_exp.normalize import intensity2reflectivity, NORMALIZE_MODE
 from reflectorch.inference.preprocess_exp.attenuation import apply_attenuation_correction
+from reflectorch.inference.preprocess_exp.cut_with_q_ratio import cut_curve
 from reflectorch.utils import angle_to_q
 
 
@@ -20,6 +21,8 @@ def standard_preprocessing(
         beam_shape: BEAM_SHAPE = "gauss",
         normalize_mode: NORMALIZE_MODE = "max",
         incoming_intensity: float = None,
+        max_q: float = None,  # if provided, max_angle is ignored
+        max_angle: float = None,
 ) -> dict:
     intensity = apply_attenuation_correction(
         intensity,
@@ -35,10 +38,12 @@ def standard_preprocessing(
 
     q = angle_to_q(scattering_angle, wavelength)
 
+    q, curve, q_ratio = cut_curve(q, curve, max_q, max_angle, wavelength)
+
     curve_interp = interp_reflectivity(q_interp, q, curve)
 
     return {
-        "curve_interp": curve_interp, "curve": curve, "q_values": q, "q_interp": q_interp,
+        "curve_interp": curve_interp, "curve": curve, "q_values": q, "q_interp": q_interp, "q_ratio": q_ratio,
     }
 
 
