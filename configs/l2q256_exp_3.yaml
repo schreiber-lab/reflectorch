@@ -43,7 +43,7 @@ dset:
   smearing:
     cls: Smearing
     kwargs:
-      sigma_range: [ 5.0e-4, 5.0e-2 ]
+      sigma_range: [ 5.0e-4, 5.0e-3 ]
       gauss_num: 31
       share_smeared: 0.2
       constant_dq: true
