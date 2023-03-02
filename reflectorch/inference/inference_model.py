@@ -181,12 +181,12 @@ class InferenceModel(object):
 
     def _scale_priors(self, priors: np.ndarray or Tensor, q_ratio: float = 1.):
         if not isinstance(priors, Tensor):
-            priors = torch.from_numpy(priors).float()
-        else:
-            priors: Tensor = priors.clone()
+            priors = torch.from_numpy(priors)
+
+        priors = priors.float().clone()
 
         priors = priors.to(self.q).T
-        priors = self._prior_sampler.scale_bounds_with_q(priors, q_ratio)
+        priors = self._prior_sampler.scale_bounds_with_q(priors, 1 / q_ratio)
         priors = self._prior_sampler.clamp_bounds(priors)
 
         min_bounds, max_bounds = priors[:, None].to(self.q)
