@@ -35,12 +35,12 @@ def to_t(arr, device=None, dtype=None):
 # mlreflect/xrrloader/dataloader/transform.py
 
 
-def angle_to_q(scattering_angle: ndarray, wavelength: float):
+def angle_to_q(scattering_angle: ndarray or float, wavelength: float):
     """Conversion from full scattering angle (degrees) to scattering vector (inverse angstroms)"""
     return 4 * np.pi / wavelength * np.sin(scattering_angle / 2 * np.pi / 180)
 
 
-def q_to_angle(q: ndarray, wavelength: float):
+def q_to_angle(q: ndarray or float, wavelength: float):
     """Conversion from scattering vector (inverse angstroms) to full scattering angle (degrees)"""
     return 2 * np.arcsin(q * wavelength / (4 * np.pi)) / np.pi * 180
 
