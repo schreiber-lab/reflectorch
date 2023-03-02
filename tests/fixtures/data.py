@@ -30,8 +30,16 @@ def raw_data_with_preprocessing_params(request):
 
 
 @pytest.fixture(
-    params=['test_preprocessed_curve_1'],
+    params=['test_preprocessed_curve_2'],
     scope="session",
 )
 def preprocessed_data(request):
     return load_generated_data(request.param)
+
+
+@pytest.fixture(
+    params=['test_raw_data_input_1'],
+    scope="session",
+)
+def raw_data_input(request):
+    pass
