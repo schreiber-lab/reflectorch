@@ -18,6 +18,7 @@ from reflectorch.data_generation.utils import (
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
 from reflectorch.data_generation.priors.base import PriorSampler
 from reflectorch.data_generation.priors.subprior_sampler import UniformSubPriorParams
+from reflectorch.data_generation.priors.params import Params
 from reflectorch.data_generation.priors.no_constraints import (
     DEFAULT_DEVICE,
     DEFAULT_DTYPE,
@@ -232,3 +233,14 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         min_bounds, max_bounds = prior_centers - prior_widths / 2, prior_centers + prior_widths / 2
 
         return min_bounds, max_bounds
+
+    @staticmethod
+    def scale_bounds_with_q(bounds: Tensor, q_ratio: float) -> Tensor:
+        params = Params.from_tensor(torch.atleast_2d(bounds))
+        params.scale_with_q(q_ratio)
+        return params.as_tensor().squeeze()
+
+    def clamp_bounds(self, bounds: Tensor) -> Tensor:
+        return torch.clamp(
+            torch.atleast_2d(bounds), torch.atleast_2d(self.min_bounds), torch.atleast_2d(self.max_bounds)
+        )
