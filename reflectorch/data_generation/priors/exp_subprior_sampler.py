@@ -236,7 +236,7 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
 
     @staticmethod
     def scale_bounds_with_q(bounds: Tensor, q_ratio: float) -> Tensor:
-        params = Params.from_tensor(torch.atleast_2d(bounds))
+        params = Params.from_tensor(torch.atleast_2d(bounds).clone())
         params.scale_with_q(q_ratio)
         return params.as_tensor().squeeze()
 
