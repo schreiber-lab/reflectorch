@@ -174,7 +174,8 @@ class InferenceModel(object):
 
     def _scale_curve(self, curve: np.ndarray or Tensor):
         if not isinstance(curve, Tensor):
-            curve = torch.from_numpy(curve).float().to(self.q)[None]
+            curve = torch.from_numpy(curve).float()
+        curve = torch.atleast_2d(curve).to(self.q)
         scaled_curve = self.trainer.loader.curves_scaler.scale(curve)
         return scaled_curve.float()
 
