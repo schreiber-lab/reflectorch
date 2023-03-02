@@ -2,8 +2,6 @@ import numpy as np
 
 from reflectorch import *
 
-from tests.fixtures.data import TEST_DATA_PATH
-
 
 def generate_test_data_by_trainer(file_name: str, model_name: str = 'l2q64_new_sub_1'):
     trainer = get_trainer_by_name(model_name, load_weights=False)
@@ -14,6 +12,12 @@ def generate_test_data_by_trainer(file_name: str, model_name: str = 'l2q64_new_s
         data['params'].min_bounds[0].cpu().numpy(), data['params'].max_bounds[0].cpu().numpy()
     ], -1)
     np.savez(TEST_DATA_PATH / f'{file_name}.npz', preprocessed_curve=noisy_curve, params=params, priors=priors)
+
+
+def load_generated_data(file_name) -> dict:
+    path = TEST_DATA_PATH / f'{file_name}.npz'
+    data = dict(np.load(str(path)))
+    return data
 
 
 if __name__ == '__main__':

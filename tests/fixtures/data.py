@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from reflectorch.paths import ROOT_DIR
 
-TEST_DATA_PATH = ROOT_DIR / 'tests' / 'data'
+from reflectorch.paths import TEST_DATA_PATH
+from tests.helpers.generate_data import load_generated_data
 
 
 @pytest.fixture(
@@ -34,6 +34,4 @@ def raw_data_with_preprocessing_params(request):
     scope="session",
 )
 def preprocessed_data(request):
-    path = TEST_DATA_PATH / f'{request.param}.npz'
-    data = dict(np.load(str(path)))
-    return data
+    return load_generated_data(request.param)
