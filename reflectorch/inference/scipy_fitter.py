@@ -38,6 +38,7 @@ def standard_refl_fit(
 ) -> np.ndarray:
     if bounds is not None:
         kwargs['bounds'] = bounds
+        init_params = np.clip(init_params, *bounds)
 
     res = curve_fit(
         get_scaled_curve_func(
