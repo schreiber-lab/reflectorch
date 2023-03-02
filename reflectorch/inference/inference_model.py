@@ -10,9 +10,12 @@ from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
 )
 from reflectorch.runs.config import load_config
-from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.ml.trainers import PointEstimatorTrainer
+from reflectorch.data_generation.likelihoods import LogLikelihood
+
+from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.inference.scipy_fitter import standard_refl_fit
+from reflectorch.inference.sampler_solution import simple_sampler_solution
 
 
 class InferenceModel(object):
@@ -84,15 +87,21 @@ class InferenceModel(object):
                                         raw_curve: np.ndarray = None,
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
-                                        q_ratio: float = 1.
+                                        q_ratio: float = 1.,
+                                        use_sampler: bool = True,
                                         ) -> dict:
-        context = self._input2context(curve, priors, q_ratio)
+        context, min_bounds, max_bounds = self._input2context(curve, priors, q_ratio)
 
         with torch.no_grad():
             self.trainer.model.eval()
             scaled_params = self.trainer.model(context)
 
         predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
+
+        if use_sampler:
+            predicted_params: UniformSubPriorParams = self._sampler_solution(
+                curve, predicted_params, min_bounds, max_bounds,
+            )
 
         if clip_prediction:
             predicted_params = self._prior_sampler.clamp_params(predicted_params)
@@ -168,9 +177,9 @@ class InferenceModel(object):
 
     def _input2context(self, curve: np.ndarray, priors: np.ndarray, q_ratio: float = 1.):
         scaled_curve = self._scale_curve(curve)
-        scaled_bounds = self._scale_priors(priors, q_ratio)
+        scaled_bounds, min_bounds, max_bounds = self._scale_priors(priors, q_ratio)
         scaled_input = torch.cat([scaled_curve, scaled_bounds], -1)
-        return scaled_input
+        return scaled_input, min_bounds, max_bounds
 
     def _scale_curve(self, curve: np.ndarray or Tensor):
         if not isinstance(curve, Tensor):
@@ -194,7 +203,7 @@ class InferenceModel(object):
         scaled_bounds = torch.cat([
             prior_sampler.scale_bounds(min_bounds), prior_sampler.scale_bounds(max_bounds)
         ], -1)
-        return scaled_bounds.float()
+        return scaled_bounds.float(), min_bounds, max_bounds
 
     @property
     def _prior_sampler(self) -> ExpUniformSubPriorSampler:
@@ -213,6 +222,30 @@ class InferenceModel(object):
             **(preprocessing_parameters or {})
         )
         self.log.info(f"preprocessing params are set: {preprocessing_parameters}.")
+
+    def _sampler_solution(
+            self,
+            curve: Tensor or np.ndarray,
+            predicted_params: UniformSubPriorParams,
+            min_bounds: Tensor,
+            max_bounds: Tensor,
+    ) -> UniformSubPriorParams:
+        if not isinstance(curve, Tensor):
+            curve = torch.from_numpy(curve).float()
+        curve = curve.to(self.q)
+
+        likelihood = LogLikelihood(
+            self.q, curve, self._prior_sampler, curve * 0.1
+        )
+        refined_params = simple_sampler_solution(
+            likelihood,
+            predicted_params,
+            min_bounds,
+            max_bounds,
+            self._prior_sampler.min_bounds,
+            self._prior_sampler.max_bounds,
+        )
+        return refined_params
 
 
 def _get_prediction_array(params: Params) -> np.ndarray:
