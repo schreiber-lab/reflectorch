@@ -29,24 +29,17 @@ dset:
   intensity_noise:
     cls: BasicExpIntensityNoise
     kwargs:
-      relative_errors: [0.05, 0.2]
+      relative_errors: [0.001, 0.01]
       abs_errors: 1.0e-8
       consistent_rel_err: false
       logdist: true
-      apply_shift: true
-      scale_range: [-0.03, 0.03]
+      apply_shift: false
+      scale_range: [-0.01, 0.01]
   q_noise:
     cls: BasicQNoiseGenerator
     kwargs:
       shift_std: 5.0e-4
-      noise_std: [0., 0.001]
-  smearing:
-    cls: Smearing
-    kwargs:
-      sigma_range: [ 5.0e-4, 5.0e-3 ]
-      gauss_num: 31
-      share_smeared: 0.2
-      constant_dq: true
+      noise_std: [0., 0.0005]
 
 model:
   encoder:
