@@ -89,6 +89,7 @@ class InferenceModel(object):
         context = self._input2context(curve, priors, q_ratio)
 
         with torch.no_grad():
+            self.trainer.model.eval()
             scaled_params = self.trainer.model(context)
 
         predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
@@ -180,6 +181,8 @@ class InferenceModel(object):
     def _scale_priors(self, priors: np.ndarray or Tensor, q_ratio: float = 1.):
         if not isinstance(priors, Tensor):
             priors = torch.from_numpy(priors).float()
+        else:
+            priors: Tensor = priors.clone()
 
         priors = priors.to(self.q).T
         priors = self._prior_sampler.scale_bounds_with_q(priors, q_ratio)
