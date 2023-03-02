@@ -69,9 +69,10 @@ class InferenceModel(object):
         )
         preprocessed_curve = preprocessed_dict["curve_interp"]
         raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
+        q_ratio = preprocessed_dict["q_ratio"]
 
         preprocessed_dict.update(self.predict_from_preprocessed_curve(
-            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish,
+            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio
         ))
 
         return preprocessed_dict
@@ -83,8 +84,9 @@ class InferenceModel(object):
                                         raw_curve: np.ndarray = None,
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
+                                        q_ratio: float = 1.
                                         ) -> dict:
-        context = self._input2context(curve, priors)
+        context = self._input2context(curve, priors, q_ratio)
 
         with torch.no_grad():
             scaled_params = self.trainer.model(context)
@@ -94,16 +96,6 @@ class InferenceModel(object):
         if clip_prediction:
             predicted_params = self._prior_sampler.clamp_params(predicted_params)
 
-        prediction_dict = {
-            "params": _get_prediction_array(predicted_params),
-            "param_names": get_param_labels(
-                predicted_params.max_layer_num,
-                thickness_name='d',
-                roughness_name='sigma',
-                sld_name='rho',
-            )
-        }
-
         if raw_curve is None:
             raw_curve = curve
         if raw_q is None:
@@ -112,7 +104,22 @@ class InferenceModel(object):
         else:
             raw_q_t = torch.from_numpy(raw_q).to(self.q)
 
-        prediction_dict['curve_predicted'] = predicted_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
+        if q_ratio != 1.:
+            predicted_params.scale_with_q(q_ratio)
+            raw_q = raw_q * q_ratio
+            raw_q_t = raw_q_t * q_ratio
+
+        prediction_dict = {
+            "params": _get_prediction_array(predicted_params),
+            "param_names": get_param_labels(
+                predicted_params.max_layer_num,
+                thickness_name='d',
+                roughness_name='sigma',
+                sld_name='rho',
+            ),
+            "curve_predicted": predicted_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
+        }
+
         sld_x_axis, sld_profile, _ = get_density_profiles(
             predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
         )
@@ -158,9 +165,9 @@ class InferenceModel(object):
         )
         return predicted_params
 
-    def _input2context(self, curve: np.ndarray, priors: np.ndarray):
+    def _input2context(self, curve: np.ndarray, priors: np.ndarray, q_ratio: float = 1.):
         scaled_curve = self._scale_curve(curve)
-        scaled_bounds = self._scale_priors(priors)
+        scaled_bounds = self._scale_priors(priors, q_ratio)
         scaled_input = torch.cat([scaled_curve, scaled_bounds], -1)
         return scaled_input
 
@@ -170,11 +177,15 @@ class InferenceModel(object):
         scaled_curve = self.trainer.loader.curves_scaler.scale(curve)
         return scaled_curve.float()
 
-    def _scale_priors(self, priors: np.ndarray or Tensor):
+    def _scale_priors(self, priors: np.ndarray or Tensor, q_ratio: float = 1.):
         if not isinstance(priors, Tensor):
             priors = torch.from_numpy(priors).float()
 
-        min_bounds, max_bounds = priors.T[:, None].to(self.q)
+        priors = priors.to(self.q).T
+        priors = self._prior_sampler.scale_bounds_with_q(priors, q_ratio)
+        priors = self._prior_sampler.clamp_bounds(priors)
+
+        min_bounds, max_bounds = priors[:, None].to(self.q)
         prior_sampler = self._prior_sampler
         scaled_bounds = torch.cat([
             prior_sampler.scale_bounds(min_bounds), prior_sampler.scale_bounds(max_bounds)
