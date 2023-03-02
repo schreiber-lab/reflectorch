@@ -12,13 +12,13 @@ from torch import Tensor
 from reflectorch.data_generation.utils import (
     uniform_sampler,
     logdist_sampler,
-    triangular_sampler,
 )
 
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
 from reflectorch.data_generation.priors.base import PriorSampler
 from reflectorch.data_generation.priors.subprior_sampler import UniformSubPriorParams
 from reflectorch.data_generation.priors.params import Params
+from reflectorch.data_generation.priors.utils import get_max_allowed_roughness
 from reflectorch.data_generation.priors.no_constraints import (
     DEFAULT_DEVICE,
     DEFAULT_DTYPE,
@@ -78,6 +78,9 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
 
         self.fixed_mask = torch.tensor(fixed_mask).to(self.device)
         self.fitted_mask = ~self.fixed_mask
+        self.roughnesses_mask = torch.zeros_like(self.fitted_mask)
+        self.roughnesses_mask[self.num_layers: self.num_layers * 2 + 1] = True
+
         self.min_bounds, self.max_bounds = torch.tensor(bounds).to(self.device).to(self.dtype).T
         self.min_deltas, self.max_deltas = map(torch.atleast_2d, torch.tensor(delta_bounds).to(self.min_bounds).T)
         self._param_dim = param_dim
@@ -101,6 +104,53 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         thicknesses, roughnesses, slds = torch.split(
             params, [self.max_num_layers, self.max_num_layers + 1, self.max_num_layers + 1], dim=-1
         )
+
+        if self.smaller_roughnesses:
+            fitted_r_mask = self.fitted_mask.clone()
+            fitted_r_mask[~self.roughnesses_mask] = False
+
+            min_roughness = self.min_bounds[fitted_r_mask]
+            max_roughness = torch.clamp(
+                get_max_allowed_roughness(thicknesses)[..., self.fitted_mask[self.roughnesses_mask]],
+                min_roughness,
+                self.max_bounds[fitted_r_mask]
+            )
+
+            min_vector = self.min_bounds.clone()[None].repeat(batch_size, 1)
+            max_vector = self.max_bounds.clone()[None].repeat(batch_size, 1)
+
+            max_vector[..., fitted_r_mask] = max_roughness
+
+            assert torch.all(max_vector[..., fitted_r_mask] == max_roughness)
+
+            min_deltas = self.min_deltas.clone().repeat(batch_size, 1)
+            max_deltas = self.max_deltas.clone().repeat(batch_size, 1)
+
+            max_deltas[..., fitted_r_mask] = torch.clamp_max(
+                max_deltas[..., fitted_r_mask],
+                max_roughness - min_roughness,
+            )
+
+            fitted_mask = torch.zeros_like(self.fitted_mask)
+            fitted_mask[fitted_r_mask] = True
+
+            updated_min_bounds, updated_max_bounds = self._sample_bounds(
+                batch_size, min_vector, max_vector, min_deltas, max_deltas, fitted_mask
+            )
+
+            min_bounds[..., fitted_mask], max_bounds[..., fitted_mask] = (
+                updated_min_bounds[..., fitted_mask], updated_max_bounds[..., fitted_mask]
+            )
+
+            params[..., fitted_mask] = torch.rand(
+                batch_size, fitted_mask.sum().item(),
+                device=self.device,
+                dtype=self.dtype
+            ) * (max_bounds[..., fitted_mask] - min_bounds[..., fitted_mask]) + min_bounds[..., fitted_mask]
+
+            thicknesses, roughnesses, slds = torch.split(
+                params, [self.max_num_layers, self.max_num_layers + 1, self.max_num_layers + 1], dim=-1
+            )
 
         params = UniformSubPriorParams(thicknesses, roughnesses, slds, min_bounds, max_bounds)
 
@@ -151,14 +201,22 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
     def _cat_restored_with_fixed_vector(self, restored_t: Tensor) -> Tensor:
         return self._cat_fitted_fixed_t(restored_t, self.fixed_params)
 
-    def _cat_fitted_fixed_t(self, fitted_t: Tensor, fixed_t: Tensor) -> Tensor:
+    def _cat_fitted_fixed_t(self, fitted_t: Tensor, fixed_t: Tensor, fitted_mask: Tensor = None) -> Tensor:
+        if fitted_mask is None:
+            fitted_mask = self.fitted_mask
+            fixed_mask = self.fixed_mask
+        else:
+            fixed_mask = ~fitted_mask
+
+        total_num_params = self.fitted_mask.sum().item() + self.fixed_mask.sum().item()
+
         batch_size = fitted_t.shape[0]
 
         concat_t = torch.empty(
-            batch_size, self._total_num_params, device=fitted_t.device, dtype=fitted_t.dtype
+            batch_size, total_num_params, device=fitted_t.device, dtype=fitted_t.dtype
         )
-        concat_t[:, self.fitted_mask] = fitted_t
-        concat_t[:, self.fixed_mask] = fixed_t[None].expand(batch_size, -1)
+        concat_t[:, fitted_mask] = fitted_t
+        concat_t[:, fixed_mask] = fixed_t[None].expand(batch_size, -1)
 
         return concat_t
 
@@ -198,37 +256,37 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
         return self.get_indices_within_bounds(params)
 
     def sample_bounds(self, batch_size: int):
-        min_vector, max_vector, min_deltas, max_deltas = (
-            self.min_bounds, self.max_bounds, self.min_deltas, self.max_deltas
+        return self._sample_bounds(
+            batch_size,
+            self.min_bounds,
+            self.max_bounds,
+            self.min_deltas,
+            self.max_deltas,
+            self.fitted_mask,
         )
 
+    def _sample_bounds(self, batch_size, min_vector, max_vector, min_deltas, max_deltas, fitted_mask):
         if self.logdist:
             widths_sampler_func = logdist_sampler
         else:
             widths_sampler_func = uniform_sampler
 
+        num_fitted = fitted_mask.sum().item()
+        num_fixed = fitted_mask.numel() - num_fitted
+
         prior_widths = widths_sampler_func(
-            min_deltas[..., self.fitted_mask], max_deltas[..., self.fitted_mask],
-            batch_size, self.param_dim,
+            min_deltas[..., fitted_mask], max_deltas[..., fitted_mask],
+            batch_size, num_fitted,
             device=self.device, dtype=self.dtype
         )
 
-        prior_widths = self._cat_fitted_fixed_t(prior_widths, torch.zeros(self._num_fixed).to(prior_widths))
+        prior_widths = self._cat_fitted_fixed_t(prior_widths, torch.zeros(num_fixed).to(prior_widths), fitted_mask)
 
         prior_centers = uniform_sampler(
             min_vector + prior_widths / 2, max_vector - prior_widths / 2,
             *prior_widths.shape,
             device=self.device, dtype=self.dtype
         )
-
-        if self.smaller_roughnesses:
-            idx_min, idx_max = self.num_layers, self.num_layers * 2 + 1
-            prior_centers[:, idx_min:idx_max] = triangular_sampler(
-                min_vector[idx_min:idx_max] + prior_widths[:, idx_min:idx_max] / 2,
-                max_vector[idx_min:idx_max] - prior_widths[:, idx_min:idx_max] / 2,
-                batch_size, self.num_layers + 1,
-                device=self.device, dtype=self.dtype
-            )
 
         min_bounds, max_bounds = prior_centers - prior_widths / 2, prior_centers + prior_widths / 2
 
