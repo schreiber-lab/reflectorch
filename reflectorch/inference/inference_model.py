@@ -73,6 +73,8 @@ class InferenceModel(object):
                 polish: bool = True,
                 use_sampler: bool = False,
                 use_q_shift: bool = True,
+                max_d_change: float = 5.,
+                fit_growth: bool = True,
                 ) -> dict:
 
         with print_time("everything"):
@@ -88,7 +90,8 @@ class InferenceModel(object):
             with print_time("predict_from_preprocessed_curve"):
                 preprocessed_dict.update(self.predict_from_preprocessed_curve(
                     preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
-                    use_sampler=use_sampler, use_q_shift=use_q_shift,
+                    use_sampler=use_sampler, use_q_shift=use_q_shift, max_d_change=max_d_change,
+                    fit_growth=fit_growth,
                 ))
 
             return preprocessed_dict
@@ -103,6 +106,8 @@ class InferenceModel(object):
                                         q_ratio: float = 1.,
                                         use_sampler: bool = False,
                                         use_q_shift: bool = True,
+                                        max_d_change: float = 5.,
+                                        fit_growth: bool = True,
                                         ) -> dict:
 
         scaled_curve = self._scale_curve(curve)
@@ -155,6 +160,7 @@ class InferenceModel(object):
         if polish:
             prediction_dict.update(self._polish_prediction(
                 raw_q, raw_curve, predicted_params, priors, sld_x_axis,
+                max_d_change=max_d_change, fit_growth=fit_growth,
             ))
 
         return prediction_dict
@@ -203,6 +209,7 @@ class InferenceModel(object):
                            priors: np.ndarray,
                            sld_x_axis,
                            fit_growth: bool = True,
+                           max_d_change: float = 5.,
                            ) -> dict:
         params = torch.cat([
             predicted_params.thicknesses.squeeze(),
@@ -214,7 +221,10 @@ class InferenceModel(object):
 
         try:
             if fit_growth:
-                polished_params_arr, curve_polished = get_fit_with_growth(q, curve, params, bounds=priors.T)
+                polished_params_arr, curve_polished = get_fit_with_growth(
+                    q, curve, params, bounds=priors.T,
+                    max_d_change=max_d_change,
+                )
                 polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[:-1][None]).to(self.q))
             else:
                 polished_params_arr, curve_polished = standard_refl_fit(q, curve, params, bounds=priors.T)
