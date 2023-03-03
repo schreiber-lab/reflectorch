@@ -70,6 +70,8 @@ class InferenceModel(object):
                 polish: bool = True,
                 use_sampler: bool = True,
                 ) -> dict:
+
+        start = perf_counter()
         preprocessed_dict = self.preprocess(
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
         )
@@ -81,6 +83,10 @@ class InferenceModel(object):
             preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
             use_sampler=use_sampler,
         ))
+
+        end = perf_counter()
+
+        print(f"Time per prediction: {(end - start):.1f} sec.")
 
         return preprocessed_dict
 
