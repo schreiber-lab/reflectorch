@@ -5,11 +5,11 @@ from scipy.optimize import minimize, curve_fit
 
 from reflectorch.data_generation.reflectivity import abeles_np
 
-
 __all__ = [
     "standard_refl_fit",
     "fit_refl_curve",
     "restore_masked_params",
+    "get_fit_with_growth",
 ]
 
 
@@ -51,6 +51,28 @@ def standard_refl_fit(
     )
 
     return res[0]
+
+
+def get_fit_with_growth(
+        q: np.ndarray, curve: np.ndarray,
+        init_params: np.ndarray,
+        bounds: np.ndarray = None,
+        init_d_change: float = 0.,
+        max_d_change: float = 30.,
+        scale_curve_func=np.log10,
+        **kwargs
+):
+    init_params = np.array(list(init_params) + [init_d_change])
+    if bounds is not None:
+        bounds = np.concatenate([bounds, np.array([0, max_d_change])[..., None]], -1)
+
+    res = standard_refl_fit(
+        q, curve, init_params, bounds, refl_generator=growth_reflectivity,
+        restore_params_func=get_restore_params_with_growth_func(q_size=q.size, d_idx=0),
+        scale_curve_func=scale_curve_func, **kwargs
+    )
+    params, delta_d = res[:-1], res[-1]
+    return params, delta_d
 
 
 def fit_refl_curve(q: np.ndarray, curve: np.ndarray,
@@ -116,3 +138,33 @@ def restore_masked_params(fixed_params, fixed_mask):
         return standard_restore_params(params)
 
     return restore_params
+
+
+def base_params2growth(base_params: dict, d_shift: np.ndarray, d_idx: int = 0) -> dict:
+    d_init = base_params['thickness'][None]
+    q_size = d_shift.size
+    d = d_init.repeat(q_size, 0)
+    d[:, d_idx] = d[:, d_idx] + d_shift
+
+    roughness = np.broadcast_to(base_params['roughness'][None], (q_size, base_params['roughness'].size))
+    sld = np.broadcast_to(base_params['sld'][None], (q_size, base_params['sld'].size))
+
+    return {
+        'thickness': d,
+        'roughness': roughness,
+        'sld': sld,
+    }
+
+
+def get_restore_params_with_growth_func(q_size: int, d_idx: int = 0):
+    def restore_params_with_growth(fitted_params) -> dict:
+        fitted_params, delta_d = fitted_params[:-1], fitted_params[-1]
+        base_params = standard_restore_params(fitted_params)
+        d_shift = np.linspace(0, delta_d, q_size)
+        return base_params2growth(base_params, d_shift, d_idx)
+
+    return restore_params_with_growth
+
+
+def growth_reflectivity(q: np.ndarray, **kwargs):
+    return abeles_np(q[..., None], **kwargs).flatten()
