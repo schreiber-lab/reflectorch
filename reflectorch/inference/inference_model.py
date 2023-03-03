@@ -20,7 +20,7 @@ from reflectorch.inference.sampler_solution import simple_sampler_solution
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
-                 num_sampling: int = 2 ** 13):
+                 num_sampling: int = 2 ** 14):
         self.log = logging.getLogger(__name__)
         self.model_name = name
         self.trainer = trainer
@@ -68,7 +68,7 @@ class InferenceModel(object):
                 priors: np.ndarray,
                 preprocessing_parameters: dict = None,
                 polish: bool = True,
-                use_sampler: bool = False,
+                use_sampler: bool = True,
                 ) -> dict:
         preprocessed_dict = self.preprocess(
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
