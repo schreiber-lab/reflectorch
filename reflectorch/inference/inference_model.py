@@ -163,6 +163,9 @@ class InferenceModel(object):
                 max_d_change=max_d_change, fit_growth=fit_growth,
             ))
 
+            if fit_growth and "params_polished" in prediction_dict:
+                prediction_dict["param_names"].append("max_d_change")
+
         return prediction_dict
 
     ### some shortcut methods for data processing ###
