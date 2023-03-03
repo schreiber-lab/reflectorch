@@ -35,7 +35,7 @@ def standard_refl_fit(
         restore_params_func=standard_restore_params,
         scale_curve_func=np.log10,
         **kwargs
-) -> np.ndarray:
+):
     if bounds is not None:
         kwargs['bounds'] = bounds
         init_params = np.clip(init_params, *bounds)
@@ -50,7 +50,8 @@ def standard_refl_fit(
         p0=init_params, **kwargs
     )
 
-    return res[0]
+    curve = refl_generator(q, **restore_params_func(res[0]))
+    return res[0], curve
 
 
 def get_fit_with_growth(
@@ -66,14 +67,14 @@ def get_fit_with_growth(
     if bounds is not None:
         bounds = np.concatenate([bounds, np.array([0, max_d_change])[..., None]], -1)
 
-    res = standard_refl_fit(
+    res, curve = standard_refl_fit(
         q, curve, init_params, bounds, refl_generator=growth_reflectivity,
         restore_params_func=get_restore_params_with_growth_func(q_size=q.size, d_idx=0),
         scale_curve_func=scale_curve_func, **kwargs
     )
     params, delta_d = res[:-1], res[-1]
     params[0] += delta_d / 2
-    return params, delta_d
+    return params, curve, delta_d
 
 
 def fit_refl_curve(q: np.ndarray, curve: np.ndarray,

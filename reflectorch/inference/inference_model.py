@@ -153,10 +153,12 @@ class InferenceModel(object):
         prediction_dict['sld_x_axis'] = sld_x_axis.squeeze().cpu().numpy()
 
         if polish:
-            polished_params, other_fitted_params = self._polish_prediction(raw_q, raw_curve, predicted_params, priors)
+            polished_params, curve_polished, other_fitted_params = self._polish_prediction(
+                raw_q, raw_curve, predicted_params, priors
+            )
             prediction_dict.update(other_fitted_params)
             prediction_dict['params_polished'] = _get_prediction_array(polished_params)
-            prediction_dict['curve_polished'] = polished_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
+            prediction_dict['curve_polished'] = curve_polished
 
             sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
                 polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
@@ -209,7 +211,7 @@ class InferenceModel(object):
                            predicted_params: Params,
                            priors: np.ndarray,
                            fit_growth: bool = True,
-                           ) -> Tuple[Params, dict]:
+                           ) -> Tuple[Params, np.ndarray, dict]:
         params = torch.cat([
             predicted_params.thicknesses.squeeze(),
             predicted_params.roughnesses.squeeze(),
@@ -220,17 +222,17 @@ class InferenceModel(object):
 
         try:
             if fit_growth:
-                polished_params, delta_d = get_fit_with_growth(q, curve, params, bounds=priors.T)
+                polished_params, curve_polished, delta_d = get_fit_with_growth(q, curve, params, bounds=priors.T)
                 other_fitted_params['delta_d'] = delta_d
             else:
-                polished_params = standard_refl_fit(q, curve, params, bounds=priors.T)
+                polished_params, curve_polished = standard_refl_fit(q, curve, params, bounds=priors.T)
 
             polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
         except Exception as err:
             self.log.exception(err)
             polished_params = predicted_params
 
-        return polished_params, other_fitted_params
+        return polished_params, curve_polished, other_fitted_params
 
     def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> UniformSubPriorParams:
         predicted_params: UniformSubPriorParams = self.trainer.loader.prior_sampler.restore_params(
