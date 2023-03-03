@@ -42,6 +42,13 @@ def standard_preprocessing(
 
     curve_interp = interp_reflectivity(q_interp, q, curve)
 
+    assert np.all(np.isfinite(curve_interp))
+    assert np.all(np.isfinite(curve))
+    assert np.all(np.isfinite(q))
+    assert np.all(np.isfinite(q_interp))
+    assert np.all(curve > 0.)
+    assert np.all(curve_interp > 0.)
+
     return {
         "curve_interp": curve_interp, "curve": curve, "q_values": q, "q_interp": q_interp, "q_ratio": q_ratio,
     }
