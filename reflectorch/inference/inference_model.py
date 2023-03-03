@@ -19,12 +19,14 @@ from reflectorch.inference.sampler_solution import simple_sampler_solution
 
 
 class InferenceModel(object):
-    def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None):
+    def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
+                 num_sampling: int = 2 ** 15):
         self.log = logging.getLogger(__name__)
         self.model_name = name
         self.trainer = trainer
         self.q = None
         self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
+        self._sampling_num = num_sampling
 
         if trainer is None and self.model_name is not None:
             self.load_model(self.model_name)
@@ -66,6 +68,7 @@ class InferenceModel(object):
                 priors: np.ndarray,
                 preprocessing_parameters: dict = None,
                 polish: bool = True,
+                use_sampler: bool = True,
                 ) -> dict:
         preprocessed_dict = self.preprocess(
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
@@ -75,7 +78,8 @@ class InferenceModel(object):
         q_ratio = preprocessed_dict["q_ratio"]
 
         preprocessed_dict.update(self.predict_from_preprocessed_curve(
-            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio
+            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
+            use_sampler=use_sampler,
         ))
 
         return preprocessed_dict
@@ -244,6 +248,7 @@ class InferenceModel(object):
             max_bounds,
             self._prior_sampler.min_bounds,
             self._prior_sampler.max_bounds,
+            num=self._sampling_num
         )
         return refined_params
 
