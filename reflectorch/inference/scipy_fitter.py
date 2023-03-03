@@ -72,6 +72,7 @@ def get_fit_with_growth(
         scale_curve_func=scale_curve_func, **kwargs
     )
     params, delta_d = res[:-1], res[-1]
+    params[0] += delta_d / 2
     return params, delta_d
 
 
