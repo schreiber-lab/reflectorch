@@ -214,12 +214,11 @@ class InferenceModel(object):
 
         try:
             if fit_growth:
-                polished_params_arr, curve_polished, delta_d = get_fit_with_growth(q, curve, params, bounds=priors.T)
-                polished_params_dict['delta_d'] = delta_d
+                polished_params_arr, curve_polished = get_fit_with_growth(q, curve, params, bounds=priors.T)
+                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[:-1][None]).to(self.q))
             else:
                 polished_params_arr, curve_polished = standard_refl_fit(q, curve, params, bounds=priors.T)
-
-            polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[None]).to(self.q))
+                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[None]).to(self.q))
         except Exception as err:
             self.log.exception(err)
             polished_params = predicted_params
