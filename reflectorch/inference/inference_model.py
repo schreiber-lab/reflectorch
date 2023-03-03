@@ -17,6 +17,8 @@ from reflectorch.data_generation.likelihoods import LogLikelihood
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.inference.scipy_fitter import standard_refl_fit
 from reflectorch.inference.sampler_solution import simple_sampler_solution
+from reflectorch.inference.record_time import print_time
+from reflectorch.utils import to_t
 
 
 class InferenceModel(object):
@@ -72,24 +74,23 @@ class InferenceModel(object):
                 use_sampler: bool = True,
                 ) -> dict:
 
-        start = perf_counter()
-        preprocessed_dict = self.preprocess(
-            intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
-        )
-        preprocessed_curve = preprocessed_dict["curve_interp"]
-        raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
-        q_ratio = preprocessed_dict["q_ratio"]
+        with print_time("everything"):
+            with print_time("preprocess"):
+                preprocessed_dict = self.preprocess(
+                    intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
+                )
 
-        preprocessed_dict.update(self.predict_from_preprocessed_curve(
-            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
-            use_sampler=use_sampler,
-        ))
+            preprocessed_curve = preprocessed_dict["curve_interp"]
+            raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
+            q_ratio = preprocessed_dict["q_ratio"]
 
-        end = perf_counter()
+            with print_time("predict_from_preprocessed_curve"):
+                preprocessed_dict.update(self.predict_from_preprocessed_curve(
+                    preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
+                    use_sampler=use_sampler,
+                ))
 
-        print(f"Time per prediction: {(end - start):.1f} sec.")
-
-        return preprocessed_dict
+            return preprocessed_dict
 
     def predict_from_preprocessed_curve(self,
                                         curve: np.ndarray,
@@ -110,9 +111,10 @@ class InferenceModel(object):
         predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
 
         if use_sampler:
-            predicted_params: UniformSubPriorParams = self._sampler_solution(
-                curve, predicted_params, min_bounds, max_bounds,
-            )
+            with print_time("sampler"):
+                predicted_params: UniformSubPriorParams = self._sampler_solution(
+                    curve, predicted_params, min_bounds, max_bounds,
+                )
 
         if clip_prediction:
             predicted_params = self._prior_sampler.clamp_params(predicted_params)
