@@ -168,8 +168,12 @@ class InferenceModel(object):
             predicted_params.slds.squeeze()
         ]).cpu().numpy()
 
-        polished_params = standard_refl_fit(q, curve, params, bounds=priors.T)
-        polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
+        try:
+            polished_params = standard_refl_fit(q, curve, params, bounds=priors.T)
+            polished_params = Params.from_tensor(torch.from_numpy(polished_params[None]).to(self.q))
+        except Exception as err:
+            self.log.exception(err)
+            polished_params = predicted_params
 
         return polished_params
 
