@@ -36,6 +36,8 @@ def standard_preprocessing(
 
     curve = intensity2reflectivity(intensity, normalize_mode, incoming_intensity)
 
+    curve = np.clip(curve, 1e-10, None)
+
     q = angle_to_q(scattering_angle, wavelength)
 
     q, curve, q_ratio = cut_curve(q, curve, max_q, max_angle, wavelength)
