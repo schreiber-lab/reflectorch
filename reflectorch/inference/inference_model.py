@@ -1,6 +1,5 @@
 import logging
 
-from time import perf_counter
 import numpy as np
 import torch
 from torch import Tensor
@@ -16,7 +15,7 @@ from reflectorch.data_generation.likelihoods import LogLikelihood
 
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
 from reflectorch.inference.scipy_fitter import standard_refl_fit
-from reflectorch.inference.sampler_solution import simple_sampler_solution
+from reflectorch.inference.sampler_solution import simple_sampler_solution, get_best_mse_param
 from reflectorch.inference.record_time import print_time
 from reflectorch.utils import to_t
 
@@ -72,6 +71,7 @@ class InferenceModel(object):
                 preprocessing_parameters: dict = None,
                 polish: bool = True,
                 use_sampler: bool = True,
+                use_q_shift: bool = True,
                 ) -> dict:
 
         with print_time("everything"):
@@ -100,21 +100,22 @@ class InferenceModel(object):
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
                                         q_ratio: float = 1.,
-                                        use_sampler: bool = True,
+                                        use_sampler: bool = False,
+                                        use_q_shift: bool = True,
                                         ) -> dict:
-        context, min_bounds, max_bounds = self._input2context(curve, priors, q_ratio)
 
-        with torch.no_grad():
-            self.trainer.model.eval()
-            scaled_params = self.trainer.model(context)
+        scaled_curve = self._scale_curve(curve)
+        scaled_bounds, min_bounds, max_bounds = self._scale_priors(priors, q_ratio)
 
-        predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
+        if not use_q_shift:
+            predicted_params: UniformSubPriorParams = self._simple_prediction(scaled_curve, scaled_bounds)
+        else:
+            predicted_params: UniformSubPriorParams = self._qshift_prediction(curve, scaled_bounds)
 
         if use_sampler:
-            with print_time("sampler"):
-                predicted_params: UniformSubPriorParams = self._sampler_solution(
-                    curve, predicted_params, min_bounds, max_bounds,
-                )
+            predicted_params: UniformSubPriorParams = self._sampler_solution(
+                curve, predicted_params,
+            )
 
         if clip_prediction:
             predicted_params = self._prior_sampler.clamp_params(predicted_params)
@@ -164,6 +165,39 @@ class InferenceModel(object):
         return prediction_dict
 
     ### some shortcut methods for data processing ###
+
+    def _simple_prediction(self, scaled_curve, scaled_bounds) -> UniformSubPriorParams:
+        context = torch.cat([scaled_curve, scaled_bounds], -1)
+
+        with torch.no_grad():
+            self.trainer.model.eval()
+            scaled_params = self.trainer.model(context)
+
+        predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
+        return predicted_params
+
+    def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> UniformSubPriorParams:
+        q = self.q.squeeze().float()
+        curve = to_t(curve).to(q)
+        dq_max = (q[1] - q[0]) * dq_coef
+        q_shifts = torch.linspace(-dq_max, dq_max, num).to(q)
+        shifted_curves = _qshift_interp(q.squeeze(), curve, q_shifts)
+
+        assert shifted_curves.shape == (num, q.shape[0])
+
+        scaled_curves = self.trainer.loader.curves_scaler.scale(shifted_curves)
+        context = torch.cat([scaled_curves, torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)], -1)
+
+        with torch.no_grad():
+            self.trainer.model.eval()
+            scaled_params = self.trainer.model(context)
+            restored_params = self._restore_predicted_params(scaled_params, context)
+
+            best_param = get_best_mse_param(
+                restored_params,
+                self._get_likelihood(curve),
+            )
+            return best_param
 
     def _polish_prediction(self,
                            q: np.ndarray,
@@ -244,26 +278,27 @@ class InferenceModel(object):
             self,
             curve: Tensor or np.ndarray,
             predicted_params: UniformSubPriorParams,
-            min_bounds: Tensor,
-            max_bounds: Tensor,
     ) -> UniformSubPriorParams:
-        if not isinstance(curve, Tensor):
-            curve = torch.from_numpy(curve).float()
-        curve = curve.to(self.q)
 
-        likelihood = LogLikelihood(
-            self.q, curve, self._prior_sampler, curve * 0.1
-        )
-        refined_params = simple_sampler_solution(
-            likelihood,
-            predicted_params,
-            min_bounds,
-            max_bounds,
-            self._prior_sampler.min_bounds,
-            self._prior_sampler.max_bounds,
-            num=self._sampling_num, coef=0.1,
-        )
+        with print_time("sampler"):
+            if not isinstance(curve, Tensor):
+                curve = torch.from_numpy(curve).float()
+            curve = curve.to(self.q)
+
+            refined_params = simple_sampler_solution(
+                self._get_likelihood(curve),
+                predicted_params,
+                self._prior_sampler.min_bounds,
+                self._prior_sampler.max_bounds,
+                num=self._sampling_num, coef=0.1,
+            )
+
         return refined_params
+
+    def _get_likelihood(self, curve, rel_err: float = 0.1, abs_err: float = 1e-12):
+        return LogLikelihood(
+            self.q, curve, self._prior_sampler, curve * rel_err + abs_err
+        )
 
 
 def _get_prediction_array(params: Params) -> np.ndarray:
@@ -274,3 +309,12 @@ def _get_prediction_array(params: Params) -> np.ndarray:
     ]).cpu().numpy()
 
     return predict_arr
+
+
+def _qshift_interp(q, r, q_shifts):
+    qs = q[None] + q_shifts[:, None]
+    eps = torch.finfo(r.dtype).eps
+    ind = torch.searchsorted(q[None].expand_as(qs).contiguous(), qs.contiguous())
+    ind = torch.clamp(ind - 1, 0, q.shape[0] - 2)
+    slopes = (r[1:] - r[:-1]) / (eps + (q[1:] - q[:-1]))
+    return r[ind] + slopes[ind] * (qs - q[ind])
