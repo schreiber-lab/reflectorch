@@ -1,5 +1,6 @@
 import logging
 
+from time import perf_counter
 import numpy as np
 import torch
 from torch import Tensor
