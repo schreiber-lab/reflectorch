@@ -68,6 +68,7 @@ class InferenceModel(object):
                 priors: np.ndarray,
                 preprocessing_parameters: dict = None,
                 polish: bool = True,
+                use_sampler: bool = False,
                 ) -> dict:
         preprocessed_dict = self.preprocess(
             intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
@@ -77,7 +78,8 @@ class InferenceModel(object):
         q_ratio = preprocessed_dict["q_ratio"]
 
         preprocessed_dict.update(self.predict_from_preprocessed_curve(
-            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio
+            preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
+            use_sampler=use_sampler,
         ))
 
         return preprocessed_dict
@@ -90,7 +92,7 @@ class InferenceModel(object):
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
                                         q_ratio: float = 1.,
-                                        use_sampler: bool = True,
+                                        use_sampler: bool = False,
                                         ) -> dict:
         context, min_bounds, max_bounds = self._input2context(curve, priors, q_ratio)
 
