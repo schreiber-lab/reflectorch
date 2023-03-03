@@ -20,7 +20,7 @@ from reflectorch.inference.sampler_solution import simple_sampler_solution
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
-                 num_sampling: int = 2 ** 14):
+                 num_sampling: int = 2 ** 15):
         self.log = logging.getLogger(__name__)
         self.model_name = name
         self.trainer = trainer
@@ -92,7 +92,7 @@ class InferenceModel(object):
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
                                         q_ratio: float = 1.,
-                                        use_sampler: bool = False,
+                                        use_sampler: bool = True,
                                         ) -> dict:
         context, min_bounds, max_bounds = self._input2context(curve, priors, q_ratio)
 
