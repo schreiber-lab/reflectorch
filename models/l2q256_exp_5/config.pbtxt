@@ -1,0 +1,107 @@
+name: "l2q256_exp_5"
+backend: "python"
+input [
+  {
+    name: "tth"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "intensity"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "transm"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "beam_width"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "sample_length"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "energy_keV"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "fit_growth"
+    data_type: TYPE_BOOL
+    dims: [ -1 ]
+  },
+  {
+    name: "max_d_change"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "priors"
+    data_type: TYPE_FP32
+    dims: [ -1, 2 ]
+  }
+]
+
+output [
+  {
+    name: "q"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "q_interp"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_interp"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_predicted"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_predicted_polished"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "parameters"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "parameters_polished"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "sld_profile"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "sld_profile_polished"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "sld_x_axis"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "parameter_names"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
