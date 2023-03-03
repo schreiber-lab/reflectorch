@@ -70,7 +70,7 @@ class InferenceModel(object):
                 priors: np.ndarray,
                 preprocessing_parameters: dict = None,
                 polish: bool = True,
-                use_sampler: bool = True,
+                use_sampler: bool = False,
                 use_q_shift: bool = True,
                 ) -> dict:
 
@@ -87,7 +87,7 @@ class InferenceModel(object):
             with print_time("predict_from_preprocessed_curve"):
                 preprocessed_dict.update(self.predict_from_preprocessed_curve(
                     preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
-                    use_sampler=use_sampler,
+                    use_sampler=use_sampler, use_q_shift=use_q_shift,
                 ))
 
             return preprocessed_dict
@@ -176,6 +176,7 @@ class InferenceModel(object):
         predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
         return predicted_params
 
+    @print_time
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> UniformSubPriorParams:
         q = self.q.squeeze().float()
         curve = to_t(curve).to(q)
@@ -199,6 +200,7 @@ class InferenceModel(object):
             )
             return best_param
 
+    @print_time
     def _polish_prediction(self,
                            q: np.ndarray,
                            curve: np.ndarray,
@@ -274,24 +276,24 @@ class InferenceModel(object):
         )
         self.log.info(f"preprocessing params are set: {preprocessing_parameters}.")
 
+    @print_time
     def _sampler_solution(
             self,
             curve: Tensor or np.ndarray,
             predicted_params: UniformSubPriorParams,
     ) -> UniformSubPriorParams:
 
-        with print_time("sampler"):
-            if not isinstance(curve, Tensor):
-                curve = torch.from_numpy(curve).float()
-            curve = curve.to(self.q)
+        if not isinstance(curve, Tensor):
+            curve = torch.from_numpy(curve).float()
+        curve = curve.to(self.q)
 
-            refined_params = simple_sampler_solution(
-                self._get_likelihood(curve),
-                predicted_params,
-                self._prior_sampler.min_bounds,
-                self._prior_sampler.max_bounds,
-                num=self._sampling_num, coef=0.1,
-            )
+        refined_params = simple_sampler_solution(
+            self._get_likelihood(curve),
+            predicted_params,
+            self._prior_sampler.min_bounds,
+            self._prior_sampler.max_bounds,
+            num=self._sampling_num, coef=0.1,
+        )
 
         return refined_params
 
