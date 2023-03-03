@@ -36,7 +36,7 @@ def standard_preprocessing(
 
     curve = intensity2reflectivity(intensity, normalize_mode, incoming_intensity)
 
-    curve = np.clip(curve, 1e-10, None)
+    curve, scattering_angle = remove_low_statistics(curve, scattering_angle)
 
     q = angle_to_q(scattering_angle, wavelength)
 
@@ -54,6 +54,11 @@ def standard_preprocessing(
     return {
         "curve_interp": curve_interp, "curve": curve, "q_values": q, "q_interp": q_interp, "q_ratio": q_ratio,
     }
+
+
+def remove_low_statistics(curve, scattering_angle, thresh: float = 1e-7):
+    indices = (curve > thresh) & np.isfinite(curve)
+    return curve[indices], scattering_angle[indices]
 
 
 @dataclass
