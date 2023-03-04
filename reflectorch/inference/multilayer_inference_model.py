@@ -45,10 +45,10 @@ class MultilayerInferenceModel(InferenceModel):
             with print_time("predict_from_preprocessed_curve"):
                 preprocessed_dict.update(self.predict_from_preprocessed_curve(
                     preprocessed_curve, priors,
-                    raw_curve=raw_curve,
+                    raw_curve=(raw_curve if use_raw_q else None),
                     raw_q=raw_q,
                     polish=polish,
-                    use_raw_q=use_raw_q
+                    use_raw_q=use_raw_q,
                 ))
 
             return preprocessed_dict
@@ -75,14 +75,14 @@ class MultilayerInferenceModel(InferenceModel):
 
         # if clip_prediction:
         #     predicted_params = self._prior_sampler.clamp_params(predicted_params)
+
+        init_raw_q = raw_q
+
         if raw_curve is None:
             raw_curve = curve
-        if raw_q is None or not use_raw_q:
-            init_raw_q = raw_q
             raw_q = self.q.squeeze().cpu().numpy()
             raw_q_t = self.q
         else:
-            init_raw_q = raw_q
             raw_q_t = torch.from_numpy(raw_q).to(self.q)
 
         # if q_ratio != 1.:
@@ -91,7 +91,7 @@ class MultilayerInferenceModel(InferenceModel):
         #     raw_q_t = raw_q_t * q_ratio
 
         prediction_dict = {
-            "params": get_prediction_array(predicted_params),
+            "params": parametrized.squeeze().cpu().numpy(),
             "param_names": list(self._prior_sampler.multilayer_model.PARAMETER_NAMES),
             "curve_predicted": predicted_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
         }
