@@ -45,11 +45,15 @@ class BasicDataset(object):
         """
         pass
 
+    def _sample_from_prior(self, batch_size: int):
+        params: Params = self.prior_sampler.sample(batch_size)
+        scaled_params: Tensor = self.prior_sampler.scale_params(params)
+        return params, scaled_params
+
     def get_batch(self, batch_size: int) -> BATCH_DATA_TYPE:
         batch_data = {}
 
-        params: Params = self.prior_sampler.sample(batch_size)
-        scaled_params: Tensor = self.prior_sampler.scale_params(params)
+        params, scaled_params = self._sample_from_prior(batch_size)
 
         batch_data['params'] = params
         batch_data['scaled_params'] = scaled_params
