@@ -98,10 +98,5 @@ output [
     name: "sld_x_axis"
     data_type: TYPE_FP32
     dims: [ -1 ]
-  },
-  {
-    name: "parameter_names"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
   }
 ]
