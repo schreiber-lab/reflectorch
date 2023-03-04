@@ -4,7 +4,7 @@
 # This source code is licensed under the GPL license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple, List
+from typing import Tuple, Dict
 
 import torch
 from torch import Tensor
@@ -27,17 +27,18 @@ class SimpleMultilayerSampler(PriorSampler):
     PARAM_CLS = MultilayerStructureParams
 
     def __init__(self,
-                 params: List[Tuple[float, float]],
+                 params: Dict[str, Tuple[float, float]],
                  model_name: str,
                  device: torch.device = DEFAULT_DEVICE,
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  max_num_layers: int = 50,
                  ):
+        self.multilayer_model: MultilayerModel = MULTILAYER_MODELS[model_name](max_num_layers)
         self.device = device
         self.dtype = dtype
         self.num_layers = max_num_layers
-        self.min_bounds, self.max_bounds = torch.tensor(params, device=device, dtype=dtype).T[:, None]
-        self.multilayer_model: MultilayerModel = MULTILAYER_MODELS[model_name]
+        ordered_bounds = [params[k] for k in self.multilayer_model.PARAMETER_NAMES]
+        self.min_bounds, self.max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
         self._param_dim = len(params)
 
     @property
@@ -90,4 +91,3 @@ class SimpleMultilayerSampler(PriorSampler):
 
     def clamp_params(self, params: Params) -> Params:
         raise NotImplementedError
-
