@@ -139,7 +139,7 @@ class InferenceModel(object):
             raw_q_t = raw_q_t * q_ratio
 
         prediction_dict = {
-            "params": _get_prediction_array(predicted_params),
+            "params": get_prediction_array(predicted_params),
             "param_names": get_param_labels(
                 predicted_params.max_layer_num,
                 thickness_name='d',
@@ -234,7 +234,7 @@ class InferenceModel(object):
         except Exception as err:
             self.log.exception(err)
             polished_params = predicted_params
-            polished_params_arr = _get_prediction_array(polished_params)
+            polished_params_arr = get_prediction_array(polished_params)
             curve_polished = np.zeros_like(q)
 
         polished_params_dict['params_polished'] = polished_params_arr
@@ -329,7 +329,7 @@ class InferenceModel(object):
         )
 
 
-def _get_prediction_array(params: Params) -> np.ndarray:
+def get_prediction_array(params: Params) -> np.ndarray:
     predict_arr = torch.cat([
         params.thicknesses.squeeze(),
         params.roughnesses.squeeze(),

@@ -6,6 +6,7 @@
 
 from typing import Tuple, Dict
 
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -17,6 +18,7 @@ from reflectorch.data_generation.priors.no_constraints import (
 )
 
 from reflectorch.data_generation.priors.multilayer_models import MULTILAYER_MODELS, MultilayerModel
+from reflectorch.utils import to_t
 
 
 class MultilayerStructureParams(Params):
@@ -38,6 +40,7 @@ class SimpleMultilayerSampler(PriorSampler):
         self.dtype = dtype
         self.num_layers = max_num_layers
         ordered_bounds = [params[k] for k in self.multilayer_model.PARAMETER_NAMES]
+        self._np_bounds = np.array(ordered_bounds).T
         self.min_bounds, self.max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
         self._param_dim = len(params)
 
@@ -63,6 +66,20 @@ class SimpleMultilayerSampler(PriorSampler):
         targets = self.restore_params(scaled_params)
 
         return targets, scaled_params
+
+    def get_np_bounds(self):
+        return np.array(self._np_bounds)
+
+    def restore_np_params(self, params: np.ndarray):
+        p = self.multilayer_model.to_standard_params(
+            torch.atleast_2d(to_t(params))
+        )
+
+        return {
+            'thickness': p['thicknesses'].squeeze().cpu().numpy(),
+            'roughness': p['roughnesses'].squeeze().cpu().numpy(),
+            'sld': p['slds'].squeeze().cpu().numpy()
+        }
 
     def restore_params2parametrized(self, scaled_params: Tensor) -> Tensor:
         return scaled_params * (self.max_bounds - self.min_bounds) + self.min_bounds

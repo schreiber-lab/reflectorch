@@ -18,6 +18,7 @@ from reflectorch.data_generation.priors import (
     UniformSubPriorSampler,
     NarrowSldUniformSubPriorSampler,
     ExpUniformSubPriorSampler,
+    SimpleMultilayerSampler,
 )
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
@@ -95,6 +96,7 @@ __all__ = [
     "UniformSubPriorSampler",
     "NarrowSldUniformSubPriorSampler",
     "ExpUniformSubPriorSampler",
+    "SimpleMultilayerSampler",
     "BATCH_DATA_TYPE",
     "LogLikelihood",
     "PoissonLogLikelihood",
