@@ -194,6 +194,7 @@ def load_pretrained(model, model_name: str, saved_models_dir: Path):
 
 
 def init_dset(config: dict):
+    dset_cls = config.get('cls', XrrDataLoader)
     prior_sampler = init_from_conf(config['prior_sampler'])
     intensity_noise = init_from_conf(config['intensity_noise'])
     q_generator = init_from_conf(config['q_generator'], device='cuda')
@@ -201,7 +202,7 @@ def init_dset(config: dict):
     smearing = init_from_conf(config['smearing']) if 'smearing' in config else None
     q_noise = init_from_conf(config['q_noise']) if 'q_noise' in config else None
 
-    dset = XrrDataLoader(
+    dset = dset_cls(
         q_generator=q_generator,
         prior_sampler=prior_sampler,
         intensity_noise=intensity_noise,
