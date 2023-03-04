@@ -105,7 +105,7 @@ class MultilayerInferenceModel(InferenceModel):
 
         if polish:
             prediction_dict.update(self._polish_prediction(
-                raw_q, raw_curve, parametrized
+                raw_q, raw_curve, parametrized, q_values=prediction_dict['q_values']
             ))
 
         return prediction_dict
@@ -153,6 +153,7 @@ class MultilayerInferenceModel(InferenceModel):
                            q: np.ndarray,
                            curve: np.ndarray,
                            predicted_params: Tensor,
+                           q_values: np.ndarray
                            ) -> dict:
 
         params = predicted_params.squeeze().cpu().numpy()
@@ -164,7 +165,7 @@ class MultilayerInferenceModel(InferenceModel):
                 bounds=self._prior_sampler.get_np_bounds(),
             )
             params = self._prior_sampler.restore_np_params(polished_params_arr)
-            curve_polished = abeles_np(polished_params_dict['q_values'], **params)
+            curve_polished = abeles_np(q_values, **params)
 
         except Exception as err:
             self.log.exception(err)
