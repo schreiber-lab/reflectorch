@@ -7,19 +7,15 @@
 import torch
 from torch import nn
 
-from reflectorch.data_generation import BasicDataset, BATCH_DATA_TYPE
-from reflectorch.ml.basic_trainer import Trainer, DataLoader
+from reflectorch.data_generation import BATCH_DATA_TYPE
+from reflectorch.ml.basic_trainer import Trainer
+from reflectorch.ml.dataloaders import XrrDataLoader
 
 __all__ = [
-    'XrrDataLoader',
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PointEstimatorTrainer',
 ]
-
-
-class XrrDataLoader(BasicDataset, DataLoader):
-    pass
 
 
 class RealTimeSimTrainer(Trainer):

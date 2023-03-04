@@ -21,6 +21,10 @@ from reflectorch.data_generation.priors.subprior_sampler import (
     NarrowSldUniformSubPriorSampler,
 )
 from reflectorch.data_generation.priors.exp_subprior_sampler import ExpUniformSubPriorSampler
+from reflectorch.data_generation.priors.multilayer_structures import (
+    SimpleMultilayerSampler,
+    MultilayerStructureParams,
+)
 
 __all__ = [
     "SingleParamPrior",
@@ -35,4 +39,6 @@ __all__ = [
     "UniformSubPriorSampler",
     "NarrowSldUniformSubPriorSampler",
     "ExpUniformSubPriorSampler",
+    "SimpleMultilayerSampler",
+    "MultilayerStructureParams",
 ]

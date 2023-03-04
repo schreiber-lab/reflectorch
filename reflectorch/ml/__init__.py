@@ -9,6 +9,7 @@ from reflectorch.ml.callbacks import *
 from reflectorch.ml.trainers import *
 from reflectorch.ml.loggers import *
 from reflectorch.ml.schedulers import *
+from reflectorch.ml.dataloaders import *
 
 __all__ = [
     'Trainer',
@@ -27,6 +28,7 @@ __all__ = [
     'LogCyclicLR',
     'ReduceLrOnPlateau',
     'XrrDataLoader',
+    'MultilayerDataset',
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PretrainSubpriors',
