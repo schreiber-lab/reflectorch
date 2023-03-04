@@ -20,6 +20,40 @@ from reflectorch.inference.scipy_fitter import standard_refl_fit
 
 
 class MultilayerInferenceModel(InferenceModel):
+    def predict(self,
+                intensity: np.ndarray,
+                scattering_angle: np.ndarray,
+                attenuation: np.ndarray,
+                priors: np.ndarray = None,
+                preprocessing_parameters: dict = None,
+                polish: bool = True,
+                use_raw_q: bool = False,
+                **kwargs
+                ) -> dict:
+
+        with print_time("everything"):
+            with print_time("preprocess"):
+                preprocessed_dict = self.preprocess(
+                    intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
+                )
+
+            preprocessed_curve = preprocessed_dict["curve_interp"]
+
+            if use_raw_q:
+                raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
+            else:
+                raw_curve, raw_q = None, None
+
+            with print_time("predict_from_preprocessed_curve"):
+                preprocessed_dict.update(self.predict_from_preprocessed_curve(
+                    preprocessed_curve, priors,
+                    raw_curve=raw_curve,
+                    raw_q=raw_q,
+                    polish=polish,
+                ))
+
+            return preprocessed_dict
+
     def predict_from_preprocessed_curve(self,
                                         curve: np.ndarray,
                                         priors: np.ndarray = None, *,  # ignore the priors so far
