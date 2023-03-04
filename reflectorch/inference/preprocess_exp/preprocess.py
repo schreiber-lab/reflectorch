@@ -18,6 +18,7 @@ def standard_preprocessing(
         wavelength: float,
         beam_width: float,
         sample_length: float,
+        min_intensity: float = 1e-9,
         beam_shape: BEAM_SHAPE = "gauss",
         normalize_mode: NORMALIZE_MODE = "max",
         incoming_intensity: float = None,
@@ -36,7 +37,7 @@ def standard_preprocessing(
 
     curve = intensity2reflectivity(intensity, normalize_mode, incoming_intensity)
 
-    curve, scattering_angle = remove_low_statistics(curve, scattering_angle)
+    curve, scattering_angle = remove_low_statistics(curve, scattering_angle, thresh=min_intensity)
 
     q = angle_to_q(scattering_angle, wavelength)
 
