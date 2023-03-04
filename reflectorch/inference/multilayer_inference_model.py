@@ -40,10 +40,7 @@ class MultilayerInferenceModel(InferenceModel):
 
             preprocessed_curve = preprocessed_dict["curve_interp"]
 
-            if use_raw_q:
-                raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
-            else:
-                raw_curve, raw_q = None, None
+            raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
 
             with print_time("predict_from_preprocessed_curve"):
                 preprocessed_dict.update(self.predict_from_preprocessed_curve(
@@ -51,6 +48,7 @@ class MultilayerInferenceModel(InferenceModel):
                     raw_curve=raw_curve,
                     raw_q=raw_q,
                     polish=polish,
+                    use_raw_q=use_raw_q
                 ))
 
             return preprocessed_dict
@@ -62,6 +60,7 @@ class MultilayerInferenceModel(InferenceModel):
                                         raw_curve: np.ndarray = None,
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
+                                        use_raw_q: bool = False,
                                         **kwargs
                                         ) -> dict:
 
@@ -76,13 +75,14 @@ class MultilayerInferenceModel(InferenceModel):
 
         # if clip_prediction:
         #     predicted_params = self._prior_sampler.clamp_params(predicted_params)
-
         if raw_curve is None:
             raw_curve = curve
-        if raw_q is None:
+        if raw_q is None or not use_raw_q:
+            init_raw_q = raw_q
             raw_q = self.q.squeeze().cpu().numpy()
             raw_q_t = self.q
         else:
+            init_raw_q = raw_q
             raw_q_t = torch.from_numpy(raw_q).to(self.q)
 
         # if q_ratio != 1.:
@@ -105,7 +105,7 @@ class MultilayerInferenceModel(InferenceModel):
 
         if polish:
             prediction_dict.update(self._polish_prediction(
-                raw_q, raw_curve, parametrized, q_values=prediction_dict['q_values']
+                raw_q, raw_curve, parametrized, q_values=init_raw_q
             ))
 
         return prediction_dict
@@ -165,6 +165,8 @@ class MultilayerInferenceModel(InferenceModel):
                 bounds=self._prior_sampler.get_np_bounds(),
             )
             params = self._prior_sampler.restore_np_params(polished_params_arr)
+            if q_values is None:
+                q_values = q
             curve_polished = abeles_np(q_values, **params)
 
         except Exception as err:
