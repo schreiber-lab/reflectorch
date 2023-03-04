@@ -27,7 +27,7 @@ input [
     dims: [ -1 ]
   },
   {
-    name: "energy_keV"
+    name: "wavelength"
     data_type: TYPE_FP32
     dims: [ -1 ]
   },

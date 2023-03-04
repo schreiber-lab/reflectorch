@@ -22,7 +22,7 @@ class TritonPythonModel:
     PREPROCESS_KEYS = (
         "beam_width",
         "sample_length",
-        "energy_keV",
+        "wavelength",
     )
 
     POSTPROCESS_KEYS = (
