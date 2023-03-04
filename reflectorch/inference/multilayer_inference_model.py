@@ -9,6 +9,7 @@ from reflectorch.inference.inference_model import (
     get_prediction_array,
 )
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.data_generation.reflectivity import abeles_np
 
 from reflectorch.data_generation.priors import (
     MultilayerStructureParams,
@@ -161,8 +162,10 @@ class MultilayerInferenceModel(InferenceModel):
             polished_params_arr, curve_polished = standard_refl_fit(
                 q, curve, params, restore_params_func=self._prior_sampler.restore_np_params,
                 bounds=self._prior_sampler.get_np_bounds(),
-
             )
+            params = self._prior_sampler.restore_np_params(polished_params_arr)
+            curve_polished = abeles_np(polished_params_dict['q_values'], **params)
+
         except Exception as err:
             self.log.exception(err)
             polished_params_arr = params
