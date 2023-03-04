@@ -74,9 +74,11 @@ class TritonPythonModel:
             **postprocess_dict,
         )
 
+        default_arr = - np.ones(256)
+
         response_tensors = pb_utils.InferenceResponse(
             output_tensors=[
-                pb_utils.Tensor(client_key, parameter_dict[server_key].astype(np.float32))
+                pb_utils.Tensor(client_key, parameter_dict.get(server_key, default_arr).astype(np.float32))
                 for client_key, server_key in self.OUTPUT_KEYS_NP32.items()
             ] + [
                 pb_utils.Tensor(client_key, parameter_dict[server_key].astype(np.str))
