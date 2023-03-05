@@ -1,0 +1,72 @@
+name: "multilayer_2_2"
+backend: "python"
+input [
+  {
+    name: "tth"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "intensity"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "transm"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "beam_width"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "sample_length"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "wavelength"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+]
+
+output [
+  {
+    name: "q"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "q_interp"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_interp"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_predicted"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "refl_predicted_polished"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "parameters"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "parameters_polished"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  }
+]
