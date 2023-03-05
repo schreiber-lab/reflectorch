@@ -32,7 +32,7 @@ description = package_info['description']
 long_description = read_file('README.md')
 long_description_content_type = 'text/markdown'
 
-python_requires = '>=3.7'
+python_requires = '>=3.6'
 install_requires = read_file('requirements.txt').splitlines()
 
 if os.environ.get('ML_SERVER', None) is not None:
