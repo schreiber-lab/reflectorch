@@ -6,18 +6,16 @@ import numpy as np
 
 from reflectorch.inference.inference_model import (
     InferenceModel,
-    get_prediction_array,
 )
-from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
-from reflectorch.data_generation.reflectivity import abeles_np, kinematical_approximation_np
+from reflectorch.data_generation.reflectivity import kinematical_approximation_np
 
 from reflectorch.data_generation.priors import (
     MultilayerStructureParams,
     SimpleMultilayerSampler,
 )
 from reflectorch.inference.record_time import print_time
-from reflectorch.inference.sampler_solution import simple_sampler_solution
 from reflectorch.inference.scipy_fitter import standard_refl_fit
+from reflectorch.inference.multilayer_fitter import MultilayerFit
 
 
 class MultilayerInferenceModel(InferenceModel):
@@ -61,6 +59,7 @@ class MultilayerInferenceModel(InferenceModel):
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
                                         use_raw_q: bool = False,
+                                        use_sampler: bool = True,
                                         **kwargs
                                         ) -> dict:
 
@@ -68,13 +67,8 @@ class MultilayerInferenceModel(InferenceModel):
 
         predicted_params, parametrized = self._simple_prediction(scaled_curve)
 
-        # if use_sampler:
-        #     predicted_params: MultilayerStructureParams = self._sampler_solution(
-        #         curve, predicted_params,
-        #     )
-
-        # if clip_prediction:
-        #     predicted_params = self._prior_sampler.clamp_params(predicted_params)
+        if use_sampler:
+            predicted_params: Tensor = self._sampler_solution(curve, parametrized)
 
         init_raw_q = raw_q
 
@@ -127,22 +121,22 @@ class MultilayerInferenceModel(InferenceModel):
     def _sampler_solution(
             self,
             curve: Tensor or np.ndarray,
-            predicted_params: MultilayerStructureParams,
-    ) -> MultilayerStructureParams:
+            predicted_params: Tensor,
+            batch_size: int = 2 ** 13,
+            time_limit: float = 3.,
+            rel_bounds: float = 0.3,
+    ) -> Tensor:
 
-        if not isinstance(curve, Tensor):
-            curve = torch.from_numpy(curve).float()
-        curve = curve.to(self.q)
-
-        refined_params = simple_sampler_solution(
-            self._get_likelihood(curve),
-            predicted_params,
-            self._prior_sampler.min_bounds,
-            self._prior_sampler.max_bounds,
-            num=self._sampling_num, coef=0.1,
+        fit_obj = MultilayerFit.from_prediction(
+            predicted_params, self._prior_sampler, self.q, torch.as_tensor(curve).to(self.q),
+            batch_size=batch_size, rel_bounds=rel_bounds,
         )
 
-        return refined_params
+        fit_obj.run_fixed_time(time_limit)
+
+        best_params = fit_obj.get_best_solution()
+
+        return best_params
 
     @property
     def _prior_sampler(self) -> SimpleMultilayerSampler:
