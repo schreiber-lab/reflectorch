@@ -7,7 +7,7 @@ import numpy as np
 from reflectorch.inference.inference_model import (
     InferenceModel,
 )
-from reflectorch.data_generation.reflectivity import kinematical_approximation_np
+from reflectorch.data_generation.reflectivity import kinematical_approximation_np, abeles_np
 
 from reflectorch.data_generation.priors import (
     MultilayerStructureParams,
@@ -162,7 +162,7 @@ class MultilayerInferenceModel(InferenceModel):
             params = self._prior_sampler.restore_np_params(polished_params_arr)
             if q_values is None:
                 q_values = q
-            curve_polished = kinematical_approximation_np(q_values, **params)
+            curve_polished = abeles_np(q_values, **params)
 
         except Exception as err:
             self.log.exception(err)
