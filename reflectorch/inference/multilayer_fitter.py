@@ -6,6 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from reflectorch.data_generation.reflectivity import kinematical_approximation
+from reflectorch.data_generation.priors.multilayer_structures import SimpleMultilayerSampler
 
 
 class MultilayerFit(object):
@@ -38,6 +39,26 @@ class MultilayerFit(object):
 
         self.get_best_solution()
         self.losses = []
+
+    @classmethod
+    def from_prior_sampler(
+            cls,
+            q: Tensor,
+            exp_curve: Tensor,
+            prior_sampler: SimpleMultilayerSampler,
+            batch_size: int = 2 ** 13,
+            **kwargs
+    ):
+        _, scaled_params = prior_sampler.optimized_sample(batch_size)
+        params = prior_sampler.restore_params2parametrized(scaled_params)
+
+        return cls(
+            q.float(), exp_curve.float(), params.float(),
+            convert_func=get_convert_func(prior_sampler.multilayer_model),
+            scale_curve_func=_save_log, min_bounds=prior_sampler.min_bounds,
+            max_bounds=prior_sampler.max_bounds,
+            **kwargs
+        )
 
     @classmethod
     def from_prediction(
@@ -121,8 +142,8 @@ class MultilayerFit(object):
                 break
 
     @torch.no_grad()
-    def get_best_solution(self):
-        losses = self.calc_loss(clip=True, reduce=False)
+    def get_best_solution(self, clip: bool = True):
+        losses = self.calc_loss(clip=clip, reduce=False)
         idx = torch.argmin(losses)
         best_loss = losses[idx].item()
 
