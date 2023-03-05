@@ -1,4 +1,4 @@
-name: "multilayer_2_2"
+name: "multilayer_test_2_2"
 backend: "python"
 input [
   {
