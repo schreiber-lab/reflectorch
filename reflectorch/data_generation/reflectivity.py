@@ -119,7 +119,7 @@ def abeles(
     return reflectivity
 
 
-@torch.jit.script
+# @torch.jit.script
 def abeles_fast(
         q: Tensor,
         thickness: Tensor,
