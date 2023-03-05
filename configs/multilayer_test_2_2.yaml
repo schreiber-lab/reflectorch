@@ -1,0 +1,79 @@
+general:
+  name: multilayer_test_2_2
+  root_dir: null
+dset:
+  cls: MultilayerDataset
+  prior_sampler:
+    cls: SimpleMultilayerSampler
+    kwargs:
+      model_name: model3
+      max_num_layers: 30
+      params:
+          d_full_rel: [0, 25]
+          rel_sigmas: [0, 6]
+          dr_sigmoid_rel_pos: [-2, 5]
+          dr_sigmoid_rel_width: [0, 10]
+          d_block1_rel: [0.1, 0.9]
+          d_block: [19, 22]
+          s_block_rel: [0., 0.2]
+          r_block: [1., 17.]
+          dr: [0., 10.]
+          d3_rel: [0, 1]
+          s3_rel: [0, 1]
+          r3: [2, 24]
+          d_sio2: [9, 11]
+          s_sio2: [2, 3]
+          s_si: [0.9, 1.1]
+          r_sio2: [17.6, 17.8]
+          r_si: [20., 20.1]
+  q_generator:
+    cls: ConstantAngle
+    kwargs:
+      angle_range: [1.011, 3.0, 132]
+      wavelength: 0.729322
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.05, 0.2]
+      abs_errors: 1.0e-10
+      consistent_rel_err: false
+      logdist: true
+      apply_shift: true
+      scale_range: [-0.04, 0.04]
+      shift_range: [-0.1, 0.2]
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 1.0e-5
+      noise_std: [0., 0.001]
+model:
+  encoder:
+    cls: SeqConvFCEncoder
+    pretrained_name: multilayer_test_2
+    kwargs:
+       latent_dim: 17
+       conv_latent_dim: 256
+       avpool: 8
+       use_batch_norm: true
+       in_features: 132
+       hidden_features: 1024
+       fc_activation: 'lrelu'
+training:
+  num_iterations: 100000
+  batch_size: 16384
+  lr: 2.0e-4
+  update_tqdm_freq: 1
+  grad_accumulation_steps: 1
+  logger:
+    use_neptune: false
+  optimizer: AdamW
+
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 50
+slurm:
+  time: 01-00:00:00
+  partition: upex
+  reservation: false
+  chdir: '~/maxwell_output'
