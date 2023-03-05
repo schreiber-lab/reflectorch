@@ -60,7 +60,7 @@ class MultilayerInferenceModel(InferenceModel):
                                         raw_q: np.ndarray = None,
                                         clip_prediction: bool = True,
                                         use_raw_q: bool = False,
-                                        use_sampler: bool = True,
+                                        use_sampler: bool = False,
                                         fitted_time_limit: float = 3.,
                                         sampler_rel_bounds: float = 0.3,
                                         polish_with_abeles: bool = False,
