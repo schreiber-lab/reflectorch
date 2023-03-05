@@ -47,6 +47,7 @@ class MultilayerInferenceModel(InferenceModel):
                     raw_q=raw_q,
                     polish=polish,
                     use_raw_q=use_raw_q,
+                    **kwargs
                 ))
 
             return preprocessed_dict
@@ -60,6 +61,9 @@ class MultilayerInferenceModel(InferenceModel):
                                         clip_prediction: bool = True,
                                         use_raw_q: bool = False,
                                         use_sampler: bool = True,
+                                        fitted_time_limit: float = 3.,
+                                        sampler_rel_bounds: float = 0.3,
+                                        polish_with_abeles: bool = False,
                                         **kwargs
                                         ) -> dict:
 
@@ -68,7 +72,11 @@ class MultilayerInferenceModel(InferenceModel):
         predicted_params, parametrized = self._simple_prediction(scaled_curve)
 
         if use_sampler:
-            parametrized: Tensor = self._sampler_solution(curve, parametrized)
+            parametrized: Tensor = self._sampler_solution(
+                curve, parametrized,
+                time_limit=fitted_time_limit,
+                rel_bounds=sampler_rel_bounds,
+            )
 
         init_raw_q = raw_q
 
@@ -99,7 +107,11 @@ class MultilayerInferenceModel(InferenceModel):
 
         if polish:
             prediction_dict.update(self._polish_prediction(
-                raw_q, raw_curve, parametrized, q_values=init_raw_q
+                raw_q, raw_curve, parametrized, q_values=init_raw_q, use_kinematical=True
+            ))
+        if polish_with_abeles:
+            prediction_dict.update(self._polish_prediction(
+                raw_q, raw_curve, parametrized, q_values=init_raw_q, use_kinematical=False
             ))
 
         return prediction_dict
@@ -147,16 +159,22 @@ class MultilayerInferenceModel(InferenceModel):
                            q: np.ndarray,
                            curve: np.ndarray,
                            predicted_params: Tensor,
-                           q_values: np.ndarray
+                           q_values: np.ndarray,
+                           use_kinematical: bool = True,
                            ) -> dict:
 
         params = predicted_params.squeeze().cpu().numpy()
         polished_params_dict = {}
 
+        if use_kinematical:
+            refl_generator = kinematical_approximation_np
+        else:
+            refl_generator = abeles_np
+
         try:
             polished_params_arr, curve_polished = standard_refl_fit(
                 q, curve, params, restore_params_func=self._prior_sampler.restore_np_params,
-                refl_generator=kinematical_approximation_np,
+                refl_generator=refl_generator,
                 bounds=self._prior_sampler.get_np_bounds(),
             )
             params = self._prior_sampler.restore_np_params(polished_params_arr)
