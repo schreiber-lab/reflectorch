@@ -1,6 +1,6 @@
 import numpy as np
 
-from reflectorch.inference import InferenceModel
+from reflectorch.inference.multilayer_inference_model import MultilayerInferenceModel
 
 try:
     import triton_python_backend_utils as pb_utils
@@ -40,7 +40,7 @@ class TritonPythonModel:
     }
 
     def initialize(self, args):
-        self.model = InferenceModel('multilayer_test_2_2')
+        self.model = MultilayerInferenceModel('multilayer_test_2_2')
 
     def execute(self, requests):
         """
