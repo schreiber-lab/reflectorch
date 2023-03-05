@@ -68,7 +68,7 @@ class MultilayerInferenceModel(InferenceModel):
         predicted_params, parametrized = self._simple_prediction(scaled_curve)
 
         if use_sampler:
-            predicted_params: Tensor = self._sampler_solution(curve, parametrized)
+            parametrized: Tensor = self._sampler_solution(curve, parametrized)
 
         init_raw_q = raw_q
 
