@@ -70,6 +70,7 @@ class StandardPreprocessing:
     sample_length: float = None
     beam_shape: BEAM_SHAPE = "gauss"
     normalize_mode: NORMALIZE_MODE = "max"
+    incoming_intensity: float = None
 
     def preprocess(self,
                    intensity: np.ndarray,
