@@ -4,7 +4,7 @@ from math import pi, sqrt, log
 import torch
 from torch import Tensor
 
-from reflows.data_generation.reflectivity.abeles import abeles
+from reflectorch.data_generation.reflectivity.abeles import abeles
 from torch.nn.functional import conv1d, pad
 
 

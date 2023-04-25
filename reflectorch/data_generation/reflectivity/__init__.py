@@ -3,14 +3,14 @@
 import torch
 from torch import Tensor
 
-from reflows.data_generation.reflectivity.abeles import abeles_compiled, abeles
-from reflows.data_generation.reflectivity.memory_eff import abeles_memory_eff
-from reflows.data_generation.reflectivity.numpy_implementations import (
+from reflectorch.data_generation.reflectivity.abeles import abeles_compiled, abeles
+from reflectorch.data_generation.reflectivity.memory_eff import abeles_memory_eff
+from reflectorch.data_generation.reflectivity.numpy_implementations import (
     kinematical_approximation_np,
     abeles_np,
 )
-from reflows.data_generation.reflectivity.smearing import abeles_constant_smearing
-from reflows.data_generation.reflectivity.kinematical import kinematical_approximation
+from reflectorch.data_generation.reflectivity.smearing import abeles_constant_smearing
+from reflectorch.data_generation.reflectivity.kinematical import kinematical_approximation
 
 
 def reflectivity(
