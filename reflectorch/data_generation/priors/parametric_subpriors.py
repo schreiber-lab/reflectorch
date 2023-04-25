@@ -136,12 +136,12 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
     PARAM_CLS = ParametricParams
 
     def __init__(self,
-                 params: Dict[str, Tuple[float, float]],
+                 param_ranges: Dict[str, Tuple[float, float]],
+                 bound_width_ranges: Dict[str, Tuple[float, float]],
                  model_name: str,
                  device: torch.device = DEFAULT_DEVICE,
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  max_num_layers: int = 50,
-                 relative_min_bound_width: float = 1e-3,
                  logdist: bool = False,
                  scaled_range: Tuple[float, float] = (-1., 1.),
                  **kwargs
@@ -149,7 +149,6 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         self.scaled_range = scaled_range
         self.param_model: ParametricModel = MULTILAYER_MODELS[model_name](
             max_num_layers,
-            relative_min_bound_width=relative_min_bound_width,
             logdist=logdist,
             **kwargs
         )
@@ -161,7 +160,9 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         self.PARAM_CLS.MAX_NUM_LAYERS = max_num_layers
 
         self._param_dim = self.param_model.param_dim
-        self.min_bounds, self.max_bounds = self.param_model.init_bounds(params, device=device, dtype=dtype)
+        self.min_bounds, self.max_bounds, self.min_delta, self.max_delta = self.param_model.init_bounds(
+            param_ranges, bound_width_ranges, device=device, dtype=dtype
+        )
 
     @property
     def max_num_layers(self) -> int:
@@ -173,7 +174,7 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
 
     def sample(self, batch_size: int) -> ParametricParams:
         params, min_bounds, max_bounds = self.param_model.sample(
-            batch_size, self.min_bounds, self.max_bounds
+            batch_size, self.min_bounds, self.max_bounds, self.min_delta, self.max_delta
         )
 
         params = ParametricParams(

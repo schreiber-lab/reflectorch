@@ -55,12 +55,19 @@ class ParametricModel(object):
     def scale_with_q(self, parametrized_model: Tensor, q_ratio: float) -> Tensor:
         raise NotImplementedError
 
-    def init_bounds(self, params: Dict[str, Tuple[float, float]], device=None, dtype=None) -> Tuple[Tensor, Tensor]:
-        ordered_bounds = [params[k] for k in self.PARAMETER_NAMES]
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        ordered_bounds = [param_ranges[k] for k in self.PARAMETER_NAMES]
+        delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES]
 
         min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
 
-        return min_bounds, max_bounds
+        return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
         return list(self.PARAMETER_NAMES)
@@ -68,8 +75,16 @@ class ParametricModel(object):
     def sample(self, batch_size: int,
                total_min_bounds: Tensor,
                total_max_bounds: Tensor,
+               total_min_delta: Tensor,
+               total_max_delta: Tensor,
                ):
-        return self.sampler_strategy.sample(batch_size, total_min_bounds, total_max_bounds)
+        return self.sampler_strategy.sample(
+            batch_size,
+            total_min_bounds,
+            total_max_bounds,
+            total_min_delta,
+            total_max_delta,
+        )
 
 
 class StandardModel(ParametricModel):
@@ -106,23 +121,33 @@ class StandardModel(ParametricModel):
     def to_standard_params(self, parametrized_model: Tensor) -> dict:
         return self._params2dict(parametrized_model)
 
-    def init_bounds(self, params: Dict[str, Tuple[float, float]], device=None, dtype=None) -> Tuple[Tensor, Tensor]:
-        d_range = params["thicknesses"]
-        sigma_range = params["roughnesses"]
-        sld_range = params["slds"]
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
 
-        other_ranges = [params[k] for k in self.PARAMETER_NAMES[3:]]
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[3:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[3:]]
 
         ordered_bounds = (
-                [d_range] * self.max_num_layers +
-                [sigma_range] * (self.max_num_layers + 1) +
-                [sld_range] * (self.max_num_layers + 1) +
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
                 other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
         )
 
         min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
 
-        return min_bounds, max_bounds
+        return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
         return get_param_labels(self.max_num_layers)
