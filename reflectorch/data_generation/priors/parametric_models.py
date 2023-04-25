@@ -219,7 +219,8 @@ class ModelWithAbsorption(StandardModel):
         return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
-        return get_param_labels(self.max_num_layers)
+        raise NotImplementedError
+        # return get_param_labels(self.max_num_layers)
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
