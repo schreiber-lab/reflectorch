@@ -50,7 +50,7 @@ model:
        conv_latent_dim: 128
        avpool: 8
        use_batch_norm: true
-       in_features: 256
+       in_features: 109
        prior_in_features: 22
        hidden_features: 512
        num_blocks: 3
