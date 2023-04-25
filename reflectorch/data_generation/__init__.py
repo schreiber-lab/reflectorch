@@ -19,6 +19,13 @@ from reflectorch.data_generation.priors import (
     NarrowSldUniformSubPriorSampler,
     ExpUniformSubPriorSampler,
     SimpleMultilayerSampler,
+    SubpriorParametricSampler,
+    ParametricParams,
+    ParametricModel,
+    MULTILAYER_MODELS,
+    SamplerStrategy,
+    BasicSamplerStrategy,
+    ConstrainedRoughnessSamplerStrategy,
 )
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
@@ -103,4 +110,11 @@ __all__ = [
     "BasicExpIntensityNoise",
     "BasicQNoiseGenerator",
     "ConstantAngle",
+    "SubpriorParametricSampler",
+    "ParametricParams",
+    "ParametricModel",
+    "MULTILAYER_MODELS",
+    "SamplerStrategy",
+    "BasicSamplerStrategy",
+    "ConstrainedRoughnessSamplerStrategy",
 ]

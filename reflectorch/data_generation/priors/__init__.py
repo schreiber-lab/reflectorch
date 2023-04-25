@@ -25,6 +25,19 @@ from reflectorch.data_generation.priors.multilayer_structures import (
     SimpleMultilayerSampler,
     MultilayerStructureParams,
 )
+from reflectorch.data_generation.priors.parametric_models import (
+    ParametricModel,
+    MULTILAYER_MODELS,
+)
+from reflectorch.data_generation.priors.parametric_subpriors import (
+    SubpriorParametricSampler,
+    ParametricParams,
+)
+from reflectorch.data_generation.priors.sampler_strategies import (
+    SamplerStrategy,
+    BasicSamplerStrategy,
+    ConstrainedRoughnessSamplerStrategy,
+)
 
 __all__ = [
     "SingleParamPrior",
@@ -41,4 +54,11 @@ __all__ = [
     "ExpUniformSubPriorSampler",
     "SimpleMultilayerSampler",
     "MultilayerStructureParams",
+    "SubpriorParametricSampler",
+    "ParametricParams",
+    "ParametricModel",
+    "MULTILAYER_MODELS",
+    "SamplerStrategy",
+    "BasicSamplerStrategy",
+    "ConstrainedRoughnessSamplerStrategy",
 ]
