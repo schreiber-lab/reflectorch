@@ -19,7 +19,7 @@ dset:
         norm_shift: [ 1.0e-2, 0.2 ]
       model_name: model_with_shifts
       max_num_layers: 2
-      constrained_roughness: false
+      constrained_roughness: true
       max_thickness_share: 0.6
       logdist: true
   q_generator:
