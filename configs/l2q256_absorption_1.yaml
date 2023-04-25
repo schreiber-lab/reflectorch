@@ -1,0 +1,76 @@
+general:
+  name: l2q256_absorption_1
+  root_dir: null
+dset:
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+        thicknesses: [0., 300.]
+        roughnesses: [0., 40.]
+        slds: [0., 60.]
+        islds: [0., 10.]
+      bound_width_ranges:
+        thicknesses: [ 1.0e-2, 300. ]
+        roughnesses: [ 1.0e-2, 40. ]
+        slds: [ 1.0e-2, 4. ]
+        islds: [ 1.0e-2, 5. ]
+      model_name: model_with_absorption
+      max_num_layers: 2
+      constrained_roughness: true
+      max_thickness_share: 0.6
+      logdist: true
+  q_generator:
+    cls: ConstantAngle
+    kwargs:
+      angle_range: [0.05, 2.6, 256]
+      wavelength: 0.729322
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.05, 0.2]
+      abs_errors: 1.0e-10
+      consistent_rel_err: false
+      logdist: true
+      apply_shift: true
+      scale_range: [-0.02, 0.02]
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 5.0e-4
+      noise_std: [0., 0.001]
+model:
+  encoder:
+    cls: SubPriorConvFCEncoder
+    pretrained_name: null
+    kwargs:
+       hidden_dims: [32, 64, 128, 256, 512]
+       latent_dim: 11
+       conv_latent_dim: 128
+       avpool: 8
+       use_batch_norm: true
+       in_features: 256
+       prior_in_features: 22
+       hidden_features: 512
+       num_blocks: 3
+       pass_bounds: false
+       pretrained_conv: null
+training:
+  num_iterations: 10000
+  batch_size: 4096
+  lr: 1.0e-3
+  update_tqdm_freq: 1
+  grad_accumulation_steps: 1
+  logger:
+    use_neptune: false
+  optimizer: AdamW
+
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+slurm:
+  time: 04-00:00:00
+  partition: upex
+  reservation: false
+  chdir: '~/maxwell_output'

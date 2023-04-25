@@ -175,6 +175,75 @@ class StandardModel(ParametricModel):
         )
 
 
+class ModelWithAbsorption(StandardModel):
+    NAME = 'model_with_absorption'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "roughnesses",
+        "slds",
+        "islds",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 4 * self.max_num_layers + 3
+
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["islds"]] * (self.max_num_layers + 1) +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["islds"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(self) -> List[str]:
+        return get_param_labels(self.max_num_layers)
+
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 4) // 3
+        assert num_layers * 4 + 3 == num_params
+
+        d, sigma, sld, isld = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers + 1], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=sigma,
+            sld=sld + 1j * isld
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(
+            q, **self._params2dict(parametrized_model), **kwargs
+        )
+
+
 class ModelWithShifts(StandardModel):
     NAME = 'model_with_shifts'
 
@@ -392,6 +461,7 @@ MULTILAYER_MODELS = {
     'model_with_shifts': ModelWithShifts,
     'standard_model': StandardModel,
     'no_fresnel_model': NoFresnelModel,
+    'model_with_absorption': ModelWithAbsorption,
 }
 
 
