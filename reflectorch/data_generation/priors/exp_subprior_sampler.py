@@ -29,7 +29,7 @@ class ExpUniformSubPriorSampler(PriorSampler, ScalerMixin):
     PARAM_CLS = UniformSubPriorParams
 
     def __init__(self,
-                 params: List[Union[float, Tuple[float, float], Tuple[float, float, float]]],
+                 params: List[Union[float, Tuple[float, float], Tuple[float, float, float, float]]],
                  device: torch.device = DEFAULT_DEVICE,
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  scaled_range: Tuple[float, float] = (-1, 1),
