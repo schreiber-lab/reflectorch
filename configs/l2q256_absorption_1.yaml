@@ -21,10 +21,11 @@ dset:
       max_thickness_share: 0.6
       logdist: true
   q_generator:
-    cls: ConstantAngle
+    cls: ConstantQ
     kwargs:
-      angle_range: [0.05, 2.6, 256]
-      wavelength: 0.729322
+      q: [0.02, 0.15, 109]
+      remove_zero: false
+      fixed_zero: true
   intensity_noise:
     cls: BasicExpIntensityNoise
     kwargs:
@@ -69,6 +70,16 @@ training:
     save_best_model:
       enable: true
       freq: 500
+    lr_scheduler:
+      cls: LogCyclicLR
+      kwargs:
+        base_lr: 1.0e-5
+        max_lr: 5.0e-4
+        period: 5000
+        gamma: 0.95
+        log: false
+        start_period: 10
+
 slurm:
   time: 04-00:00:00
   partition: upex
