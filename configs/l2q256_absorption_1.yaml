@@ -8,22 +8,22 @@ dset:
       param_ranges:
         thicknesses: [0., 300.]
         roughnesses: [0., 40.]
-        slds: [0., 60.]
-        islds: [0., 10.]
+        slds: [0., 130.] 
+        islds: [0., 15.] 
       bound_width_ranges:
         thicknesses: [ 1.0e-2, 300. ]
         roughnesses: [ 1.0e-2, 40. ]
         slds: [ 1.0e-2, 4. ]
         islds: [ 1.0e-2, 5. ]
       model_name: model_with_absorption
-      max_num_layers: 2
+      max_num_layers: 2 # 2
       constrained_roughness: true
       max_thickness_share: 0.6
-      logdist: true
+      logdist: false
   q_generator:
     cls: ConstantQ
     kwargs:
-      q: [0.02, 0.15, 109]
+      q: [0.02, 0.15, 256] # [0.02, 0.15, 109]
       remove_zero: false
       fixed_zero: true
   intensity_noise:
@@ -32,7 +32,7 @@ dset:
       relative_errors: [0.05, 0.2]
       abs_errors: 1.0e-10
       consistent_rel_err: false
-      logdist: true
+      logdist: false
       apply_shift: true
       scale_range: [-0.02, 0.02]
   q_noise:
@@ -46,12 +46,12 @@ model:
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]
-       latent_dim: 11
+       latent_dim: 11 #11
        conv_latent_dim: 128
        avpool: 8
        use_batch_norm: true
-       in_features: 109
-       prior_in_features: 22
+       in_features: 256 # 109
+       prior_in_features: 22 
        hidden_features: 512
        num_blocks: 3
        pass_bounds: false
