@@ -1,5 +1,5 @@
 general:
-  name: l5q256_absorption_1
+  name: l4q256_absorption_1
   root_dir: null
 dset:
   prior_sampler:
@@ -16,7 +16,7 @@ dset:
         slds: [ 1.0e-2, 4. ]
         islds: [ 1.0e-2, 5. ]
       model_name: model_with_absorption
-      max_num_layers: 5 # 2
+      max_num_layers: 4 # 2
       constrained_roughness: true
       max_thickness_share: 0.6
       logdist: false
@@ -46,12 +46,12 @@ model:
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]
-       latent_dim: 23 #11
+       latent_dim: 19 #11
        conv_latent_dim: 128
        avpool: 8
        use_batch_norm: true
        in_features: 256 # 109
-       prior_in_features: 46 # 22 
+       prior_in_features: 38 # 22 
        hidden_features: 512
        num_blocks: 3
        pass_bounds: false
