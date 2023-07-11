@@ -225,7 +225,7 @@ class ModelWithAbsorption(StandardModel):
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
         num_params = parametrized_model.shape[-1]
-        num_layers = (num_params - 4) // 3
+        num_layers = (num_params - 3) // 4 # num_layers = (num_params - 4) // 3
         assert num_layers * 4 + 3 == num_params
 
         d, sigma, sld, isld = torch.split(
