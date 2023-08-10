@@ -121,10 +121,15 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
     logger = None
 
     trainer_kwargs = train_conf.get('init_kwargs', {})
+    
+    if 'train_with_q_input' in train_conf:
+        train_with_q_input = train_conf['train_with_q_input']
+    else:
+        train_with_q_input = False
 
     trainer = PointEstimatorTrainer(
         model, dset, train_conf['lr'], train_conf['batch_size'],
-        logger=logger, optim_cls=optim_cls, train_with_q_input=train_conf['train_with_q_input'], 
+        logger=logger, optim_cls=optim_cls, train_with_q_input=train_with_q_input, 
         **trainer_kwargs
     )
 
