@@ -1,5 +1,5 @@
 # _reflectorch_
 
-## X-ray & neutron reflectometry + prior input (mlreflect 2)
+## X-ray & neutron reflectometry with prior input
 
-Private repo under development.
+Code for the manuscript https://arxiv.org/abs/2307.05364
