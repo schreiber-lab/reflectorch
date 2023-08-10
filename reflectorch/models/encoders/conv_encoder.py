@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class ConvEncoder(nn.Module):
     def __init__(self,
+                 in_channels: int = 1,
                  hidden_dims: tuple = (32, 64, 128, 256, 512),
                  latent_dim: int = 64,
                  avpool: int = 1,
@@ -33,7 +34,7 @@ class ConvEncoder(nn.Module):
 
         modules = []
 
-        in_channels = 1
+        in_channels = in_channels
         activation = activation_by_name(activation)
 
         for h_dim in hidden_dims:
@@ -51,7 +52,9 @@ class ConvEncoder(nn.Module):
         self.fc = nn.Linear(hidden_dims[-1] * avpool, latent_dim)
 
     def forward(self, x):
-        x = self.core(x.unsqueeze(1))
+        if len(x.shape) < 3:
+            x = x.unsqueeze(1)
+        x = self.core(x)
         x = self.avpool(x).view(x.size(0), -1)
         x = self.fc(x)
         return x

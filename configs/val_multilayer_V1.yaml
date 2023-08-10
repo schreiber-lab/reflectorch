@@ -1,0 +1,116 @@
+general:
+  name: val_multilayer_V1
+  root_dir: null
+dset:
+  #cls: MultilayerDataset
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+          d_full_rel: [0, 25] #relative sigmoid center
+          rel_sigmas: [0, 10] #relative roughness
+          dr_sigmoid_rel_pos: [-2, 10] #position of the second sigmoid relative to d_full_rel (units are d_block)
+          dr_sigmoid_rel_width: [0, 20] #width of the second sigmoid relative to d_full_rel (units are d_block)
+          d_block1_rel: [0.1, 0.9] #fractional thickness of one box1 in the monolayer
+          d_block: [19, 22] #thickness of one monolayer (two boxes stacked together)
+          s_block_rel: [0., 0.3] #roughness of each interface in the monolayer relative to d_block
+          r_block: [0., 17.] #SLD of box1 in the multilayer
+          dr: [-10., 10.] #dr = SLD(box2) - SLD(box1)
+          d3_rel: [0, 1] #relative thickness of phase layer with respect to d_block
+          s3_rel: [0, 1] #relative roughness of phase layer with respect to d_block
+          r3: [0., 24] #SLD of phase layer
+          d_sio2: [8, 13] #thickness SiO2
+          s_sio2: [0, 5] #roughness SiO2
+          s_si: [0., 5] #roughness Si
+          r_sio2: [17., 24.] #SLD SiO2
+          r_si: [19., 23.] #SLD Si
+      bound_width_ranges:
+          d_full_rel: [0.1, 25]
+          rel_sigmas: [0.1, 10]
+          dr_sigmoid_rel_pos: [0.1, 12]
+          dr_sigmoid_rel_width: [0.1, 20]
+          d_block1_rel: [0.01, 0.8]
+          d_block: [0.1, 3.]
+          s_block_rel: [0.1, 0.3]
+          r_block: [0.1, 17.]
+          dr: [0.1, 10.]
+          d3_rel: [0.01, 1]
+          s3_rel: [0.01, 1]
+          r3: [0.01, 24]
+          d_sio2: [0.01, 5]
+          s_sio2: [0.01, 5]
+          s_si: [0.01, 5]
+          r_sio2: [0.01, 7]
+          r_si: [0.01, 4]
+      model_name: model3
+      max_num_layers: 30
+      logdist: false
+#   q_generator:
+#     cls: ConstantAngle
+#     kwargs:
+#       angle_range: [1.011, 3.0, 132]
+#       wavelength: 0.729322
+  q_generator:
+    cls: ConstantQ
+    kwargs:
+      q: [0.02, 0.5, 256]
+      remove_zero: false
+      fixed_zero: true
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.05, 0.2]
+      abs_errors: 1.0e-10
+      consistent_rel_err: false
+      logdist: true
+      apply_shift: true
+      scale_range: [-0.02, 0.02]
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 5.0e-4
+      noise_std: [0., 0.001]
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2 #0.2
+      bias: 1.0 #1.0
+      eps: 1.0e-10
+      
+model:
+  encoder:
+    cls: SubPriorConvFCEncoder_V2
+    pretrained_name: null
+    kwargs:
+       hidden_dims: [32, 64, 128, 256, 512]
+       latent_dim: 17 #output_dim
+       conv_latent_dim: 128
+       avpool: 8
+       use_batch_norm: true
+       in_features: 256
+       prior_in_features: 34
+       hidden_features: 1024
+       num_blocks: 6  #3
+       fc_activation: 'gelu'
+       conv_activation: 'gelu' #'lrelu'
+       pass_bounds: false
+       pretrained_conv: null
+training:
+  train_with_q_input: False
+  num_iterations: 50000
+  batch_size: 4096
+  lr: 1.0e-4
+  update_tqdm_freq: 1
+  grad_accumulation_steps: 1
+  logger:
+    use_neptune: false
+  optimizer: AdamW
+#   init_kwargs
+#     optim_kwargs:
+#       betas:
+
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500

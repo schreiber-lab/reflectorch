@@ -32,6 +32,7 @@ from reflectorch.data_generation.q_generator import (
     QGenerator,
     ConstantAngle,
     ConstantQ,
+    VariableQ,
     EquidistantQ,
 )
 from reflectorch.data_generation.noise import (
@@ -78,6 +79,7 @@ __all__ = [
     "ProcessPipeline",
     "QGenerator",
     "ConstantQ",
+    "VariableQ",
     "EquidistantQ",
     "QNoiseGenerator",
     "IntensityNoiseGenerator",

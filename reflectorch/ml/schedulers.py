@@ -17,6 +17,7 @@ __all__ = [
     'CyclicLR',
     'LogCyclicLR',
     'ReduceLrOnPlateau',
+    'OneCycleLR',
 ]
 
 
@@ -149,3 +150,18 @@ class ReduceLrOnPlateau(TrainerCallback):
         if np.mean(loss[-self.patience:-(self.patience - self.average)]) <= np.mean(loss[-self.average:]):
             for param_group in self.param_groups:
                 trainer.set_lr(trainer.lr(param_group) * self.gamma, param_group)
+                
+                
+class OneCycleLR(ScheduleLR):
+    def __init__(self, max_lr: float, total_steps: int, pct_start: float = 0.3, div_factor: float = 25., 
+                 final_div_factor: float = 1e4, three_phase: bool = True, **kwargs):
+        super().__init__(
+            lr_scheduler.OneCycleLR,
+            max_lr=max_lr,
+            total_steps=total_steps,
+            pct_start=pct_start,
+            div_factor=div_factor ,
+            final_div_factor=final_div_factor,
+            three_phase=three_phase,
+            **kwargs
+        )

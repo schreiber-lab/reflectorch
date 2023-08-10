@@ -7,7 +7,7 @@
 from typing import Tuple, Iterable, Any, Union, Type
 from collections import defaultdict
 
-from tqdm import trange
+from tqdm.notebook import trange
 import numpy as np
 
 import torch
@@ -36,12 +36,14 @@ class Trainer(object):
                  logger: Union[Logger, Tuple[Logger, ...], Loggers] = None,
                  optim_cls: Type[torch.optim.Optimizer] = torch.optim.Adam,
                  optim_kwargs: dict = None,
+                 train_with_q_input: bool = False,
                  **kwargs
                  ):
 
         self.model = model
         self.loader = loader
         self.batch_size = batch_size
+        self.train_with_q_input = train_with_q_input
 
         self.optim = self.configure_optimizer(optim_cls, lr=lr, **(optim_kwargs or {}))
         self.losses = defaultdict(list)

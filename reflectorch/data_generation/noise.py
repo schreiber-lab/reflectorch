@@ -222,6 +222,7 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
                  scale_range: tuple = (-2e-2, 2e-2),
                  shift_range: tuple = (-0.1, 0.2e-2),
                  apply_shift: bool = False,
+                 apply_scaling: bool = False,
                  consistent_rel_err: bool = False,
                  add_to_context: bool = False,
                  logdist: bool = False,
@@ -235,13 +236,14 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
         )
         self.scaling_noise = ScalingNoise(
             scale_range=scale_range, add_to_context=add_to_context
-        )
+        ) if apply_scaling else None
         self.shift_noise = ShiftNoise(
             shift_range=shift_range, add_to_context=add_to_context
         ) if apply_shift else None
 
     def apply(self, curves: Tensor, context: dict = None):
-        curves = self.scaling_noise(curves, context)
+        if self.scaling_noise:
+            curves = self.scaling_noise(curves, context)
         if self.shift_noise:
             curves = self.shift_noise(curves, context)
         curves = self.poisson_noise(curves, context)

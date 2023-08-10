@@ -27,6 +27,7 @@ __all__ = [
     'CyclicLR',
     'LogCyclicLR',
     'ReduceLrOnPlateau',
+    'OneCycleLR',
     'XrrDataLoader',
     'MultilayerDataset',
     'RealTimeSimTrainer',

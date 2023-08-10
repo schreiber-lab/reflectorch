@@ -35,24 +35,28 @@ class RealTimeSimTrainer(Trainer):
 
 class PointEstimatorTrainer(RealTimeSimTrainer):
     add_sigmas_to_context: bool = False
-
+        
     def _get_batch(self, batch_data: BATCH_DATA_TYPE):
-        scaled_params, context = batch_data['scaled_params'], batch_data['scaled_noisy_curves']
+        scaled_params, context, q_values = batch_data['scaled_params'], batch_data['scaled_noisy_curves'], batch_data['q_values']
 
         if self.add_sigmas_to_context:
             sigmas = self.loader.curves_scaler.scale(batch_data['sigmas'])
             context = torch.cat([context, sigmas], dim=-1)
-
+            
         scaled_params, context = scaled_params.to(torch.float32), context.to(torch.float32)
         scaled_params, context = batch_data['params'].rearrange_context_from_params(scaled_params, context)
 
-        return scaled_params, context
+        return scaled_params, context, q_values
 
     def get_loss_dict(self, batch_data):
-        scaled_params, context = batch_data
-        predicted_params = self.model(context)
-        loss = self.mse(predicted_params, scaled_params)
+        scaled_params, context, q_values = batch_data
 
+        if self.train_with_q_input:
+            predicted_params = self.model(context, q_values)
+        else:
+            predicted_params = self.model(context)
+            
+        loss = self.mse(predicted_params, scaled_params)
         return {'loss': loss}
 
     def init(self):
