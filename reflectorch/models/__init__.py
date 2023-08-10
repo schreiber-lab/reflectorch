@@ -13,7 +13,11 @@ __all__ = [
     "TransformerEncoder",
     "ConvResidualNet1D",
     "ResidualNet",
+    "ResidualNet_FiLM",
     "ConvFCEncoder",
     "SubPriorConvFCEncoder",
+    "SubPriorConvFCEncoder_V2",
+    "SubPriorConvFCEncoder_FiLM",
+    "SubPrior_FNO_MLP",
     "SeqConvFCEncoder",
 ]
