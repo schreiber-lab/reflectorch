@@ -163,6 +163,11 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         self.min_bounds, self.max_bounds, self.min_delta, self.max_delta = self.param_model.init_bounds(
             param_ranges, bound_width_ranges, device=device, dtype=dtype
         )
+        
+        self.param_ranges = param_ranges
+        self.bound_width_ranges = bound_width_ranges
+        self.model_name = model_name
+        self.logdist = logdist
 
     @property
     def max_num_layers(self) -> int:
