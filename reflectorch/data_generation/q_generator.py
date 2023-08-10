@@ -19,6 +19,7 @@ from reflectorch.data_generation.priors.no_constraints import DEFAULT_DEVICE, DE
 __all__ = [
     "QGenerator",
     "ConstantQ",
+    "VariableQ",
     "EquidistantQ",
     "ConstantAngle",
 ]
@@ -48,6 +49,53 @@ class ConstantQ(QGenerator):
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
+    
+    
+# class VariableQ(QGenerator):
+#     def __init__(self,
+#                  q_min_range = [0.01, 0.03],
+#                  q_max_range = [0.1, 0.5],
+#                  n_q_range = [64, 512],
+#                  device=DEFAULT_DEVICE,
+#                  dtype=DEFAULT_DTYPE,
+#                  ):
+#         self.q_min_range = q_min_range
+#         self.q_max_range = q_max_range
+#         self.n_q_range = n_q_range
+#         self.device = device
+#         self.dtype = dtype
+
+#     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+#         q_min = np.random.uniform(*self.q_min_range)
+#         q_max = np.random.uniform(*self.q_max_range)
+#         n_q = np.random.randint(*self.n_q_range)
+        
+#         q = torch.linspace(start=q_min, end=q_max, steps=n_q).to(self.device).to(self.dtype)
+        
+#         return q[None].expand(batch_size, q.shape[0])
+
+class VariableQ(QGenerator):
+    def __init__(self,
+                 q_min_range = [0.01, 0.03],
+                 q_max_range = [0.1, 0.5],
+                 n_q_range = [64, 512],
+                 device=DEFAULT_DEVICE,
+                 dtype=DEFAULT_DTYPE,
+                 ):
+        self.q_min_range = q_min_range
+        self.q_max_range = q_max_range
+        self.n_q_range = n_q_range
+        self.device = device
+        self.dtype = dtype
+
+    def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        q_min = np.random.uniform(*self.q_min_range, batch_size)
+        q_max = np.random.uniform(*self.q_max_range, batch_size)
+        n_q = np.random.randint(*self.n_q_range)
+        
+        q = torch.from_numpy(np.linspace(q_min, q_max, n_q).T).to(self.device).to(self.dtype)
+        
+        return q
 
 
 class ConstantAngle(QGenerator):
