@@ -7,6 +7,9 @@ ACTIVATIONS = {
     'selu': nn.SELU(),
     'elu': nn.ELU(),
     'sigmoid': nn.Sigmoid(),
+    
+    'silu': nn.SiLU(), #added
+    'mish': nn.Mish(),
 }
 
 
