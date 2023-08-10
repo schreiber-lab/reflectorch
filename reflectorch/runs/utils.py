@@ -124,7 +124,8 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
     trainer = PointEstimatorTrainer(
         model, dset, train_conf['lr'], train_conf['batch_size'],
-        logger=logger, optim_cls=optim_cls, **trainer_kwargs
+        logger=logger, optim_cls=optim_cls, train_with_q_input=train_conf['train_with_q_input'], 
+        **trainer_kwargs
     )
 
     return trainer
