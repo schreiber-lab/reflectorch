@@ -145,3 +145,46 @@ def constrained_roughness_sampler(
     params[..., roughness_mask] = rougnhesses
 
     return params, min_bounds, max_bounds
+
+
+
+def constrained_sld_sampler(
+        batch_size: int,
+        total_min_bounds: Tensor,
+        total_max_bounds: Tensor,
+        total_min_delta: Tensor,
+        total_max_delta: Tensor,
+        thickness_mask: Tensor,
+        roughness_mask: Tensor,
+        widths_sampler_func,
+        coef_roughness: float = 0.5,
+        coef_sld: float = 0.5,
+):
+    params, min_bounds, max_bounds = basic_sampler(
+        batch_size, total_min_bounds, total_max_bounds, total_min_delta, total_max_delta,
+        widths_sampler_func=widths_sampler_func,
+    )
+
+    max_roughness = torch.minimum(
+        get_max_allowed_roughness(thicknesses=params[..., thickness_mask], coef_roughness=coef_roughness),
+        total_max_bounds[..., roughness_mask]
+    )
+    min_roughness = total_min_bounds[..., roughness_mask]
+
+    assert torch.all(min_roughness <= max_roughness)
+
+    min_roughness_delta = total_min_delta[..., roughness_mask]
+    max_roughness_delta = torch.minimum(total_max_delta[..., roughness_mask], max_roughness - min_roughness)
+
+    rougnhesses, min_r_bounds, max_r_bounds = basic_sampler(
+        batch_size, min_roughness, max_roughness,
+        min_roughness_delta, max_roughness_delta,
+        widths_sampler_func=widths_sampler_func
+    )
+
+    min_bounds[..., roughness_mask], max_bounds[..., roughness_mask] = min_r_bounds, max_r_bounds
+    params[..., roughness_mask] = rougnhesses
+
+    # sld bounds
+
+    return params, min_bounds, max_bounds
