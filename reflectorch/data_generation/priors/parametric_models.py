@@ -122,7 +122,7 @@ class StandardModel(ParametricModel):
                 sld_real_mask, sld_imag_mask,
                 max_sld_share=max_sld_share,
                 **kwargs
-            )
+                )
         else:
             return BasicSamplerStrategy(**kwargs)
 
