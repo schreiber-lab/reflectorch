@@ -37,6 +37,7 @@ from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
+    ConstrainedSLDSamplerStrategy,
 )
 
 __all__ = [
