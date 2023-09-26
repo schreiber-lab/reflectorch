@@ -120,10 +120,10 @@ class StandardModel(ParametricModel):
                 thickness_mask, roughness_mask,
                 max_thickness_share=max_thickness_share,
                 sld_real_mask, sld_imag_mask,
-                max_sld_share = max_sld_share,
+                max_sld_share=max_sld_share,
                 **kwargs
             )
-        else if constrained_roughness:
+        elif constrained_roughness:
             num_params = self.param_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)
