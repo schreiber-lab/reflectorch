@@ -101,10 +101,29 @@ class StandardModel(ParametricModel):
         return 3 * self.max_num_layers + 2
 
     def _init_sampler_strategy(self,
+                               constrained_sld: bool = True,
                                constrained_roughness: bool = True,
                                max_thickness_share: float = 0.5,
+                               max_sld_share: float = 0.2,
                                **kwargs):
-        if constrained_roughness:
+        if constrained_sld:
+            num_params = self.param_dim
+            thickness_mask = torch.zeros(num_params, dtype=torch.bool)
+            roughness_mask = torch.zeros(num_params, dtype=torch.bool)
+            sld_imag_mask = torch.zeros(num_params, dtype=torch.bool)
+            sld_real_mask = torch.zeros(num_params, dtype=torch.bool)
+            thickness_mask[:self.max_num_layers] = True
+            roughness_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
+            sld_real_mask[:self.max_num_layers] = True
+            sld_imag_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
+            return ConstrainedSLDSamplerStrategy(
+                thickness_mask, roughness_mask,
+                max_thickness_share=max_thickness_share,
+                sld_real_mask, sld_imag_mask,
+                max_sld_share = max_sld_share,
+                **kwargs
+            )
+        else if constrained_roughness:
             num_params = self.param_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)

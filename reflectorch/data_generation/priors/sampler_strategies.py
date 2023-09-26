@@ -6,7 +6,7 @@ from reflectorch.data_generation.utils import (
     logdist_sampler,
 )
 
-from reflectorch.data_generation.priors.utils import get_max_allowed_roughness
+from reflectorch.data_generation.priors.utils import get_max_allowed_roughness, get_max_allowed_sld_imag
 
 
 class SamplerStrategy(object):
@@ -71,6 +71,47 @@ class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
             roughness_mask=self.roughness_mask.to(device),
             widths_sampler_func=self.widths_sampler_func,
             coef=self.max_thickness_share,
+        )
+    
+class ConstrainedSLDSamplerStrategy(BasicSamplerStrategy):
+    def __init__(self,
+                 thickness_mask: Tensor,
+                 roughness_mask: Tensor,
+                 logdist: bool = False,
+                 max_thickness_share: float = 0.5,
+                 sld_real_mask: Tensor,
+                 sld_imag_mask: Tensor,
+                 logdist: bool = False,
+                 max_sld_share: float = 0.2,
+                 ):
+        super().__init__(logdist=logdist)
+        self.thickness_mask = thickness_mask
+        self.roughness_mask = roughness_mask
+        self.max_thickness_share = max_thickness_share
+        self.sld_real_mask = sld_real_mask
+        self.sld_imag_mask = sld_imag_mask
+        self.max_sld_share = max_sld_share
+
+    def sample(self, batch_size: int,
+               total_min_bounds: Tensor,
+               total_max_bounds: Tensor,
+               total_min_delta: Tensor,
+               total_max_delta: Tensor,
+               ):
+        device = total_min_bounds.device
+        return constrained_sld_sampler(
+            batch_size,
+            total_min_bounds,
+            total_max_bounds,
+            total_min_delta,
+            total_max_delta,
+            thickness_mask=self.thickness_mask.to(device),
+            roughness_mask=self.roughness_mask.to(device),
+            sld_imag_mask=self.sld_imag_mask.to(device),
+            sld_real_mask=self.sld_real_mask.to(device),
+            widths_sampler_func=self.widths_sampler_func,
+            coef_roughness=self.max_thickness_share,
+            coef_sld=self.max_sld_share,
         )
 
 
@@ -156,9 +197,11 @@ def constrained_sld_sampler(
         total_max_delta: Tensor,
         thickness_mask: Tensor,
         roughness_mask: Tensor,
+        sld_imag_mask: Tensor,
+        sld_real_mask: Tensor,
         widths_sampler_func,
         coef_roughness: float = 0.5,
-        coef_sld: float = 0.5,
+        coef_sld: float = 0.2,
 ):
     params, min_bounds, max_bounds = basic_sampler(
         batch_size, total_min_bounds, total_max_bounds, total_min_delta, total_max_delta,
@@ -176,17 +219,36 @@ def constrained_sld_sampler(
     min_roughness_delta = total_min_delta[..., roughness_mask]
     max_roughness_delta = torch.minimum(total_max_delta[..., roughness_mask], max_roughness - min_roughness)
 
-    rougnhesses, min_r_bounds, max_r_bounds = basic_sampler(
+    roughnesses, min_r_bounds, max_r_bounds = basic_sampler(
         batch_size, min_roughness, max_roughness,
         min_roughness_delta, max_roughness_delta,
         widths_sampler_func=widths_sampler_func
     )
 
     min_bounds[..., roughness_mask], max_bounds[..., roughness_mask] = min_r_bounds, max_r_bounds
-    params[..., roughness_mask] = rougnhesses
+    params[..., roughness_mask] = roughnesses
 
     # sld bounds
 
+    max_sld_imag = torch.minimum(
+        get_max_allowed_sld_imag(sld_real=params[..., sld_real_mask], coef_sld=coef_sld), total_max_bounds[...,sld_imag_mask]
+    )
+
+    min_sld_imag = total_min_bounds[..., sld_imag_mask]
+
+    assert torch.all(min_sld_imag <= max_sld_imag)
+
+    min_sld_imag_delta = total_min_delta[..., sld_imag_mask]
+    max_sld_imag_delta = torch.minimum(total_max_delta[...,sld_imag_mask], max_sld_imag - min_sld_imag)
+
+    sld_imag, min_sld_bounds, max_sld_bounds = basic_sampler(
+        batch_size, min_sld_imag, max_sld_imag,
+        min_sld_imag_delta, max_sld_imag_delta,
+        widths_sampler_func=widths_sampler_func
+    )
+
+    min_bounds[...,sld_imag_mask],max_bounds[..., sld_imag_mask] = min_sld_bounds, max_sld_bounds
+    params[...,sld_imag_mask] = sld_imag
     
 
     return params, min_bounds, max_bounds
