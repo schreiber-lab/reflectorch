@@ -81,7 +81,6 @@ class ConstrainedSLDSamplerStrategy(BasicSamplerStrategy):
                  max_thickness_share: float = 0.5,
                  sld_real_mask: Tensor,
                  sld_imag_mask: Tensor,
-                 logdist: bool = False,
                  max_sld_share: float = 0.2,
                  ):
         super().__init__(logdist=logdist)

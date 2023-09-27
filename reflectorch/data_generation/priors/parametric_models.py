@@ -116,13 +116,13 @@ class StandardModel(ParametricModel):
             roughness_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
             sld_real_mask[:self.max_num_layers] = True
             sld_imag_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
-            return ConstrainedSLDSamplerStrategy(
-                thickness_mask, roughness_mask,
+            return ConstrainedSLDSamplerStrategy(thickness_mask,
+                roughness_mask,
                 max_thickness_share=max_thickness_share,
-                sld_real_mask, sld_imag_mask,
+                sld_real_mask,
+                sld_imag_mask,
                 max_sld_share=max_sld_share,
-                **kwargs
-                )
+                **kwargs)
         else:
             return BasicSamplerStrategy(**kwargs)
 
