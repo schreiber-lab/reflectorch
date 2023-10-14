@@ -19,7 +19,6 @@ dset:
       max_num_layers: 2 # 2
       constrained_sld: true
       max_thickness_share: 0.6
-      max_sld_share: 0.2
       logdist: false
   q_generator:
     cls: ConstantQ

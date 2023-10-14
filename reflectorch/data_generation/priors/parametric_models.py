@@ -103,8 +103,8 @@ class StandardModel(ParametricModel):
 
     def _init_sampler_strategy(self,
                                constrained_sld: bool = True,
+                               logdist: bool = False,
                                max_thickness_share: float = 0.5,
-                               max_sld_share: float = 0.2,
                                **kwargs):
         if constrained_sld:
             num_params = self.param_dim
@@ -120,8 +120,7 @@ class StandardModel(ParametricModel):
                 roughness_mask,
                 sld_real_mask,
                 sld_imag_mask,
-                max_thickness_share=max_thickness_share,
-                max_sld_share=max_sld_share,
+                max_thickness_share = max_thickness_share, 
                 **kwargs
             )
         else:

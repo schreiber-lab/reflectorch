@@ -29,13 +29,13 @@ def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef_rou
     max_roughness[:, 1:] = torch.minimum(max_roughness[:, 1:], boundary)
     return max_roughness
 
-def get_max_allowed_sld_imag(sld_real: Tensor, mask: Tensor = None, coef_sld: float = 0.2):
+def get_max_allowed_sld_imag(sld_real: Tensor, mask: Tensor = None):
     batch_size, layers_num = sld_real.shape
     max_sld_imag = torch.ones(
         batch_size, layers_num + 1, device = sld_real.device, dtype = sld_real.dtype
     ) * float('inf')
 
-    boundary = sld_real * coef_sld
+    boundary = sld_real * 0.2
     if mask is not None:
         boundary[get_thickness_mask_from_sld_mask(mask)] = float('inf')
 
