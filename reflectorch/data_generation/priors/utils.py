@@ -15,13 +15,13 @@ from reflectorch.data_generation.utils import (
 )
 
 
-def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef: float = 0.5):
+def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef_roughness: float = 0.5):
     batch_size, layers_num = thicknesses.shape
     max_roughness = torch.ones(
         batch_size, layers_num + 1, device=thicknesses.device, dtype=thicknesses.dtype
     ) * float('inf')
 
-    boundary = thicknesses * coef
+    boundary = thicknesses * coef_roughness
     if mask is not None:
         boundary[get_thickness_mask_from_sld_mask(mask)] = float('inf')
 
@@ -29,13 +29,13 @@ def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef: fl
     max_roughness[:, 1:] = torch.minimum(max_roughness[:, 1:], boundary)
     return max_roughness
 
-def get_max_allowed_sld_imag(sld_real: Tensor, mask: Tensor = None, coef: float = 0.2):
+def get_max_allowed_sld_imag(sld_real: Tensor, mask: Tensor = None, coef_sld: float = 0.2):
     batch_size, layers_num = sld_real.shape
     max_sld_imag = torch.ones(
         batch_size, layers_num + 1, device = sld_real.device, dtype = sld_real.dtype
     ) * float('inf')
 
-    boundary = sld_real * coef
+    boundary = sld_real * coef_sld
     if mask is not None:
         boundary[get_thickness_mask_from_sld_mask(mask)] = float('inf')
 

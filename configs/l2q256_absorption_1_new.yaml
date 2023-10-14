@@ -8,8 +8,8 @@ dset:
       param_ranges:
         thicknesses: [0., 300.]
         roughnesses: [0., 40.]
-        slds: [100., 130.] 
-        islds: [10., 15.] 
+        slds: [0., 150.] 
+        islds: [0., 30.] 
       bound_width_ranges:
         thicknesses: [ 1.0e-2, 300. ]
         roughnesses: [ 1.0e-2, 40. ]
@@ -17,8 +17,9 @@ dset:
         islds: [ 1.0e-2, 5. ]
       model_name: model_with_absorption
       max_num_layers: 2 # 2
-      constrained_roughness: true
+      constrained_sld: true
       max_thickness_share: 0.6
+      max_sld_share: 0.2
       logdist: false
   q_generator:
     cls: ConstantQ
