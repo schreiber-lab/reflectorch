@@ -203,11 +203,11 @@ def constrained_sld_sampler(
         widths_sampler_func=widths_sampler_func,
     )
     
-    max_roughness = torch.minimum(
-        get_max_allowed_roughness(thicknesses=params[..., thickness_mask], coef_roughness=coef_roughness),
-        total_max_bounds[..., roughness_mask]
-    )
-    min_roughness = total_min_bounds[..., roughness_mask]
+    # max_roughness = torch.minimum(
+    #     get_max_allowed_roughness(thicknesses=params[..., thickness_mask], coef_roughness=coef_roughness),
+    #     total_max_bounds[..., roughness_mask]
+    # )
+    # min_roughness = total_min_bounds[..., roughness_mask]
 
 
     max_sld_imag = torch.minimum(
@@ -217,23 +217,23 @@ def constrained_sld_sampler(
     min_sld_imag = total_min_bounds[..., sld_imag_mask]
 
 
-    assert torch.all(min_roughness <= max_roughness)
+    # assert torch.all(min_roughness <= max_roughness)
 
     assert torch.all(min_sld_imag <= max_sld_imag)
 
-
-    min_roughness_delta = total_min_delta[..., roughness_mask]
-    max_roughness_delta = torch.minimum(total_max_delta[..., roughness_mask], max_roughness - min_roughness)
+    
+    # min_roughness_delta = total_min_delta[..., roughness_mask]
+    # max_roughness_delta = torch.minimum(total_max_delta[..., roughness_mask], max_roughness - min_roughness)
 
     min_sld_imag_delta = total_min_delta[..., sld_imag_mask]
     max_sld_imag_delta = torch.minimum(total_max_delta[...,sld_imag_mask], max_sld_imag - min_sld_imag)
 
-
-    roughnesses, min_r_bounds, max_r_bounds = basic_sampler(
-        batch_size, min_roughness, max_roughness,
-        min_roughness_delta, max_roughness_delta,
-        widths_sampler_func=widths_sampler_func
-    )
+    
+    # roughnesses, min_r_bounds, max_r_bounds = basic_sampler(
+    #     batch_size, min_roughness, max_roughness,
+    #     min_roughness_delta, max_roughness_delta,
+    #     widths_sampler_func=widths_sampler_func
+    # )
 
     sld_imag, min_sld_bounds, max_sld_bounds = basic_sampler(
         batch_size, min_sld_imag, max_sld_imag,
@@ -241,9 +241,11 @@ def constrained_sld_sampler(
         widths_sampler_func=widths_sampler_func
     )
 
+    # min_bounds[..., roughness_mask], min_bounds[...,sld_imag_mask], max_bounds[..., sld_imag_mask], max_bounds[..., roughness_mask] = min_r_bounds, min_sld_bounds, max_sld_bounds, max_r_bounds
+    # params[..., roughness_mask], params[...,sld_imag_mask] = roughnesses, sld_imag
 
-    min_bounds[..., roughness_mask], max_bounds[..., roughness_mask] = min_r_bounds, max_r_bounds
-    params[..., roughness_mask] = roughnesses
+    # min_bounds[..., roughness_mask], max_bounds[..., roughness_mask] = min_r_bounds, max_r_bounds
+    # params[..., roughness_mask] = roughnesses
 
     min_bounds[...,sld_imag_mask],max_bounds[..., sld_imag_mask] = min_sld_bounds, max_sld_bounds
     params[...,sld_imag_mask] = sld_imag
