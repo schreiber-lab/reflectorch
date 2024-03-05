@@ -1,9 +1,14 @@
 # reflectorch
 
+Reflectorch is a Python package for the analysis of X-ray and neutron reflectometry data via neural networks. 
+
 This repository provides the code used in our publication, *Neural network analysis of neutron and X-ray reflectivity data 
 incorporating prior knowledge* by Valentin Munteanu, Vladimir Starostin, Alessandro Greco, Linus Pithan, Alexander Gerlach, Alexander Hinderhofer, Stefan Kowarik and Frank Schreiber. The [arXiv preprint](https://arxiv.org/abs/2307.05364) is currently available.  
 
-Reflectorch is a Python package for the analysis of X-ray and neutron reflectometry data via neural networks. 
+## Get started
+
+In order to get started with using our package, please read the [documentation page](https://).
+Additionally, you can explore reflectorch inside an interactive notebook [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
 
 
 ## Citation
