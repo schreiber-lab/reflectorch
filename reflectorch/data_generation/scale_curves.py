@@ -22,6 +22,13 @@ class CurvesScaler(object):
 
 
 class LogAffineCurvesScaler(CurvesScaler):
+    """Contains functions for scaling the reflectivity curves to a ML-friendly range and restoring scale curves to the physical range
+
+    Args:
+        weight (float): 
+        bias (float): 
+        eps (float): 
+    """
     def __init__(self, weight: float = 0.1, bias: float = 0.5, eps: float = 1e-10):
         self.weight = weight
         self.bias = bias
