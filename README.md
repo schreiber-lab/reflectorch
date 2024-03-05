@@ -1,5 +1,6 @@
-# _reflectorch_
+# reflectorch
 
-## X-ray & neutron reflectometry with prior input
+This repository provides the code used in our publication, *Neural network analysis of neutron and X-ray reflectivity data 
+incorporating prior knowledge* by Valentin Munteanu, Vladimir Starostin, Alessandro Greco, Linus Pithan, Alexander Gerlach, Alexander Hinderhofer, Stefan Kowarik and Frank Schreiber. The [arXiv preprint](https://arxiv.org/abs/2307.05364) is currently available.  
 
-Code for the manuscript https://arxiv.org/abs/2307.05364
+Reflectorch is a Python package for the analysis of X-ray and neutron reflectometry data via neural networks. 
