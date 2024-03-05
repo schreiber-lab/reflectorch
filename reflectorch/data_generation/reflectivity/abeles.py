@@ -11,6 +11,17 @@ def abeles(
         roughness: Tensor,
         sld: Tensor,
 ):
+    """Simulates reflectivity curves for SLD profiles with box model parameterization using the Abeles matrix method
+
+    Args:
+        q (Tensor): q values
+        thickness (Tensor): layer thicknesses
+        roughness (Tensor): interlayer roughnesses
+        sld (Tensor): layer SLDs
+
+    Returns:
+        Tensor: simulated reflectivity curves
+    """
     c_dtype = torch.complex128 if q.dtype is torch.float64 else torch.complex64
 
     batch_size, num_layers = thickness.shape

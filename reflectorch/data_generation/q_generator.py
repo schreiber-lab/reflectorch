@@ -31,6 +31,9 @@ class QGenerator(object):
 
 
 class ConstantQ(QGenerator):
+    """Q generator for reflectivity curves with fixed discretization
+    """
+
     def __init__(self,
                  q: Union[Tensor, Tuple[float, float, int]] = (0., 0.2, 257),
                  device=DEFAULT_DEVICE,
@@ -75,6 +78,9 @@ class ConstantQ(QGenerator):
 #         return q[None].expand(batch_size, q.shape[0])
 
 class VariableQ(QGenerator):
+    """Q generator for reflectivity curves with variable discretization
+    """
+
     def __init__(self,
                  q_min_range = [0.01, 0.03],
                  q_max_range = [0.1, 0.5],
