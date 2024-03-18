@@ -9,7 +9,7 @@ From: nvcr.io/nvidia/tritonserver:21.08-py3
         python3 setup.py install --user --e
 
 %runscript
-        tritonserver --model-repository=./triton_models/
+        tritonserver --model-repository=../triton_models/
 
 ###USAGE:
 #singularity build --fakeroot triton.sif triton_singularity
