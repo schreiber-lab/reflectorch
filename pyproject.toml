@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "reflectorch"
 version = "0.0.2"
 authors = [
-    {name = "Vladimir Starostin"},
+    {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
 ]
 maintainers = [
-    {name = "Valentin Munteanu"},
+    {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"},
 ]
 description = "A Pytorch-based package for the analysis of reflectometry data"
 keywords = ["reflectometry", "machine learning"]
