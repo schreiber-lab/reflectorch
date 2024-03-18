@@ -9,7 +9,7 @@ authors = [
     {name = "Vladimir Starostin", email = "vladimir.starostin@uni-tuebingen.de"},
 ]
 maintainers = [
-    {name = "Valentin Munteanu", email = "valentin.munteanu@uni-tuebingen.de"},
+    {name = "Valentin Munteanu"},
 ]
 description = "A Pytorch-based package for the analysis of reflectometry data"
 keywords = ["reflectometry", "machine learning"]
