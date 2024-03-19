@@ -1,4 +1,9 @@
-Reflectorch is a machine learning Python package for the analysis of X-ray and neutron reflectometry data via neural networks. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://arxiv.org/abs/2307.05364).
+
+
+
+## About
+
+**Reflectorch** is a machine learning Python package for the analysis of X-ray and neutron reflectometry data via based on Pytorch. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and neural network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://arxiv.org/abs/2307.05364).
 
 ## Installation
 
