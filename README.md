@@ -1,16 +1,28 @@
-<img src="https://raw.githubusercontent.com/schreiber-lab/reflectorch/dev_vm/docs/reflectorch_logo.png?token=GHSAT0AAAAAACOZH257GWTMS6JNTKQAZC5SZPZQ3XQ" alt="reflectorch banner" width="400"/>
+Reflectorch is a machine learning Python package for the analysis of X-ray and neutron reflectometry data via neural networks. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://arxiv.org/abs/2307.05364).
 
+## Installation
 
-Reflectorch is a Python package for the analysis of X-ray and neutron reflectometry data via neural networks. 
+**Reflectorch** can be installed either via *pip* or *conda*:
 
-This repository provides the code used in our publication, *Neural network analysis of neutron and X-ray reflectivity data 
-incorporating prior knowledge* by Valentin Munteanu, Vladimir Starostin, Alessandro Greco, Linus Pithan, Alexander Gerlach, Alexander Hinderhofer, Stefan Kowarik and Frank Schreiber. The [arXiv preprint](https://arxiv.org/abs/2307.05364) is currently available.  
+```bash
+pip install reflectorch
+```
+
+or
+
+```bash
+conda install -c conda-forge reflectorch
+```
+
+Users with Nvidia GPUs need to additionally install Pytorch with CUDA support corresponding to their hardware and operating system according to the instructions from the [Pytorch website](https://pytorch.org/get-started/locally/)
 
 ## Get started
 
-In order to get started with using our package, please read the [documentation page](https://).
-Additionally, you can explore reflectorch inside an interactive notebook [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
+We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
 
+## Documentation
+
+The documentation is built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and is hosted at [reflectorch.readthedocs.io](https://reflectorch.readthedocs.io).
 
 ## Citation
 If you find our work useful in your research, please cite:
