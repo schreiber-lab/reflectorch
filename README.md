@@ -1,4 +1,5 @@
-# reflectorch
+![reflectorch banner](https://raw.githubusercontent.com/schreiber-lab/reflectorch/dev_vm/docs/reflectorch_logo.png)
+
 
 Reflectorch is a Python package for the analysis of X-ray and neutron reflectometry data via neural networks. 
 
