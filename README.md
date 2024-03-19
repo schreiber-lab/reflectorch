@@ -1,4 +1,4 @@
-
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 
 ## About
@@ -7,7 +7,7 @@
 
 ## Installation
 
-**Reflectorch** can be installed either via *pip* or *conda*:
+**Reflectorch** can be installed either from [PyPi](https://pypi.org/project/reflectorch/) via *pip* or from [conda-forge](https://anaconda.org/conda-forge/reflectorch/) via *conda*:
 
 ```bash
 pip install reflectorch
