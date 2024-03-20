@@ -3,7 +3,7 @@ name: Install Package, Run Tests & Build Distibution on Multiple OS and Python V
 on:
   push:
     branches:
-      - dev_vm 
+      - main
 
 jobs:
   build:
