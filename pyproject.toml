@@ -31,7 +31,9 @@ dependencies = [
     "scipy",
     "tqdm",
     "PyYAML",
-    "click"
+    "click",
+    "matplotlib",
+    "ipywidgets"
 ]
 
 [project.optional-dependencies]
