@@ -42,12 +42,16 @@ The documentation is built with [Jupyter Book](https://jupyterbook.org/) and [Sp
 ## Citation
 If you find our work useful in your research, please cite:
 ```
-@misc{munteanu2023neural,
-      title={Neural network analysis of neutron and X-ray reflectivity data: Incorporating prior knowledge for tackling the phase problem}, 
-      author={Valentin Munteanu and Vladimir Starostin and Alessandro Greco and Linus Pithan and Alexander Gerlach and Alexander Hinderhofer and Stefan Kowarik and Frank Schreiber},
-      year={2023},
-      eprint={2307.05364},
-      archivePrefix={arXiv},
-      primaryClass={eess.SP}
+@Article{Munteanu2024,
+  author    = {Munteanu, Valentin and Starostin, Vladimir and Greco, Alessandro and Pithan, Linus and Gerlach, Alexander and Hinderhofer, Alexander and Kowarik, Stefan and Schreiber, Frank},
+  journal   = {Journal of Applied Crystallography},
+  title     = {Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge},
+  year      = {2024},
+  issn      = {1600-5767},
+  month     = mar,
+  number    = {2},
+  volume    = {57},
+  doi       = {10.1107/s1600576724002115},
+  publisher = {International Union of Crystallography (IUCr)},
 }
 ```
