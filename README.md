@@ -8,6 +8,8 @@
 
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
+![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
+[![Documentation build status](https://readthedocs.org/projects/reflectorch/badge/)](https://reflectorch.readthedocs.io)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
 [![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://reflectorch.readthedocs.io)
 [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
