@@ -11,7 +11,10 @@ logo: reflectorch_logo.png
 execute:
   execute_notebooks: auto
   
-only_build_toc_files: true  
+only_build_toc_files: true
+
+launch_buttons:
+  thebe: true
 
 # Define the name of the latex output file for PDF builds
 latex:
