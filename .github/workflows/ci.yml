@@ -1,9 +1,9 @@
-name: Install Package, Run Tests & Build Distibution on Multiple OS and Python Versions
+name: CI
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
