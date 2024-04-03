@@ -2,4 +2,12 @@ API Reference
 =============
 
 .. automodule:: reflectorch
-    :members: SubPriorConvFCEncoder_V2, ConstantQ, VariableQ, angle_to_q, q_to_angle, energy_to_wavelength, wavelength_to_energy
+    :members: SubPriorConvFCEncoder_V2, 
+              ConstantQ, 
+              VariableQ, 
+              to_np, 
+              to_t, 
+              angle_to_q, 
+              q_to_angle, 
+              energy_to_wavelength, 
+              wavelength_to_energy
