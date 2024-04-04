@@ -2,12 +2,16 @@ API Reference
 =============
 
 .. automodule:: reflectorch
-    :members: SubPriorConvFCEncoder_V2, 
+    :members: load_config,
+              to_np,
+              to_t,
+              SaveBestModel,
+              LogLosses,
+              SubPriorConvFCEncoder_V2, 
               ConstantQ, 
               VariableQ, 
-              to_np, 
-              to_t, 
               angle_to_q, 
               q_to_angle, 
               energy_to_wavelength, 
               wavelength_to_energy
+              activation_by_name
