@@ -20,6 +20,11 @@ __all__ = [
 @click.command()
 @click.argument('config_name', type=str)
 def run_train(config_name: str):
+    """Runs the training from the command line interface 
+
+    Args:
+        config_name (str): name of the YAML configuration file
+    """
     config = load_config(config_name)
     train_from_config(config)
 

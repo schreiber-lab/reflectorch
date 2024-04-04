@@ -22,6 +22,14 @@ __all__ = [
 
 
 class SaveBestModel(TrainerCallback):
+    """Callback for periodically saving the best model weights
+
+    Args:
+        path (str): path for saving the model weights
+        freq (int, optional): frequency in iterations at which the current average loss is evaluated. Defaults to 50.
+        average (int, optional): number of recent iterations over which the average loss is computed. Defaults to 10.
+    """
+
     def __init__(self, path: str, freq: int = 50, average: int = 10):
         self.path = path
         self.average = average
@@ -52,6 +60,7 @@ class SaveBestModel(TrainerCallback):
 
 
 class LogLosses(TrainerCallback):
+    """Callback for logging the training losses"""
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
         try:
             trainer.log('train/total_loss', trainer.losses[trainer.TOTAL_LOSS_KEY][-1])

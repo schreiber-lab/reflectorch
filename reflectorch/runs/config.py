@@ -10,10 +10,10 @@ from reflectorch.paths import CONFIG_DIR
 
 
 def load_config(config_name: str) -> dict:
-    """Initializes a configuration dictionary from a configuration file in the configuration directory
+    """Initializes a configuration dictionary from a YAML configuration file located in the configuration directory
 
     Args:
-        config_name (str): name of the configuration file
+        config_name (str): name of the YAML configuration file
 
     Returns:
         dict: the configuration dictionary
@@ -24,5 +24,5 @@ def load_config(config_name: str) -> dict:
     with open(path, 'r') as f:
         config = yaml.safe_load(f)
     config['config_path'] = str(path.absolute())
-    
+
     return config
