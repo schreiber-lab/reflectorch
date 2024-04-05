@@ -37,6 +37,12 @@ class SaveBestModel(TrainerCallback):
         self.freq = freq
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
+        """checks if the current average loss has improved from the previous save, if true the model is saved
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the current iteration / batch
+        """
         if is_divisor(batch_num, self.freq):
 
             loss = np.mean(trainer.losses['total_loss'][-self.average:])
@@ -46,6 +52,13 @@ class SaveBestModel(TrainerCallback):
                 self.save(trainer, batch_num)
 
     def save(self, trainer: Trainer, batch_num: int):
+        """saves a dictionary containing the network weights, the learning rates, the losses and the current \
+            best loss with its corresponding iteration to the disk
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the current iteration / batch
+        """
         prev_save = trainer.callback_params.pop('saved_iteration', 0)
         trainer.callback_params['saved_iteration'] = batch_num
         save_dict = {
@@ -62,6 +75,12 @@ class SaveBestModel(TrainerCallback):
 class LogLosses(TrainerCallback):
     """Callback for logging the training losses"""
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
+        """log loss at the current iteration
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the index of the current iteration / batch
+        """
         try:
             trainer.log('train/total_loss', trainer.losses[trainer.TOTAL_LOSS_KEY][-1])
         except IndexError:

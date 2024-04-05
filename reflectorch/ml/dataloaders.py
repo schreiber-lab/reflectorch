@@ -14,6 +14,8 @@ __all__ = [
 
 
 class XrrDataLoader(BasicDataset, DataLoader):
+    """Class combining the functionalities of the BasicDataset and DataLoader classes
+    """
     pass
 
 

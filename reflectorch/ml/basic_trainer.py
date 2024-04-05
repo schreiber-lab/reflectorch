@@ -143,13 +143,34 @@ class Trainer(object):
 
 
 class TrainerCallback(object):
+    """Base class for trainer callbacks
+    """
     def start_training(self, trainer: Trainer) -> None:
+        """add functionality the start of training
+
+        Args:
+            trainer (Trainer): the trainer object
+        """
         pass
 
     def end_training(self, trainer: Trainer) -> None:
+        """add functionality at the end of training
+
+        Args:
+            trainer (Trainer): the trainer object
+        """
         pass
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> Union[bool, None]:
+        """add functionality at the end of the iteration / batch
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the index of the current iteration / batch
+
+        Returns:
+            Union[bool, None]:
+        """
         pass
 
     def __repr__(self):
@@ -161,6 +182,8 @@ class DataLoader(TrainerCallback):
 
 
 class PeriodicTrainerCallback(TrainerCallback):
+    """Base class for trainer callbacks which perform actions 
+    """
     def __init__(self, step: int = 1, last_epoch: int = -1):
         self.step = step
         self.last_epoch = last_epoch
