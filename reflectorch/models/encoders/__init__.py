@@ -9,7 +9,7 @@ from reflectorch.models.encoders.conv_encoder import (
     ConvDecoder,
     Autoencoder,
 )
-from reflectorch.models.encoders.fno import FNO_Enc
+from reflectorch.models.encoders.fno import FNO_Enc, SpectralConv1d
 from reflectorch.models.encoders.transformers import TransformerEncoder
 from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
 from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
@@ -32,6 +32,7 @@ __all__ = [
     "Autoencoder",
     "ConvResidualNet1D",
     "FNO_Enc",
+    "SpectralConv1d",
     "ResidualNet",
     "ResidualNet_FiLM",
     "ConvFCEncoder",

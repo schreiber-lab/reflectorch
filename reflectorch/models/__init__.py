@@ -11,6 +11,8 @@ __all__ = [
     "ConvDecoder",
     "Autoencoder",
     "TransformerEncoder",
+    "FNO_Enc",
+    "SpectralConv1d",
     "ConvResidualNet1D",
     "ResidualNet",
     "ResidualNet_FiLM",
