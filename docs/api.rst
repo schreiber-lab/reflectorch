@@ -13,5 +13,7 @@ API Reference
               angle_to_q, 
               q_to_angle, 
               energy_to_wavelength, 
-              wavelength_to_energy
-              activation_by_name
+              wavelength_to_energy,
+              XrrDataLoader,
+              TrainerCallback,
+              FNO_Enc,
