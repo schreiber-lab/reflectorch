@@ -108,6 +108,15 @@ def get_callbacks_from_config(config: dict, folder_paths: dict = None) -> Tuple[
 
 
 def get_trainer_from_config(config: dict, folder_paths: dict = None):
+    """Initializes a trainer from a configuration dictionary
+
+    Args:
+        config (dict): the configuration dictionary
+        folder_paths (dict, optional): _description_. Defaults to None.
+
+    Returns:
+        Trainer: the trainer object
+    """
     dset = init_dset(config['dset'])
 
     folder_paths = folder_paths or get_paths_from_config(config)
@@ -137,6 +146,19 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
 
 def get_trainer_by_name(model_name, model_path=None, load_weights: bool = True):
+    """Initializes a trainer based on a configuration file (i.e. the model name) and optionally loads \
+        saved weights into the network
+
+    Args:
+        model_name (str): name of the configuration file defining the model
+        model_path (str, optional): path to the network weights. The default path is the 'saved_models' \
+            directory located in the package directory
+        load_weights (bool, optional): if True the saved network weights are loaded into the netwrok. Defaults to True.
+
+
+    Returns:
+        Trainer: the trainer object
+    """
     config = load_config(model_name)
     config['model']['encoder']['pretrained_name'] = None
     config['training']['logger']['use_neptune'] = False

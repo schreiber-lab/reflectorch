@@ -3,6 +3,8 @@ API Reference
 
 .. automodule:: reflectorch
     :members: load_config,
+              get_trainer_from_config,
+              get_trainer_by_name, 
               to_np,
               to_t,
               SaveBestModel,

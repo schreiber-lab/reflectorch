@@ -12,7 +12,16 @@ from ..matplotlib import plot_losses
 
 
 class JPlotLoss(TrainerCallback):
+    """Callback for plotting the loss in a Jupyter notebook
+    """
     def __init__(self, frequency: int, log: bool = True, clear: bool = True, **kwargs):
+        """
+
+        Args:
+            frequency (int): plotting frequency
+            log (bool, optional): if True, the plot is on a logarithmic scale. Defaults to True.
+            clear (bool, optional):
+        """
         self.frequency = frequency
         self.log = log
         self.kwargs = kwargs
