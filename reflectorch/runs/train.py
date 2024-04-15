@@ -20,7 +20,8 @@ __all__ = [
 @click.command()
 @click.argument('config_name', type=str)
 def run_train(config_name: str):
-    """Runs the training from the command line interface 
+    """Runs the training from the command line interface
+       Example: python train.py 'conf_name.yaml'
 
     Args:
         config_name (str): name of the YAML configuration file
@@ -34,6 +35,14 @@ def run_train(config_name: str):
 @click.argument('batch_size', type=int, default=512)
 @click.argument('num_iterations', type=int, default=10)
 def run_test_config(config_name: str, batch_size: int, num_iterations: int):
+    """Run for the purpose of testing the configuration file.
+       Example: python test_config.py 'conf_name.yaml' 512 10
+
+    Args:
+        config_name (str): name of the YAML configuration file
+        batch_size (int): overwrites the batch size in the configuration file
+        num_iterations (int): overwrites the number of iterations in the configuration file
+    """
     config = load_config(config_name)
     config = _change_to_test_config(config, batch_size=batch_size, num_iterations=num_iterations)
     train_from_config(config)
