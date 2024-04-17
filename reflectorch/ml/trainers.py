@@ -9,7 +9,7 @@ from torch import nn
 
 from reflectorch.data_generation import BATCH_DATA_TYPE
 from reflectorch.ml.basic_trainer import Trainer
-from reflectorch.ml.dataloaders import XrrDataLoader
+from reflectorch.ml.dataloaders import ReflectivityDataLoader
 
 __all__ = [
     'RealTimeSimTrainer',
@@ -20,7 +20,7 @@ __all__ = [
 
 class RealTimeSimTrainer(Trainer):
     """Trainer with functionality to customize the sampled batch of data"""
-    loader: XrrDataLoader
+    loader: ReflectivityDataLoader
 
     def get_batch_by_idx(self, batch_num: int):
         """Gets a batch of data with the default batch size"""

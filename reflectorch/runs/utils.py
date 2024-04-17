@@ -259,7 +259,7 @@ def load_pretrained(model, model_name: str, saved_models_dir: Path):
 
 def init_dset(config: dict):
     """Initializes the dataset / dataloader object"""
-    dset_cls = globals().get(config['cls']) if 'cls' in config else XrrDataLoader
+    dset_cls = globals().get(config['cls']) if 'cls' in config else ReflectivityDataLoader
     prior_sampler = init_from_conf(config['prior_sampler'])
     intensity_noise = init_from_conf(config['intensity_noise'])
     q_generator = init_from_conf(config['q_generator'], device='cuda')

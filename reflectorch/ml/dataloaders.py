@@ -8,18 +8,18 @@ from reflectorch.ml.basic_trainer import DataLoader
 
 
 __all__ = [
-    "XrrDataLoader",
-    "MultilayerDataset",
+    "ReflectivityDataLoader",
+    "MultilayerDataLoader",
 ]
 
 
-class XrrDataLoader(BasicDataset, DataLoader):
-    """Class combining the functionalities of the BasicDataset and DataLoader classes
-    """
+class ReflectivityDataLoader(BasicDataset, DataLoader):
+    """Class combining functionality from BasicDataset (basic dataset class for reflectivity) and the DataLoader (which inherits from TrainerCallback)"""
     pass
 
 
-class MultilayerDataset(XrrDataLoader):
+class MultilayerDataLoader(ReflectivityDataLoader):
+    """Dataloader for reflectivity curves simulated using the kinematical approximation."""
     def _sample_from_prior(self, batch_size: int):
         return self.prior_sampler.optimized_sample(batch_size)
 
