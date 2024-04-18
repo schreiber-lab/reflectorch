@@ -140,7 +140,7 @@ training:
   logger:
     use_neptune: false
   optimizer: AdamW
-#  init_kwargs:
+#  trainer_kwargs:
 #     optim_kwargs:
 #       amsgrad: false
 #       weight_decay: 0.001

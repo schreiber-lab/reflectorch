@@ -1,5 +1,5 @@
 general:
-  name: val_test_variableQ
+  name: time_val_sim_L5_q256_d300_r60_s25_bs4_budist_noise-poisson02_LONGER
   root_dir: null
   
 dset:
@@ -7,7 +7,7 @@ dset:
     cls: SubpriorParametricSampler
     kwargs:
       param_ranges:
-        thicknesses: [0., 300.]
+        thicknesses: [1., 300.]
         roughnesses: [0., 60.]
         slds: [0., 25.]
       bound_width_ranges:
@@ -15,7 +15,7 @@ dset:
         roughnesses: [1.0e-2, 60.]
         slds: [ 1.0e-2, 4.]
       model_name: standard_model
-      max_num_layers: 2
+      max_num_layers: 5
       constrained_roughness: true
       max_thickness_share: 0.5
       logdist: false
@@ -34,17 +34,11 @@ dset:
 #       relative_min_bound_width: 1.0e-4
       
   q_generator:
-    cls:  VariableQ
+    cls: ConstantQ
     kwargs:
-      q_min_range: [0.01, 0.03]
-      q_max_range: [0.2, 0.4]
-      n_q_range: [128, 321]
-#   q_generator:
-#     cls: ConstantQ
-#     kwargs:
-#       q: [0.02, 0.3, 256]
-#       remove_zero: false
-#       fixed_zero: true
+      q: [0.02, 0.3, 256]
+      remove_zero: false
+      fixed_zero: true
       
 #   intensity_noise:
 #     cls: BasicExpIntensityNoise
@@ -60,11 +54,12 @@ dset:
   intensity_noise: #no noise
     cls: BasicExpIntensityNoise
     kwargs:
-      relative_errors: [0.001, 0.002] #[0.01, 0.02]
-      abs_errors: 1.0e-10
+      relative_errors: [0.0, 0.2] #[0.01, 0.02]
+      abs_errors: 0.0
       consistent_rel_err: false
-      logdist: true
+      logdist: false
       apply_shift: false
+      shift_range: [-0.001, 0.001]
       apply_scaling: false
       scale_range: [-0.001, 0.001] #[-0.02, 0.02]
 
@@ -88,51 +83,28 @@ dset:
       bias: 1.0 #1.0
       eps: 1.0e-10
 
-# model:
-#   encoder:
-#     cls: SubPriorConvFCEncoder_V2
-#     pretrained_name: null
-#     kwargs:
-#        in_channels: 2
-#        hidden_dims: [32, 64, 128, 256, 512]
-#        latent_dim: 8
-#        conv_latent_dim: 128
-#        avpool: 8
-#        use_batch_norm: true
-#        in_features: 256
-#        prior_in_features: 16
-#        hidden_features: 1024
-#        num_blocks: 6  #3
-#        fc_activation: 'gelu'
-#        conv_activation: 'gelu' #'lrelu'
-#        pass_bounds: false
-#        pretrained_conv: null
 model:
   encoder:
-    cls: SubPrior_FNO_MLP
+    cls: SubPriorConvFCEncoder_V2
     pretrained_name: null
     kwargs:
-       latent_dim: 8 
-       hidden_features: 512 
-       num_blocks: 6
-       prior_in_features: 16
-       use_batch_norm: True
+       hidden_dims: [32, 64, 128, 256, 512]
+       latent_dim: 17 #output_dim
+       conv_latent_dim: 128
+       avpool: 8
+       use_batch_norm: true
+       in_features: 256
+       prior_in_features: 34
+       hidden_features: 1024
+       num_blocks: 6  #3
        fc_activation: 'gelu'
-
-       ch_in: 2 #1
-       dim_embedding: 512 #256
-       modes: 16 #16
-       width_fno: 128 #64
-       fno_activation: 'gelu'
-       n_fno_blocks : 5 #5
-
-       use_selu_init: False
-       pass_bounds: False
-       
+       conv_activation: 'gelu' #'lrelu'
+       pass_bounds: false
+       pretrained_conv: null
 training:
-  train_with_q_input: True #False
+  train_with_q_input: False
   num_iterations: 10000
-  batch_size: 1024
+  batch_size: 4096
   lr: 1.0e-4
   update_tqdm_freq: 1
   grad_accumulation_steps: 1
