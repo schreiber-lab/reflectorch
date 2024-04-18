@@ -17,7 +17,6 @@ from reflectorch.ml.utils import is_divisor
 __all__ = [
     'SaveBestModel',
     'LogLosses',
-    'PretrainSubpriors',
 ]
 
 
@@ -85,15 +84,3 @@ class LogLosses(TrainerCallback):
             trainer.log('train/total_loss', trainer.losses[trainer.TOTAL_LOSS_KEY][-1])
         except IndexError:
             pass
-
-
-class PretrainSubpriors(TrainerCallback):
-    def __init__(self, num_pretrain_iterations: int):
-        self.num_pretrain_iterations = num_pretrain_iterations
-
-    def start_training(self, trainer: Trainer) -> None:
-        trainer.subprior_pretraining = True
-
-    def end_batch(self, trainer: Trainer, batch_num: int) -> None:
-        if batch_num > self.num_pretrain_iterations:
-            trainer.subprior_pretraining = False
