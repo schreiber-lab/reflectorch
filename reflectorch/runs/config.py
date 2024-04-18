@@ -15,6 +15,7 @@ def load_config(config_name: str, config_dir: str = None) -> dict:
 
     Args:
         config_name (str): name of the YAML configuration file
+        config_dir (str): path of the configuration directory
 
     Returns:
         dict: the configuration dictionary
