@@ -2,7 +2,7 @@ general:
   name: multilayer_test_2_2
   root_dir: null
 dset:
-  cls: MultilayerDataset
+  cls: MultilayerDataLoader
   prior_sampler:
     cls: SimpleMultilayerSampler
     kwargs:

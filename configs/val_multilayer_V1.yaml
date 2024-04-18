@@ -2,7 +2,7 @@ general:
   name: val_multilayer_V1
   root_dir: null
 dset:
-  #cls: MultilayerDataset
+  #cls: MultilayerDataLoader
   prior_sampler:
     cls: SubpriorParametricSampler
     kwargs:
