@@ -12,6 +12,7 @@ __all__ = [
     "get_paths_from_config",
     "get_callbacks_from_config",
     "get_trainer_by_name",
+    "get_callbacks_by_name",
 ]
 
 
@@ -56,7 +57,7 @@ def train_from_config(config: dict):
 
     callbacks = get_callbacks_from_config(config, folder_paths)
 
-    trainer.train_epoch(
+    trainer.train(
         config['training']['num_iterations'],
         callbacks, disable_tqdm=False,
         update_tqdm_freq=config['training']['update_tqdm_freq'],
@@ -160,15 +161,13 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
     logger = None
 
-    trainer_kwargs = train_conf.get('init_kwargs', {})
-    
-    if 'train_with_q_input' in train_conf:
-        train_with_q_input = train_conf['train_with_q_input']
-    else:
-        train_with_q_input = False
+    train_with_q_input = train_conf.get('train_with_q_input', False)
+    clip_grad_norm_max = train_conf.get('clip_grad_norm_max', None)
+
+    trainer_kwargs = train_conf.get('trainer_kwargs', {})
 
     trainer = PointEstimatorTrainer(
-        model, dset, train_conf['lr'], train_conf['batch_size'],
+        model, dset, train_conf['lr'], train_conf['batch_size'], clip_grad_norm_max=clip_grad_norm_max,
         logger=logger, optim_cls=optim_cls, train_with_q_input=train_with_q_input, 
         **trainer_kwargs
     )
@@ -181,7 +180,8 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         saved weights into the network
 
     Args:
-        model_name (str): name of the configuration file
+        config_name (str): name of the configuration file
+        config_dir (str): path of the configuration directory
         model_path (str, optional): path to the network weights. The default path is 'saved_models' located in the package directory
         load_weights (bool, optional): if True the saved network weights are loaded into the network. Defaults to True.
 
@@ -218,6 +218,18 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         trainer.model.load_state_dict(state_dict)
 
     return trainer
+
+def get_callbacks_by_name(config_name, config_dir=None):
+    """Initializes the trainer callbacks based on a configuration file
+
+    Args:
+        config_name (str): name of the configuration file
+        config_dir (str): path of the configuration directory
+    """
+    config = load_config(config_name, config_dir)
+    callbacks = get_callbacks_from_config(config)
+
+    return callbacks
 
 
 def init_encoder(config: dict, saved_models_dir: Path):
