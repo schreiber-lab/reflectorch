@@ -22,7 +22,15 @@ __all__ = [
 
 
 class ScheduleBatchSize(PeriodicTrainerCallback):
+    """batch size scheduler"""
     def __init__(self, step: int, gamma: int = 2, last_epoch: int = -1, mode: str = 'add'):
+        """
+        Args:
+            step (int): number of iterations after which the batch is modified.
+            gamma (int, optional): 1uantity which is added to or multipied with the current batch. Defaults to 2.
+            last_epoch (int, optional): the last training iteration for which the batch is modified. Defaults to -1.
+            mode (str, optional): 'add' for addition or 'multiply' for multiplication. Defaults to 'add'.
+        """
         super().__init__(step, last_epoch)
 
         assert mode in ('add', 'multiply')
@@ -38,6 +46,7 @@ class ScheduleBatchSize(PeriodicTrainerCallback):
 
 
 class ScheduleLR(TrainerCallback):
+    """learning rate scheduler"""
     def __init__(self, lr_scheduler_cls, **kwargs):
         self.lr_scheduler_cls = lr_scheduler_cls
         self.kwargs = kwargs
