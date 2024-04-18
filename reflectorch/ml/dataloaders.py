@@ -19,7 +19,7 @@ class ReflectivityDataLoader(BasicDataset, DataLoader):
 
 
 class MultilayerDataLoader(ReflectivityDataLoader):
-    """Dataloader for reflectivity curves simulated using the kinematical approximation."""
+    """Dataloader for reflectivity curves simulated using the kinematical approximation (for multilayer parameterizations)."""
     def _sample_from_prior(self, batch_size: int):
         return self.prior_sampler.optimized_sample(batch_size)
 
