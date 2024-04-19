@@ -22,7 +22,7 @@ __all__ = [
 
 
 class ScheduleBatchSize(PeriodicTrainerCallback):
-    """batch size scheduler"""
+    """Batch size scheduler"""
     def __init__(self, step: int, gamma: int = 2, last_epoch: int = -1, mode: str = 'add'):
         """
         Args:
@@ -46,22 +46,45 @@ class ScheduleBatchSize(PeriodicTrainerCallback):
 
 
 class ScheduleLR(TrainerCallback):
-    """learning rate scheduler"""
+    """Base class for learning rate schedulers"""
     def __init__(self, lr_scheduler_cls, **kwargs):
+        """
+            lr_scheduler_cls: class of the learning rate scheduler
+        """
         self.lr_scheduler_cls = lr_scheduler_cls
         self.kwargs = kwargs
         self.lr_scheduler = None
 
     def start_training(self, trainer: Trainer) -> None:
+        """initializes a learning rate scheduler based on its class and kwargs at the start of training
+
+        Args:
+            trainer (Trainer): the trainer object
+        """
         self.lr_scheduler = self.lr_scheduler_cls(trainer.optim, **self.kwargs)
         trainer.callback_params['lrs'] = []
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
+        """modifies the learning rate at the end of each iteration
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): index of the current iteration
+        """
         self.lr_scheduler.step()
 
 
 class StepLR(ScheduleLR):
+    """Learning rate scheduler which decays the learning rate of each parameter group by gamma every step_size epochs.
+    
+    Args:
+        step_size (int): Period of learning rate decay
+        gamma (float): Multiplicative factor of learning rate decay
+        last_epoch (int, optional): The index of last iteration. Defaults to -1.
+    """
     def __init__(self, step_size: int, gamma: float, last_epoch: int = -1, **kwargs):
+
+        
         super().__init__(lr_scheduler.StepLR, step_size=step_size, gamma=gamma, last_epoch=last_epoch, **kwargs)
 
     def start_training(self, trainer: Trainer) -> None:
