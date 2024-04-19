@@ -20,6 +20,8 @@ API Reference
               TrainerCallback,
               PeriodicTrainerCallback,
               ScheduleBatchSize,
+              ScheduleLR,
+              StepLR,
               SubPriorConvFCEncoder_V2, 
               ConstantQ, 
               VariableQ, 
