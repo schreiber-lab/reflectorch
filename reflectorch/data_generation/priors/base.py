@@ -14,6 +14,8 @@ __all__ = [
 
 
 class PriorSampler(object):
+    """Base class for prior samplers"""
+    
     PARAM_CLS = Params
 
     @property
