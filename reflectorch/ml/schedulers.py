@@ -16,21 +16,20 @@ __all__ = [
     'StepLR',
     'CyclicLR',
     'LogCyclicLR',
-    'ReduceLrOnPlateau',
+    'ReduceLROnPlateau',
     'OneCycleLR',
 ]
 
 
 class ScheduleBatchSize(PeriodicTrainerCallback):
-    """Batch size scheduler"""
+    """Batch size scheduler
+    Args:
+        step (int): number of iterations after which the batch is modified.
+        gamma (int, optional): 1uantity which is added to or multipied with the current batch. Defaults to 2.
+        last_epoch (int, optional): the last training iteration for which the batch is modified. Defaults to -1.
+        mode (str, optional): 'add' for addition or 'multiply' for multiplication. Defaults to 'add'.
+    """
     def __init__(self, step: int, gamma: int = 2, last_epoch: int = -1, mode: str = 'add'):
-        """
-        Args:
-            step (int): number of iterations after which the batch is modified.
-            gamma (int, optional): 1uantity which is added to or multipied with the current batch. Defaults to 2.
-            last_epoch (int, optional): the last training iteration for which the batch is modified. Defaults to -1.
-            mode (str, optional): 'add' for addition or 'multiply' for multiplication. Defaults to 'add'.
-        """
         super().__init__(step, last_epoch)
 
         assert mode in ('add', 'multiply')
@@ -46,11 +45,12 @@ class ScheduleBatchSize(PeriodicTrainerCallback):
 
 
 class ScheduleLR(TrainerCallback):
-    """Base class for learning rate schedulers"""
+    """Base class for learning rate schedulers
+    Args:
+        lr_scheduler_cls: class of the learning rate scheduler
+    """
+    
     def __init__(self, lr_scheduler_cls, **kwargs):
-        """
-            lr_scheduler_cls: class of the learning rate scheduler
-        """
         self.lr_scheduler_cls = lr_scheduler_cls
         self.kwargs = kwargs
         self.lr_scheduler = None
@@ -93,6 +93,18 @@ class StepLR(ScheduleLR):
 
 
 class CyclicLR(ScheduleLR):
+    """Cyclic learning rate scheduler
+
+    Args:
+        base_lr (float): Initial learning rate which is the lower boundary in the cycle
+        max_lr (float): Upper learning rate boundary in the cycle
+        step_size_up (int, optional): Number of training iterations in the increasing half of a cycle. Defaults to 2000.
+        cycle_momentum (bool, optional):  If True, momentum is cycled inversely to learning rate between ‘base_momentum’ and ‘max_momentum’. Defaults to False.
+        gamma (float, optional): Constant in ‘exp_range’ mode scaling function: gamma**(cycle iterations). Defaults to 1..
+        mode (str, optional):  One of: 'triangular' (a basic triangular cycle without amplitude scaling),
+              'triangular2' (a basic triangular cycle that scales initial amplitude by half each cycle), 'exp_range' 
+              (a cycle that scales initial amplitude by gamma^iterations at each cycle iteration). Defaults to 'triangular'.
+    """
     def __init__(self, base_lr, max_lr, step_size_up: int = 2000,
                  cycle_momentum: bool = False, gamma: float = 1., mode: str = 'triangular',
                  **kwargs):
@@ -109,6 +121,15 @@ class CyclicLR(ScheduleLR):
 
 
 class LogCyclicLR(TrainerCallback):
+    """Cyclic learning rate scheduler on a logarithmic scale
+    
+    Args:
+        base_lr (float): Lower learning rate boundary in the cycle
+        max_lr (float): Upper learning rate boundary in the cycle
+        period (int, optional): Number of training iterations in the cycle. Defaults to 2000.
+        gamma (float, optional): Constant for scaling the amplitude as gamma^iterations. Defaults to 1.
+        start_period (int, optional): Number of starting iterations with the default learning rate.
+    """
     def __init__(self,
                  base_lr,
                  max_lr,
@@ -158,7 +179,17 @@ class LogCyclicLR(TrainerCallback):
             trainer.set_lr(lr, param_group)
 
 
-class ReduceLrOnPlateau(TrainerCallback):
+class ReduceLROnPlateau(TrainerCallback):
+    """Learning rate scheduler which reduces the learning rate when the loss stops decreasing
+    
+    Args:
+            gamma (float, optional): Multiplicative factor of learning rate decay. Defaults to 0.5.
+            patience (int, optional): The number of allowed iterations with no improvement after which the learning rate will be reduced. Defaults to 500.
+            average (int, optional): Size of the window over which the average loss is computed. Defaults to 50.
+            loss_key (str, optional): Defaults to 'total_loss'.
+            param_groups (tuple, optional): Defaults to (0,).
+    
+    """
     def __init__(
             self,
             gamma: float = 0.5,
@@ -167,6 +198,8 @@ class ReduceLrOnPlateau(TrainerCallback):
             loss_key: str = 'total_loss',
             param_groups: tuple = (0,),
     ):
+        """
+        """
         self.patience = patience
         self.average = average
         self.gamma = gamma
@@ -185,6 +218,16 @@ class ReduceLrOnPlateau(TrainerCallback):
                 
                 
 class OneCycleLR(ScheduleLR):
+    """One-cycle learning rate scheduler (https://arxiv.org/abs/1708.07120)
+
+    Args:
+        max_lr (float): Upper learning rate boundary in the cycle
+        total_steps (int): The total number of steps in the cycle
+        pct_start (float, optional): The percentage of the cycle (in number of steps) spent increasing the learning rate. Defaults to 0.3.
+        div_factor (float, optional): Determines the initial learning rate via initial_lr = max_lr/div_factor. Defaults to 25..
+        final_div_factor (float, optional): Determines the minimum learning rate via min_lr = initial_lr/final_div_factor. Defaults to 1e4.
+        three_phase (bool, optional): If ``True``, use a third phase of the schedule to annihilate the learning rate according to ‘final_div_factor’ instead of modifying the second phase. Defaults to True.
+    """
     def __init__(self, max_lr: float, total_steps: int, pct_start: float = 0.3, div_factor: float = 25., 
                  final_div_factor: float = 1e4, three_phase: bool = True, **kwargs):
         super().__init__(
