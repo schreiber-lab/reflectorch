@@ -26,7 +26,7 @@ __all__ = [
     'StepLR',
     'CyclicLR',
     'LogCyclicLR',
-    'ReduceLrOnPlateau',
+    'ReduceLROnPlateau',
     'OneCycleLR',
     'ReflectivityDataLoader',
     'MultilayerDataLoader',
