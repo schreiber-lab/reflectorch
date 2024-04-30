@@ -9,20 +9,16 @@ from reflectorch.models.encoders.conv_encoder import (
     ConvDecoder,
     Autoencoder,
 )
-from reflectorch.models.encoders.fno import FNO_Enc, SpectralConv1d
+from reflectorch.models.encoders.fno import FnoEncoder, SpectralConv1d
 from reflectorch.models.encoders.transformers import TransformerEncoder
 from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
-from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
 from reflectorch.models.encoders.conv_fc_encoder import (
-    ConvFCEncoder,
-    SubPriorConvFCEncoder,
-    SubPriorConvFCEncoder_V2,
+    PriorInformedNetworkConvEmb,
     SubPriorConvFCEncoder_FiLM,
     SubPrior_FNO_MLP,
-    SeqConvFCEncoder,
-    ResidualNet_FiLM,
+    ResidualMLP_FiLM,
 )
-from reflectorch.models.encoders.residual_net import ResidualNet
+from reflectorch.models.encoders.residual_net import ResidualMLP
 
 
 __all__ = [
@@ -31,14 +27,11 @@ __all__ = [
     "ConvDecoder",
     "Autoencoder",
     "ConvResidualNet1D",
-    "FNO_Enc",
+    "FnoEncoder",
     "SpectralConv1d",
-    "ResidualNet",
-    "ResidualNet_FiLM",
-    "ConvFCEncoder",
-    "SubPriorConvFCEncoder",
-    "SubPriorConvFCEncoder_V2",
+    "ResidualMLP",
+    "ResidualMLP_FiLM",
+    "PriorInformedNetworkConvEmb",
     "SubPriorConvFCEncoder_FiLM",
     "SubPrior_FNO_MLP",
-    "SeqConvFCEncoder",
 ]

@@ -3,102 +3,109 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn import init
 
+from reflectorch.models.utils import activation_by_name
 
-class ResidualNet(nn.Module):
-    """A general-purpose residual network. Works only with 1-dim inputs."""
+class ResidualMLP(nn.Module):
+    """Multilayer perceptron with residual blocks (BN-Act-Linear-BN-Act-Linear)"""
 
     def __init__(
             self,
-            in_features,
-            out_features,
-            hidden_features,
-            context_features=None,
-            num_blocks=2,
-            activation=F.relu,
-            dropout_probability=0.0,
-            use_batch_norm=False,
+            dim_in,
+            dim_out,
+            dim_condition=None,
+            layer_width=512,
+            num_blocks=4,
+            repeats_per_block=2,
+            activation='relu',
+            use_batch_norm=True,
+            dropout_rate=0.0,
     ):
         super().__init__()
-        self.hidden_features = hidden_features
-        self.context_features = context_features
-        if context_features is not None:
-            self.initial_layer = nn.Linear(
-                in_features + context_features, hidden_features
-            )
-        else:
-            self.initial_layer = nn.Linear(in_features, hidden_features)
+
+        dim_first_layer = dim_in + dim_condition if dim_condition is not None else dim_in 
+        self.first_layer = nn.Linear(dim_first_layer, layer_width)
         self.blocks = nn.ModuleList(
             [
                 ResidualBlock(
-                    features=hidden_features,
-                    context_features=context_features,
+                    layer_width=layer_width,
+                    dim_condition=dim_condition,
+                    repeats_per_block=repeats_per_block,
                     activation=activation,
-                    dropout_probability=dropout_probability,
                     use_batch_norm=use_batch_norm,
+                    dropout_rate=dropout_rate,
                 )
                 for _ in range(num_blocks)
             ]
         )
-        self.final_layer = nn.Linear(hidden_features, out_features)
+        self.last_layer = nn.Linear(layer_width, dim_out)
 
-    def forward(self, inputs, context=None):
-        if context is None:
-            temps = self.initial_layer(inputs)
+    def forward(self, x, condition=None):
+        if condition is None:
+            x = self.first_layer(x)
         else:
-            temps = self.initial_layer(torch.cat((inputs, context), dim=1))
+            x = self.first_layer(torch.cat((x, condition), dim=1))
+
         for block in self.blocks:
-            temps = block(temps, context=context)
-        outputs = self.final_layer(temps)
-        return outputs
+            x = block(x, condition=condition)
+        x = self.last_layer(x)
+
+        return x
 
 
 class ResidualBlock(nn.Module):
-    """A general-purpose residual block. Works only with 1-dim inputs."""
+    """Residual block (BN-Act-Linear-BN-Act-Linear)"""
 
     def __init__(
             self,
-            features,
-            context_features,
-            activation=F.relu,
-            dropout_probability=0.0,
+            layer_width,
+            dim_condition=None,
+            repeats_per_block=2,
+            activation='relu',
             use_batch_norm=False,
-            zero_initialization=True,
+            dropout_rate=0.0,
+            residual=True,
     ):
         super().__init__()
-        self.activation = activation
-
+         
+        self.residual = residual
+        self.repeats_per_block = repeats_per_block
         self.use_batch_norm = use_batch_norm
+        self.dropout_rate = dropout_rate
+        self.activation = activation_by_name(activation)
+
         if use_batch_norm:
             self.batch_norm_layers = nn.ModuleList(
-                [nn.BatchNorm1d(features, eps=1e-3) for _ in range(2)]
+                [nn.BatchNorm1d(layer_width, eps=1e-3) for _ in range(repeats_per_block)]
             )
-        if context_features is not None:
-            self.context_layer = nn.Linear(context_features, features)
-        self.linear_layers = nn.ModuleList(
-            [nn.Linear(features, features) for _ in range(2)]
-        )
-        self.dropout = nn.Dropout(p=dropout_probability)
-        if zero_initialization:
-            init.uniform_(self.linear_layers[-1].weight, -1e-3, 1e-3)
-            init.uniform_(self.linear_layers[-1].bias, -1e-3, 1e-3)
 
-    def forward(self, inputs, context=None):
-        temps = inputs
-        if self.use_batch_norm:
-            temps = self.batch_norm_layers[0](temps)
-        temps = self.activation(temps)
-        temps = self.linear_layers[0](temps)
-        if self.use_batch_norm:
-            temps = self.batch_norm_layers[1](temps)
-        temps = self.activation(temps)
-        temps = self.dropout(temps)
-        temps = self.linear_layers[1](temps)
-        if context is not None:
-            temps = F.glu(torch.cat((temps, self.context_layer(context)), dim=1), dim=1)
-        return inputs + temps
+        if dim_condition is not None:
+            self.condition_layer = nn.Linear(dim_condition, layer_width)
+
+        self.linear_layers = nn.ModuleList(
+            [nn.Linear(layer_width, layer_width) for _ in range(repeats_per_block)]
+        )
+
+        if self.dropout_rate > 0:
+            self.dropout = nn.Dropout(p=dropout_rate)
+
+    def forward(self, x, condition=None):
+        x0 = x
+         
+        for i in range(self.repeats_per_block):
+            if self.use_batch_norm:
+                x = self.batch_norm_layers[i](x)
+            x = self.activation(x)
+            if self.dropout_rate > 0 and i == self.repeats_per_block - 1:
+                x = self.dropout(x)
+            x = self.linear_layers[i](x)
+        
+        if condition is not None:
+            x = F.glu(torch.cat((x, self.condition_layer(condition)), dim=1), dim=1)
+
+        return x0 + x if self.residual else x
 
     
-class ResidualNet_FiLM(nn.Module):
+class ResidualMLP_FiLM(nn.Module):
     """A general-purpose residual network. Works only with 1-dim inputs."""
 
     def __init__(

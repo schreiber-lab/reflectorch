@@ -36,7 +36,7 @@ class SpectralConv1d(nn.Module):
         return x
     
 
-class FNO_Enc(nn.Module):
+class FnoEncoder(nn.Module):
     """An embedding network based on the Fourier Neural Operator (FNO) architecture
 
     Args:
