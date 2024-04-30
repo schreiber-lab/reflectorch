@@ -91,7 +91,7 @@ dset:
 
 # model:
 #   encoder:
-#     cls: SubPriorConvFCEncoder_V2
+#     cls: PriorInformedNetworkConvEmb
 #     pretrained_name: null
 #     kwargs:
 #        in_channels: 2

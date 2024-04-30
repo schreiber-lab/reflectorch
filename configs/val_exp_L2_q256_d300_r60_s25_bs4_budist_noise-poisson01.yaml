@@ -85,7 +85,7 @@ dset:
 
 model:
   encoder:
-    cls: SubPriorConvFCEncoder_V2
+    cls: PriorInformedNetworkConvEmb
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]

@@ -85,13 +85,13 @@ dset:
 
 model:
   encoder:
-    cls: SubPriorConvFCEncoder_V2
+    cls: PriorInformedNetworkConvEmb
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]
        latent_dim: 8
        conv_latent_dim: 128
-       avpool: 1
+       avpool_dim_dim_dim_dim_dim: 1
        use_batch_norm: true
        in_features: 256
        prior_in_features: 16
