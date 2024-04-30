@@ -1,8 +1,8 @@
 # Reflectorch
 
-**Reflectorch** is a Pytorch package for the analysis of X-ray and neutron reflectivity data using Pytorch-based neural networks developed by the [Schreiber Lab](https://www.soft-matter.uni-tuebingen.de/) located in Tübingen, Germany. 
+**Reflectorch** is a Python package for the analysis of X-ray and neutron reflectivity data using Pytorch-based neural networks developed by the [Schreiber Lab](https://www.soft-matter.uni-tuebingen.de/) located in Tübingen, Germany. 
 
-Our training pipeline incorporates prior boundaries for the thin film parameters as an additional input to the neural network alongside the reflectivity curves. This allows the neural network to be trained simultaneously on the well-posed subintervals of a larger parameter space on which the inverse problem would otherwise be ill-posed / underdetermined (an issue primarily related to the phase problem). Consequently, our approach scales well for parameter spaces significantly larger that previously tackled other ML-based reflectomety solutions. From the perspective of the user, a neural network trained using this methodology allows the input of prior knowledge about the investigated thin film at inference time.
+Our training pipeline incorporates prior boundaries for the thin film parameters as an additional input to the neural network alongside the reflectivity curves. This allows the neural network to be trained simultaneously on the well-posed subintervals of a larger parameter space on which the inverse problem would otherwise be ill-posed / underdetermined (an issue primarily related to the phase problem). Consequently, our approach scales well for parameter spaces significantly larger that previously tackled by other ML-based reflectomety solutions. From the perspective of the user, a neural network trained using this methodology allows the input of prior knowledge about the investigated thin film at inference time.
 
 ![](FigureReflectometryNetwork.png)
 
