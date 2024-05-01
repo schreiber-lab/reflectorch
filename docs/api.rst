@@ -40,3 +40,6 @@ API Reference
               PriorInformedNetworkConvEmb, 
               ConvEncoder,
               FnoEncoder,
+              apply_attenuation_correction,
+              interp_reflectivity,
+              abeles,
