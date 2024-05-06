@@ -18,13 +18,33 @@ def standard_preprocessing(
         wavelength: float,
         beam_width: float,
         sample_length: float,
-        min_intensity: float = 1e-9,
+        min_intensity: float = 1e-10,
         beam_shape: BEAM_SHAPE = "gauss",
         normalize_mode: NORMALIZE_MODE = "max",
         incoming_intensity: float = None,
         max_q: float = None,  # if provided, max_angle is ignored
         max_angle: float = None,
 ) -> dict:
+    """Preprocesses a raw experimental reflectivity curve by applying attenuation correction, footprint correction, cutting at a maximum q_value and interpolation to  
+
+    Args:
+        intensity (np.ndarray): array of intensities of the reflectivity curve
+        scattering_angle (np.ndarray): array of scattering angles
+        attenuation (np.ndarray): attenuation factors for each measured point
+        q_interp (np.ndarray): reciprocal space points used for the interpolation
+        wavelength (float): the wavelength of the beam
+        beam_width (float): the beam width
+        sample_length (float): the sample length
+        min_intensity (float, optional): intensities lower than this value are removed. Defaults to 1e-10.
+        beam_shape (BEAM_SHAPE, optional): the shape of the beam, either "gauss" or "box". Defaults to "gauss".
+        normalize_mode (NORMALIZE_MODE, optional): normalization mode, either "first", "max" or "incoming_intensity". Defaults to "max".
+        incoming_intensity (float, optional): array of intensities for the "incoming_intensity" normalization. Defaults to None.
+        max_q (float, optional): the maximum q value at which the curve is cut. Defaults to None.
+        max_angle (float, optional): the maximum scattering angle at which the curve is cut; only used if max_q is not provided. Defaults to None.
+
+    Returns:
+        dict: dictionary containing the interpolated reflectivity curve, the curve before interpolation, the q values before interpolation, the q values after interpolation and the q ratio of the cutting
+    """
     intensity = apply_attenuation_correction(
         intensity,
         attenuation,

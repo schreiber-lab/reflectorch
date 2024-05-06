@@ -41,5 +41,8 @@ API Reference
               ConvEncoder,
               FnoEncoder,
               apply_attenuation_correction,
+              apply_footprint_correction,
               interp_reflectivity,
+              standard_preprocessing,
               abeles,
+              ReflGradientFit,

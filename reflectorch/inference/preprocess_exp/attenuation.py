@@ -10,8 +10,8 @@ def apply_attenuation_correction(
     """Applies attenuation correction to experimental reflectivity curves
 
     Args:
-        intensity (np.ndarray): list of intensities of an experimental reflectivity curves
-        attenuation (np.ndarray): list of attenuation factors for each measured point
+        intensity (np.ndarray): intensities of an experimental reflectivity curves
+        attenuation (np.ndarray): attenuation factors for each measured point
         scattering_angle (np.ndarray, optional): scattering angles of the measured points. Defaults to None.
         correct_discontinuities (bool, optional): whether to correct discontinuities in the measured curves. Defaults to True.
 

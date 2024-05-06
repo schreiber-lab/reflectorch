@@ -14,6 +14,7 @@ from reflectorch.paths import SAVED_MODELS_DIR
 
 
 class CurvesScaler(object):
+    """Base class for curve scalers"""
     def scale(self, curves: Tensor):
         raise NotImplementedError
 
