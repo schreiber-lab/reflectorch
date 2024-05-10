@@ -109,7 +109,7 @@ dset:
 #        pretrained_conv: null
 model:
   encoder:
-    cls: SubPrior_FNO_MLP
+    cls: PriorInformedNetworkFnoEmb
     pretrained_name: null
     kwargs:
        latent_dim: 8 
