@@ -19,7 +19,7 @@ class PriorInformedNetworkConvEmb(nn.Module):
                  dim_out: int = 8,
                  layer_width: int = 512,
                  num_blocks: int = 4,
-                 repeats_per_block = 2,
+                 repeats_per_block: int = 2,
                  mlp_activation: str = 'gelu',
                  dropout_rate: float = 0.0,
                  use_selu_init: bool = False,
@@ -357,57 +357,61 @@ class SubPriorConvFCEncoder_FiLM(nn.Module):
         return x
     
     
-class SubPrior_FNO_MLP(nn.Module):
+class PriorInformedNetworkFnoEmb(nn.Module):
     def __init__(self,
-                 latent_dim: int = 8, #output_dim
-                 hidden_features: int = 64, #hidden layer width mlp
-                 num_blocks: int = 3, #res_mlp blocks
-                 prior_in_features: int = 16,
-                 use_batch_norm: bool = False,
-                 fc_activation: str = 'gelu',
-                 
-                 ch_in: int = 2,
+                 in_channels: int = 2,
                  dim_embedding: int = 128,
                  modes: int = 16,
                  width_fno: int = 64,
-                 fno_activation: str = 'gelu',
+                 embedding_net_activation: str = 'gelu',
                  n_fno_blocks : int = 6,
-                 
+                 dim_out: int = 8,
+                 layer_width: int = 64,
+                 num_blocks: int = 3,
+                 repeats_per_block: int = 2,
+                 use_batch_norm: bool = False,
+                 mlp_activation: str = 'gelu',
+                 dropout_rate: float = 0.0,
                  use_selu_init: bool = False,
-                 pass_bounds: bool = False,
                  ):
         super().__init__()
-        self.pass_bounds = pass_bounds
 
-        self.FnoEncoder = FnoEncoder(
-            ch_in=ch_in, dim_embedding=dim_embedding, modes=modes, width_fno=width_fno, 
-            n_fno_blocks=n_fno_blocks, activation=activation_by_name(fno_activation)
+        self.embedding_net = FnoEncoder(
+            ch_in=in_channels, 
+            dim_embedding=dim_embedding, 
+            modes=modes, 
+            width_fno=width_fno, 
+            n_fno_blocks=n_fno_blocks, 
+            activation=activation_by_name(embedding_net_activation)
         )
 
-        self.prior_in_features = prior_in_features
-        fc_in_dim = dim_embedding + prior_in_features
+        self.dim_prior_bounds = 2 * dim_out
+        dim_mlp_in = dim_embedding + self.dim_prior_bounds
 
-        self.fc = ResidualMLP(
-            fc_in_dim,
-            latent_dim,
-            hidden_features,
-            activation=activation_by_name(fc_activation),
+        self.mlp = ResidualMLP(
+            dim_in=dim_mlp_in,
+            dim_out=dim_out,
+            dim_condition=None,
+            layer_width=layer_width,
             num_blocks=num_blocks,
-            use_batch_norm=use_batch_norm
+            repeats_per_block=repeats_per_block,
+            activation=mlp_activation,
+            use_batch_norm=use_batch_norm,
+            dropout_rate=dropout_rate,
         )
 
-        if use_selu_init and conv_activation == 'selu':
+        if use_selu_init and embedding_net_activation == 'selu':
             self.FnoEncoder.apply(selu_init)
 
-        if use_selu_init and fc_activation == 'selu':
-            self.fc.apply(selu_init)
+        if use_selu_init and mlp_activation == 'selu':
+            self.mlp.apply(selu_init)
 
             
     def forward(self, x, q_values=None):
         if isinstance(x, dict):
             curves, bounds = x['scaled_curves'], x['scaled_bounds']
         else:
-            curves, bounds = split(x, [x.shape[-1]-self.prior_in_features, self.prior_in_features], dim=-1)
+            curves, bounds = split(x, [x.shape[-1]-self.dim_prior_bounds, self.dim_prior_bounds], dim=-1)
             
         if q_values is not None:
             q_input = 4 * q_values.float()[:, None, :] - 1
@@ -415,10 +419,9 @@ class SubPrior_FNO_MLP(nn.Module):
         else:
             curves = curves[:, None, :]
 
-        x = cat([self.FnoEncoder(curves), bounds], dim=-1)
-        x = self.fc(x)
-        if self.pass_bounds:
-            x = cat([x, bounds], dim=-1)
+        x = cat([self.embedding_net(curves), bounds], dim=-1)
+        x = self.mlp(x)
+
         return x
 
 
