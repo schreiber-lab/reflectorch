@@ -50,7 +50,7 @@ from reflectorch.data_generation.noise import (
 from reflectorch.data_generation.scale_curves import (
     CurvesScaler,
     LogAffineCurvesScaler,
-    MeanNormalization,
+    MeanNormalizationCurvesScaler,
 )
 from reflectorch.data_generation.utils import (
     get_reversed_params,
@@ -87,7 +87,7 @@ __all__ = [
     "PoissonNoiseGenerator",
     "CurvesScaler",
     "LogAffineCurvesScaler",
-    "MeanNormalization",
+    "MeanNormalizationCurvesScaler",
     "get_reversed_params",
     "get_density_profiles",
     "logdist_sampler",
