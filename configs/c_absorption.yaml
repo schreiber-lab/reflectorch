@@ -26,8 +26,6 @@ dset:
     cls: ConstantQ
     kwargs:
       q: [0.02, 0.15, 128]
-      remove_zero: false
-      fixed_zero: true
       
   intensity_noise:
     cls: BasicExpIntensityNoise
