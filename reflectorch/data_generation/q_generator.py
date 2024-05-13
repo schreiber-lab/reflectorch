@@ -26,20 +26,28 @@ __all__ = [
 
 
 class QGenerator(object):
+    """Base class for momentum transfer (q) generators"""
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         pass
 
 
 class ConstantQ(QGenerator):
     """Q generator for reflectivity curves with fixed discretization
+
+    Args:
+        q (Union[Tensor, Tuple[float, float, int]], optional): tuple (q_min, q_max, num_q) defining the minimum q value, maximum q value and the number of q points. Defaults to (0., 0.2, 128).
+        device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
+        dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
+        remove_zero (bool, optional): do not include the upper end of the interval. Defaults to False.
+        fixed_zero (bool, optional): do not include the lower end of the interval. Defaults to False.
     """
 
     def __init__(self,
-                 q: Union[Tensor, Tuple[float, float, int]] = (0., 0.2, 257),
+                 q: Union[Tensor, Tuple[float, float, int]] = (0., 0.2, 128),
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
-                 remove_zero: bool = True,
-                 fixed_zero: bool = False,  # bug from previous version left for back-compatibility
+                 remove_zero: bool = False,
+                 fixed_zero: bool = False,
                  ):
         if isinstance(q, (tuple, list)):
             q = torch.linspace(*q, device=device, dtype=dtype)
@@ -51,40 +59,33 @@ class ConstantQ(QGenerator):
         self.q = q
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        """generate a batch of q values
+
+        Args:
+            batch_size (int): the batch size
+
+        Returns:
+            Tensor: generated batch of q values
+        """
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
     
-    
-# class VariableQ(QGenerator):
-#     def __init__(self,
-#                  q_min_range = [0.01, 0.03],
-#                  q_max_range = [0.1, 0.5],
-#                  n_q_range = [64, 512],
-#                  device=DEFAULT_DEVICE,
-#                  dtype=DEFAULT_DTYPE,
-#                  ):
-#         self.q_min_range = q_min_range
-#         self.q_max_range = q_max_range
-#         self.n_q_range = n_q_range
-#         self.device = device
-#         self.dtype = dtype
-
-#     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
-#         q_min = np.random.uniform(*self.q_min_range)
-#         q_max = np.random.uniform(*self.q_max_range)
-#         n_q = np.random.randint(*self.n_q_range)
-        
-#         q = torch.linspace(start=q_min, end=q_max, steps=n_q).to(self.device).to(self.dtype)
-        
-#         return q[None].expand(batch_size, q.shape[0])
 
 class VariableQ(QGenerator):
     """Q generator for reflectivity curves with variable discretization
+
+    Args:
+        q_min_range (list, optional): the range for sampling the minimum q value of the curves, q_min. Defaults to [0.01, 0.03].
+        q_max_range (list, optional): the range for sampling the maximum q value of the curves, q_max. Defaults to [0.1, 0.5].
+        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between q_min and q_max, 
+                                    the number of points varies between batches but is constant within a batch). Defaults to [64, 256].
+        device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
+        dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
     """
 
     def __init__(self,
                  q_min_range = [0.01, 0.03],
                  q_max_range = [0.1, 0.5],
-                 n_q_range = [64, 512],
+                 n_q_range = [64, 256],
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
@@ -95,6 +96,14 @@ class VariableQ(QGenerator):
         self.dtype = dtype
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        """generate a batch of q values (the number of points varies between batches but is constant within a batch)
+
+        Args:
+            batch_size (int): the batch size
+
+        Returns:
+            Tensor: generated batch of q values
+        """
         q_min = np.random.uniform(*self.q_min_range, batch_size)
         q_max = np.random.uniform(*self.q_max_range, batch_size)
         n_q = np.random.randint(*self.n_q_range)

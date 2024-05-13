@@ -28,11 +28,18 @@ __all__ = [
 
 
 class QNoiseGenerator(ProcessData):
+    """base class for q noise generators"""
     def apply(self, qs: Tensor, context: dict = None):
         return qs
 
 
 class QNormalNoiseGenerator(QNoiseGenerator):
+    """Q noise generator which adds to each q value of the reflectivity curve a noise sampled from a normal distribution.
+
+    Args:
+        std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution (the same for all curves in the batch if provided as a float, 
+                                                           or uniformly sampled for each curve in the batch if provided as a tuple)
+    """
     def __init__(self,
                  std: Union[float, Tuple[float, float]] = (0, 1e-3),
                  add_to_context: bool = False
@@ -41,6 +48,7 @@ class QNormalNoiseGenerator(QNoiseGenerator):
         self.add_to_context = add_to_context
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies noise to the q values"""
         std = self.std
 
         if isinstance(std, (list, tuple)):
@@ -59,11 +67,17 @@ class QNormalNoiseGenerator(QNoiseGenerator):
 
 
 class QSystematicShiftGenerator(QNoiseGenerator):
+    """Q noise generator which samples a q shift (for each curve in the batch) from a normal distribution adds it to all q values of the curve
+
+    Args:
+        std (float): the standard deviation of the normal distribution
+    """
     def __init__(self, std: float, add_to_context: bool = True):
         self.std = std
         self.add_to_context = add_to_context
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies systematic shifts to the q values"""
         if len(qs.shape) == 1:
             shape = (1,)
         else:
@@ -82,6 +96,16 @@ class QSystematicShiftGenerator(QNoiseGenerator):
 
 
 class BasicQNoiseGenerator(QNoiseGenerator):
+    """Q noise generator which applies both systematic shifts (same change for all q points in the curve) and random noise (different changes per q point in the curve)
+
+    Args:
+        shift_std (float, optional): the standard deviation of the normal distribution for systematic q shifts 
+                                    (i.e. same change applied to all q points in the curve). Defaults to 1e-3.
+        noise_std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution for random q noise 
+                                    (i.e. different changes applied to each q point in the curve). The standard deviation is the same 
+                                    for all curves in the batch if provided as a float, or uniformly sampled for each curve in the batch if provided as a tuple. 
+                                    Defaults to (0, 1e-3).
+    """
     def __init__(self,
                  shift_std: float = 1e-3,
                  noise_std: Union[float, Tuple[float, float]] = (0, 1e-3),
@@ -91,6 +115,7 @@ class BasicQNoiseGenerator(QNoiseGenerator):
         self.q_noise = QNormalNoiseGenerator(noise_std, add_to_context=add_to_context)
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies random noise to the q values"""
         qs = torch.atleast_2d(qs)
         qs = self.q_shift.apply(qs, context)
         qs = self.q_noise.apply(qs, context)
@@ -98,6 +123,7 @@ class BasicQNoiseGenerator(QNoiseGenerator):
 
 
 class IntensityNoiseGenerator(ProcessData):
+    """base class for intensity noise generators"""
     def apply(self, curves: Tensor, context: dict = None):
         raise NotImplementedError
 
