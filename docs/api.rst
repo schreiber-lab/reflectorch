@@ -44,6 +44,7 @@ API Reference
               q_to_angle, 
               energy_to_wavelength, 
               wavelength_to_energy,
+              get_density_profiles,
               ReflectivityDataLoader,
               MultilayerDataLoader,
               Logger,
@@ -60,3 +61,4 @@ API Reference
               reflectivity,
               LogLikelihood,
               PoissonLogLikelihood,
+              Params,

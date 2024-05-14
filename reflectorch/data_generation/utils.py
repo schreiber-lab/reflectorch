@@ -70,6 +70,19 @@ def get_density_profiles(
         z_axis: Tensor = None,
         num: int = 1000
 ):
+    """Generates SLD profiles (and their derivative) based on batches of thicknesses, roughnesses and layer SLDs. 
+       The axis has its zero at the top (ambient medium) interface and is positive inside the film.
+
+    Args:
+        thicknesses (Tensor): the layer thicknesses (top to bottom)
+        roughnesses (Tensor): the interlayer roughnesses (top to bottom)
+        slds (Tensor): the layer SLDs (top to bottom)
+        z_axis (Tensor, optional): a custom depth (z) axis. Defaults to None.
+        num (int, optional): number of discretization points for the profile. Defaults to 1000.
+
+    Returns:
+        tuple: the z axis, the computed density profile rho(z) and the derivative of the density profile drho/dz(z)
+    """
     assert torch.all(roughnesses >= 0), 'Negative roughness happened'
     assert torch.all(thicknesses >= 0), 'Negative thickness happened'
 
@@ -117,10 +130,10 @@ def get_param_labels(
         num_layers: int, *,
         thickness_name: str = 'Thickness',
         roughness_name: str = 'Roughness',
-        sld_name: str = 'Sld',
+        sld_name: str = 'SLD',
         substrate_name: str = 'sub',
 ) -> List[str]:
-    thickness_labels = [f'{thickness_name} {i + 1}' for i in range(num_layers)]
-    roughness_labels = [f'{roughness_name} {i + 1}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
-    sld_labels = [f'{sld_name} {i + 1}' for i in range(num_layers)] + [f'{sld_name} {substrate_name}']
+    thickness_labels = [f'{thickness_name} L{num_layers - i}' for i in range(num_layers)]
+    roughness_labels = [f'{roughness_name} L{num_layers - i}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
+    sld_labels = [f'{sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{sld_name} {substrate_name}']
     return thickness_labels + roughness_labels + sld_labels
