@@ -16,6 +16,14 @@ from reflectorch.data_generation import (
 
 
 class LogLikelihood(object):
+    """Computes the gaussian log likelihood of the thin film parameters
+
+    Args:
+        q (Tensor): the q values
+        exp_curve (Tensor): the experimental reflectivity curve
+        priors (PriorSampler): the prior sampler
+        sigmas (Union[float, Tensor]): the sigmas (i.e. intensity error bars)
+    """
     def __init__(self, q: Tensor, exp_curve: Tensor, priors: PriorSampler, sigmas: Union[float, Tensor]):
         self.exp_curve = torch.atleast_2d(exp_curve)
         self.priors: PriorSampler = priors
@@ -24,6 +32,7 @@ class LogLikelihood(object):
         self.sigmas2 = self.sigmas ** 2
 
     def calc_log_likelihood(self, curves: Tensor):
+        "computes the gaussian log likelihood"
         log_probs = - (self.exp_curve - curves) ** 2 / self.sigmas2 / 2
         return log_probs.sum(-1)
 
@@ -63,6 +72,15 @@ class LogLikelihood(object):
 
 
 class PoissonLogLikelihood(LogLikelihood):
+    """Computes the Poisson log likelihood of the thin film parameters
+
+    Args:
+        q (Tensor): the q values
+        exp_curve (Tensor): the experimental reflectivity curve
+        priors (PriorSampler): the prior sampler
+        sigmas (Union[float, Tensor]): the sigmas (i.e. intensity error bars)
+    """    
     def calc_log_likelihood(self, curves: Tensor):
+        """computes the Poisson log likelihood"""
         log_probs = self.exp_curve / self.sigmas2 * (self.exp_curve * torch.log(curves) - curves)
         return log_probs.sum(-1)

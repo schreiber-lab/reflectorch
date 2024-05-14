@@ -58,3 +58,5 @@ API Reference
               standard_preprocessing,
               ReflGradientFit,
               reflectivity,
+              LogLikelihood,
+              PoissonLogLikelihood,
