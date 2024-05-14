@@ -20,6 +20,19 @@ BATCH_DATA_TYPE = Dict[str, Union[Tensor, Params]]
 
 
 class BasicDataset(object):
+    """Reflectometry dataset. It generates the q positions, samples the thin film parameters from the prior, 
+    simulates the reflectivity curves and applies noise to the curves.
+
+    Args:
+        q_generator (QGenerator): the momentum transfer (q) genrator
+        prior_sampler (PriorSampler): the prior sampler
+        intensity_noise (IntensityNoiseGenerator, optional): the intensity noise generator. Defaults to None.
+        q_noise (QNoiseGenerator, optional): the q noise generator. Defaults to None.
+        curves_scaler (CurvesScaler, optional): the reflectivity curve scaler. Defaults to an instance of LogAffineCurvesScaler, 
+                                                which scales the curves to the range [-1, 1], the minimum considered intensity being 1e-10.
+        calc_denoised_curves (bool, optional): whether to add the curves without noise to the dictionary. Defaults to False.
+        smearing (Smearing, optional): curve smearing generator. Defaults to None.
+    """
     def __init__(self,
                  q_generator: QGenerator,
                  prior_sampler: PriorSampler,
@@ -38,11 +51,7 @@ class BasicDataset(object):
         self.calc_denoised_curves = calc_denoised_curves
 
     def update_batch_data(self, batch_data: BATCH_DATA_TYPE) -> None:
-        """
-        Implement in a subclass to edit batch_data dict inplace
-        :param batch_data: dict
-        :return: None
-        """
+        """implement in a subclass to edit batch_data dict inplace"""
         pass
 
     def _sample_from_prior(self, batch_size: int):
@@ -51,6 +60,11 @@ class BasicDataset(object):
         return params, scaled_params
 
     def get_batch(self, batch_size: int) -> BATCH_DATA_TYPE:
+        """get a batch of data as a dictionary with keys `params`, `scaled_params`, `q_values`, `curves`, `scaled_noisy_curves`
+
+        Args:
+            batch_size (int): the batch size
+        """
         batch_data = {}
 
         params, scaled_params = self._sample_from_prior(batch_size)

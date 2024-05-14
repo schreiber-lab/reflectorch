@@ -83,9 +83,9 @@ class VariableQ(QGenerator):
     """
 
     def __init__(self,
-                 q_min_range = [0.01, 0.03],
-                 q_max_range = [0.1, 0.5],
-                 n_q_range = [64, 256],
+                 q_min_range: Tuple[float, float] = [0.01, 0.03],
+                 q_max_range: Tuple[float, float] = [0.1, 0.5],
+                 n_q_range: Tuple[int, int] = [64, 256],
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
@@ -114,6 +114,14 @@ class VariableQ(QGenerator):
 
 
 class ConstantAngle(QGenerator):
+    """Q generator for reflectivity curves measured at equidistant angles
+
+    Args:
+        angle_range (Tuple[float, float, int], optional): . Defaults to (0., 0.2, 257).
+        wavelength (float, optional): the beam wavelength in units of angstroms. Defaults to 1.
+        device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
+        dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
+        """
     def __init__(self,
                  angle_range: Tuple[float, float, int] = (0., 0.2, 257),
                  wavelength: float = 1.,
@@ -123,6 +131,14 @@ class ConstantAngle(QGenerator):
         self.q = torch.from_numpy(angle_to_q(np.linspace(*angle_range), wavelength)).to(device).to(dtype)
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        """generate a batch of q values
+
+        Args:
+            batch_size (int): the batch size
+
+        Returns:
+            Tensor: generated batch of q values
+        """
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
 
 
