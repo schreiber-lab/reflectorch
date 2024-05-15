@@ -35,6 +35,7 @@ class AbstractParams(object):
         return scaled_params
 
     def reflectivity(self, q: Tensor, log: bool = False, **kwargs):
+        """computes the reflectivity curves directly from the parameters"""
         raise NotImplementedError
 
     def __iter__(self):
@@ -46,12 +47,15 @@ class AbstractParams(object):
             setattr(self, name, _to(arr, tgt))
 
     def to(self, tgt):
+        """performs Pytorch Tensor dtype and/or device conversion"""
         return self.__class__(*[_to(arr, tgt) for arr in self])
 
     def cuda(self):
+        """moves the parameters to the GPU"""
         return self.to('cuda')
 
     def cpu(self):
+        """moves the parameters to the CPU"""
         return self.to('cpu')
 
     def __getitem__(self, item) -> 'AbstractParams':
@@ -101,18 +105,22 @@ class AbstractParams(object):
 
     @property
     def max_layer_num(self) -> int:
+        """gets the number of layers"""
         return self._ref_tensor.shape[-1]
 
     @property
     def batch_size(self) -> int:
+        """gets the batch size"""
         return self._ref_tensor.shape[0]
 
     @property
     def device(self):
+        """gets the Pytorch device"""
         return self._ref_tensor.device
 
     @property
     def dtype(self):
+        """gets the Pytorch data type"""
         return self._ref_tensor.dtype
 
     @property
@@ -120,25 +128,31 @@ class AbstractParams(object):
         raise NotImplementedError
 
     def as_tensor(self, use_drho: bool = False) -> Tensor:
+        """converts the instance of the class to a Pytorch tensor"""
         raise NotImplementedError
 
     @classmethod
     def from_tensor(cls, params: Tensor):
+        """initializes an instance of the class from a Pytorch tensor"""
         raise NotImplementedError
 
     @property
     def num_params(self) -> int:
+        """get the number of parameters"""
         return self.layers_num2size(self.max_layer_num)
 
     @staticmethod
     def size2layers_num(size: int) -> int:
+        """converts the number of parameters to the number of layers"""
         raise NotImplementedError
 
     @staticmethod
     def layers_num2size(layers_num: int) -> int:
+        """converts the number of layers to the number of parameters"""
         raise NotImplementedError
 
     def get_param_labels(self) -> List[str]:
+        """gets the parameter labels"""
         raise NotImplementedError
 
     def __repr__(self):
