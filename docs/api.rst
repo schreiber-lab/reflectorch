@@ -62,3 +62,4 @@ API Reference
               LogLikelihood,
               PoissonLogLikelihood,
               Params,
+              PriorSampler,
