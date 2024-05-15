@@ -22,6 +22,9 @@ authors:
   - name: Alexander Hinderhofer
     orcid: 0000-0001-8152-6386
     affiliation: 1
+  - name: Dmitry Lapkin
+    orcid: 0000-0000-0000-0000
+    affiliation: 1
   - name: Alexander Gerlach
     orcid: 0000-0003-1787-1868
     affiliation: 1
@@ -41,39 +44,29 @@ bibliography: paper.bib
 
 # Summary
 
-The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration).
+We introduce `reflectorch`, a Python package which facilitates the full machine learning pipeline for the data domain of X-ray and neutron reflectivity. Firstly, the package allows the choice of different parameterizations of the scattering length density profile of a thin film and the sampling of the ground truth physical parameters from user-defined ranges. Secondly, the package provides functionality for the fast simulation of reflectivity curves on the GPU using a vectorized implementation of the Abeles matrix formalism and the augmentation of the theoretical curves with noise informed by experimental considerations. The architecture of the neural network as well as the training callbacks and hyperparameters can be easily customized from YAML configurtation files. Notably, our implementation makes use of a special training procedure described in the paper *Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge*, in which prior boundaries for the target parameters are provided alongside the reflectivity curve as an additional input to the neural network.
+
 
 # Statement of need
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+`Reflectorch` is a Python package for machine learning based analysis of reflectometry data. The package is built on top of the Pytorch deep learning framework. 
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
 
-# Mathematics
+The core
+
+`Reflectorch` was designed to be used by researchers both at their home institutes and at synchrotron facilities [@Pearson:2017].
+
+
+# General workflow
+
+Several types of parameterizations of the scattering length density profile are implemented: the (default) box model parameterization without absorption (the parameter types being layer thicknesses, interlayer roughnesses and real valued layer SLDs), the box model parameterization with absorption (with imaginary valued layer SLDs as an additional parameter type) and a parameterization for multilayers with repeating unit. The parameters are represented as an instance of the `Params` class (or its subclasses). The `PriorSampler` is responsible 
+
+# Related Work
+
+There are several well-established packages designed for the classical analysis of X-ray and neutron reflectivity data such as `GenX` and `refnx`, as well as some newer ones such as `easyreflectometry`. While several machine learning approaches pertaining to X-ray or neutron reflectometry have been proposed in various publications, `mlreflect` is the only other properly packaged and documented software. Also previously developed in our research group, `mlreflect` is Python package using the Tensorflow deep learning framework and has limited functionality compared to `reflectorch`. 
+
+
+<!-- # Mathematics
 
 Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
 
@@ -111,11 +104,10 @@ Figures can be included like this:
 and referenced from text using \autoref{fig:example}.
 
 Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](figure.png){ width=20% }
+![Caption for example figure.](figure.png){ width=20% }' -->
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+The research was part of a project (VIPR 05D23VT1 ERUMDATA) funded by the German Federal Ministry for Science and Education (BMBF). This work was partly supported by the consortium DAPHNE4NFDI in the context of the work of the NFDI e.V., funded by the German Research Foundation.
 
 # References
