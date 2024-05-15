@@ -11,6 +11,9 @@ Our training pipeline incorporates prior boundaries for the thin film parameters
 Please check out our article [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](
 https://doi.org/10.1107/S1600576724002115), published in the Journal of Applied Crystallography, for in-depth information about the implementation of our method, the theory behind it and the performance evaluation. Additionally, the article [Closing the loop: autonomous experiments enabled by machine-learning-based online data analysis in synchrotron beamline environments](https://journals.iucr.org/s/issues/2023/06/00/ju5054/index.html), published in the Journal of Synchrotron Radiation, uses the **reflectorch** package for the *in-situ* analysis of reflectivity data during a synchrotron experiment.
 
+The research was part of a project (VIPR 05D23VT1 ERUMDATA) funded by the German Federal Ministry for Science and Education (BMBF). This work was partly supported by
+the consortium DAPHNE4NFDI in the context of the work of the NFDI e.V., funded by the German Research Foundation.
+
 ```bibtex
 @Article{Munteanu2024,
   author    = {Munteanu, Valentin and Starostin, Vladimir and Greco, Alessandro and Pithan, Linus and Gerlach, Alexander and Hinderhofer, Alexander and Kowarik, Stefan and Schreiber, Frank},
