@@ -235,7 +235,7 @@ class Params(AbstractParams):
 
     @classmethod
     def from_tensor(cls, params: Tensor):
-        """initializes an instance of the class from a Pytorch tensor"""
+        """initializes an instance of the class from a Pytorch tensor containing the values of the parameters"""
         layers_num = (params.shape[-1] - 2) // 3
 
         thicknesses, roughnesses, slds = torch.split(params, [layers_num, layers_num + 1, layers_num + 1], dim=-1)

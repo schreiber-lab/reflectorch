@@ -24,6 +24,16 @@ from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
 
 
 class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
+    """Parameter class compatible with different parameterizations of the SLD profile. It stores the parameters as well as their minimum and maximum subprior bounds.
+
+        Args:
+            parameters (Tensor): the values of the thin film parameters
+            min_bounds (Tensor): the minimum subprior bounds of the parameters
+            max_bounds (Tensor): the maximum subprior bounds of the parameters
+            max_num_layers (int, optional): the maximum number of layers (for box model parameterizations it is the number of layers). Defaults to None.
+            param_model (ParametricModel, optional): the parametric model. Defaults to the box model parameterization with number of layers given by max_num_layers.
+        """
+    
     __slots__ = (
         'parameters',
         'min_bounds',
@@ -51,31 +61,46 @@ class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
         self.max_bounds = max_bounds
 
     def get_param_labels(self) -> List[str]:
+        """gets the parameter labels"""
         return self.param_model.get_param_labels()
 
     def reflectivity(self, q: Tensor, log: bool = False, **kwargs):
+        """computes the reflectivity curves directly from the parameters
+
+        Args:
+            q (Tensor): the q values
+            log (bool, optional): whether to apply logarithm to the curves. Defaults to False.
+
+        Returns:
+            Tensor: the simulated reflectivity curves
+        """
         return self.param_model.reflectivity(q, self.parameters, log=log, **kwargs)
 
     @property
     def max_layer_num(self) -> int:  # keep for back compatibility but TODO: unify api among different params
+        """gets the maximum number of layers"""
         return self.max_num_layers
 
     @property
     def num_params(self) -> int:
+        """get the number of parameters (parameter dimensionality)"""
         return self.param_model.param_dim
 
     @property
     def thicknesses(self):
+        """gets the thicknesses"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['thickness']
 
     @property
     def roughnesses(self):
+        """gets the roughnesses"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['roughness']
 
     @property
     def slds(self):
+        """gets the slds"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['sld']
 
@@ -107,12 +132,28 @@ class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
         return scaled_params
 
     def as_tensor(self, add_bounds: bool = True, **kwargs) -> Tensor:
+        """converts the instance of the class to a Pytorch tensor
+
+        Args:
+            add_bounds (bool, optional): whether to add the subprior bounds to the tensor. Defaults to True.
+
+        Returns:
+            Tensor: the Pytorch tensor obtained from the instance of the class
+        """
         if not add_bounds:
             return self.parameters
         return torch.cat([self.parameters, self.min_bounds, self.max_bounds], -1)
 
     @classmethod
     def from_tensor(cls, params: Tensor, **kwargs):
+        """initializes an instance of the class from a Pytorch tensor
+
+        Args:
+            params (Tensor): Pytorch tensor containing the parameter values, min subprior bounds and max subprior bounds
+
+        Returns:
+            ParametricParams: the instance of the class
+        """
         num_params = params.shape[-1] // 3
 
         params, min_bounds, max_bounds = torch.split(
@@ -127,6 +168,11 @@ class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
         )
 
     def scale_with_q(self, q_ratio: float):
+        """scales the parameters based on the q ratio
+
+        Args:
+            q_ratio (float): the scaling ratio
+        """
         self.parameters = self.param_model.scale_with_q(self.parameters, q_ratio)
         self.min_bounds = self.param_model.scale_with_q(self.min_bounds, q_ratio)
         self.max_bounds = self.param_model.scale_with_q(self.max_bounds, q_ratio)

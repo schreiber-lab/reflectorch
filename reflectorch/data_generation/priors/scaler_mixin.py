@@ -5,7 +5,7 @@ from torch import Tensor
 
 
 class ScalerMixin:
-    """provides functionality for scaling and restoring the parameters"""
+    """Provides functionality to multiple inheritance classes for scaling the parameters to a specified range and restoring them to the original range."""
     @staticmethod
     def _get_delta_vector(min_vector: Tensor, max_vector: Tensor):
         delta_vector = max_vector - min_vector
