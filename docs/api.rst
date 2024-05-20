@@ -67,3 +67,7 @@ API Reference
               PriorSampler,
               UniformSubPriorSampler,
               SubpriorParametricSampler,
+              SamplerStrategy,
+              BasicSamplerStrategy,
+              ConstrainedRoughnessSamplerStrategy,
+              ConstrainedRoughnessAndImgSldSamplerStrategy

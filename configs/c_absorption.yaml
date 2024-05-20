@@ -19,7 +19,9 @@ dset:
       model_name: model_with_absorption
       max_num_layers: 2
       constrained_roughness: true
+      constrained_isld: true
       max_thickness_share: 0.5
+      max_sld_share: 0.2
       logdist: false
        
   q_generator:

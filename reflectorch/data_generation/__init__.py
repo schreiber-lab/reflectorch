@@ -26,6 +26,7 @@ from reflectorch.data_generation.priors import (
     SamplerStrategy,
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
+    ConstrainedRoughnessAndImgSldSamplerStrategy,
 )
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
@@ -123,4 +124,5 @@ __all__ = [
     "SamplerStrategy",
     "BasicSamplerStrategy",
     "ConstrainedRoughnessSamplerStrategy",
+    "ConstrainedRoughnessAndImgSldSamplerStrategy",
 ]

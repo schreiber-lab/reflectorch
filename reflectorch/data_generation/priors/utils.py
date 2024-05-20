@@ -16,6 +16,7 @@ from reflectorch.data_generation.utils import (
 
 
 def get_max_allowed_roughness(thicknesses: Tensor, mask: Tensor = None, coef: float = 0.5):
+    """gets the maximum allowed interlayer roughnesses such that they do not exceed a fraction of the thickness of either layers meeting at that interface"""
     batch_size, layers_num = thicknesses.shape
     max_roughness = torch.ones(
         batch_size, layers_num + 1, device=thicknesses.device, dtype=thicknesses.dtype

@@ -15,6 +15,7 @@ from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
+    ConstrainedRoughnessAndImgSldSamplerStrategy,
 )
 
 __all__ = [
@@ -188,6 +189,37 @@ class ModelWithAbsorption(StandardModel):
     @property
     def param_dim(self) -> int:
         return 4 * self.max_num_layers + 3
+    
+    def _init_sampler_strategy(self,
+                               constrained_roughness: bool = True,
+                               constrained_isld: bool = True,
+                               max_thickness_share: float = 0.5,
+                               max_sld_share: float = 0.2,
+                               **kwargs):
+        if constrained_roughness:
+            num_params = self.param_dim
+            thickness_mask = torch.zeros(num_params, dtype=torch.bool)
+            roughness_mask = torch.zeros(num_params, dtype=torch.bool)
+            thickness_mask[:self.max_num_layers] = True
+            roughness_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
+
+            if constrained_isld:
+                sld_mask = torch.zeros(num_params, dtype=torch.bool)
+                isld_mask = torch.zeros(num_params, dtype=torch.bool)
+                sld_mask[2 * self.max_num_layers + 1:3 * self.max_num_layers + 2] = True
+                isld_mask[3 * self.max_num_layers + 2:] = True
+                return ConstrainedRoughnessAndImgSldSamplerStrategy(
+                    thickness_mask, roughness_mask, sld_mask, isld_mask,
+                    max_thickness_share=max_thickness_share, max_sld_share=max_sld_share
+                )
+            else:
+                return ConstrainedRoughnessSamplerStrategy(
+                    thickness_mask, roughness_mask,
+                    max_thickness_share=max_thickness_share,
+                    **kwargs
+            )
+        else:
+            return BasicSamplerStrategy(**kwargs)
 
     def init_bounds(self,
                     param_ranges: Dict[str, Tuple[float, float]],
