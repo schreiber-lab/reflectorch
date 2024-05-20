@@ -19,6 +19,7 @@ dset:
       constrained_roughness: true
       max_thickness_share: 0.5
       logdist: false
+      scale_params_by_ranges: true
       
 #   prior_sampler:   
 #     cls: UniformSubPriorSampler

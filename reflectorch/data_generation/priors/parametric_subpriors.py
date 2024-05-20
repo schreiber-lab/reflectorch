@@ -189,9 +189,23 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  max_num_layers: int = 50,
                  logdist: bool = False,
+                 scale_params_by_ranges = False,
                  scaled_range: Tuple[float, float] = (-1., 1.),
                  **kwargs
                  ):
+        """Prior sampler for the parameters of a parametric model and their subprior bounds
+
+        Args:
+            param_ranges (Dict[str, Tuple[float, float]]): dictionary containing the name of each type of parameter together with its range
+            bound_width_ranges (Dict[str, Tuple[float, float]]): dictionary containing the name of each type of parameter together with the range for sampling the widths of the subprior interval
+            model_name (str): the name of the parametric model
+            device (torch.device, optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
+            dtype (torch.dtype, optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
+            max_num_layers (int, optional): the maximum number of layers (for box model parameterizations it is the number of layers). Defaults to 50.
+            logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
+            scale_params_by_ranges (bool, optional): if True the parameters are scaled with respect to their ranges instead of being scaled with respect to their prior bounds. Defaults to False.
+            scaled_range (Tuple[float, float], optional): the range for scaling the parameters. Defaults to (-1., 1.)
+        """
         self.scaled_range = scaled_range
         self.param_model: ParametricModel = MULTILAYER_MODELS[model_name](
             max_num_layers,
@@ -214,16 +228,27 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         self.bound_width_ranges = bound_width_ranges
         self.model_name = model_name
         self.logdist = logdist
+        self.scale_params_by_ranges = scale_params_by_ranges
 
     @property
     def max_num_layers(self) -> int:
+        """gets the maximum number of layers"""
         return self.num_layers
 
     @property
     def param_dim(self) -> int:
+        """get the number of parameters (parameter dimensionality)"""
         return self._param_dim
 
     def sample(self, batch_size: int) -> ParametricParams:
+        """sample a batch of parameters
+
+        Args:
+            batch_size (int): the batch size
+
+        Returns:
+            ParametricParams: sampled parameters
+        """
         params, min_bounds, max_bounds = self.param_model.sample(
             batch_size, self.min_bounds, self.max_bounds, self.min_delta, self.max_delta
         )
@@ -239,21 +264,50 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         return params
 
     def scale_params(self, params: ParametricParams) -> Tensor:
-        scaled_params = torch.cat([
-            self._scale(params.parameters, params.min_bounds, params.max_bounds),
-            self._scale(params.min_bounds, self.min_bounds, self.max_bounds),
-            self._scale(params.max_bounds, self.min_bounds, self.max_bounds),
-        ], -1)
-        return scaled_params
+        """scale the parameters to a ML-friendly range
+
+        Args:
+            params (ParametricParams): the parameters to be scaled
+
+        Returns:
+            Tensor: the scaled parameters
+        """
+        if self.scale_params_by_ranges:
+            scaled_params = torch.cat([
+                self._scale(params.parameters, self.min_bounds, self.max_bounds), #parameters and subprior bounds are scaled with respect to the parameter ranges
+                self._scale(params.min_bounds, self.min_bounds, self.max_bounds), 
+                self._scale(params.max_bounds, self.min_bounds, self.max_bounds),
+            ], -1)
+            return scaled_params
+        else:
+            scaled_params = torch.cat([
+                self._scale(params.parameters, params.min_bounds, params.max_bounds), #each parameter scaled with respect to its subprior bounds
+                self._scale(params.min_bounds, self.min_bounds, self.max_bounds), #the subprior bounds are scaled with respect to the parameter ranges
+                self._scale(params.max_bounds, self.min_bounds, self.max_bounds),
+            ], -1)
+            return scaled_params
 
     def restore_params(self, scaled_params: Tensor) -> ParametricParams:
+        """restore the parameters to their original range
+
+        Args:
+            scaled_params (Tensor): the scaled parameters
+
+        Returns:
+            ParametricParams: the parameters restored to their original range
+        """
         num_params = scaled_params.shape[-1] // 3
         scaled_params, scaled_min_bounds, scaled_max_bounds = torch.split(
             scaled_params, num_params, -1
         )
-        min_bounds = self._restore(scaled_min_bounds, self.min_bounds, self.max_bounds)
-        max_bounds = self._restore(scaled_max_bounds, self.min_bounds, self.max_bounds)
-        params = self._restore(scaled_params, min_bounds, max_bounds)
+        if self.scale_params_by_ranges:
+            min_bounds = self._restore(scaled_min_bounds, self.min_bounds, self.max_bounds)
+            max_bounds = self._restore(scaled_max_bounds, self.min_bounds, self.max_bounds)
+            params = self._restore(scaled_params, self.min_bounds, self.max_bounds)
+        else:
+            min_bounds = self._restore(scaled_min_bounds, self.min_bounds, self.max_bounds)
+            max_bounds = self._restore(scaled_max_bounds, self.min_bounds, self.max_bounds)
+            params = self._restore(scaled_params, min_bounds, max_bounds)
 
         return ParametricParams(
             parameters=params,
