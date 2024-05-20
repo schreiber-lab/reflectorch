@@ -66,3 +66,4 @@ API Reference
               ParametricParams,
               PriorSampler,
               UniformSubPriorSampler,
+              SubpriorParametricSampler,
