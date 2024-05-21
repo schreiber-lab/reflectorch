@@ -316,6 +316,9 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             max_num_layers=self.max_num_layers,
             param_model=self.param_model,
         )
+    
+    def scale_bounds(self, bounds: Tensor) -> Tensor:
+        return self._scale(bounds, self.min_bounds, self.max_bounds)
 
     def log_prob(self, params: ParametricParams) -> Tensor:
         log_prob = torch.zeros(params.batch_size, device=self.device, dtype=self.dtype)
