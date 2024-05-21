@@ -11,31 +11,26 @@ authors:
     orcid: 0000-0002-5897-3863
     affiliation: 1
     equal-contrib: true
-    corresponding: true
   - name: Vladimir Starostin
     orcid: 0000-0003-4533-6256
     affiliation: 1
     equal-contrib: true
-  - name: Linus Pithan
-    orcid: 0000-0002-6080-3273
-    affiliation: "1, 2"
   - name: Alexander Hinderhofer
     orcid: 0000-0001-8152-6386
     affiliation: 1
-  - name: Dmitry Lapkin
-    orcid: 0000-0000-0000-0000
     affiliation: 1
   - name: Alexander Gerlach
     orcid: 0000-0003-1787-1868
     affiliation: 1
+  - name: Dmitry Lapkin
+    orcid: 0000-0000-0000-0000
   - name: Frank Schreiber
     orcid: 0000-0003-3659-6718
     affiliation: 1
+    corresponding: true
 affiliations:
- - name: University of Tu¨bingen, Auf der Morgenstelle 10, 72076 Tu¨bingen, Germany
+ - name: University of Tübingen, Institute for Applied Physics, Auf der Morgenstelle 10, 72076 Tübingen, Germany
    index: 1
- - name: Deutsches Elektronen-Synchrotron DESY, Notkestraße 85, 22607 Hamburg, Germany
-   index: 2
 
 date: 10 April 2024
 bibliography: paper.bib
@@ -44,7 +39,7 @@ bibliography: paper.bib
 
 # Summary
 
-We introduce `reflectorch`, a Python package which facilitates the full machine learning pipeline for the data domain of X-ray and neutron reflectivity. Firstly, the package allows the choice of different parameterizations of the scattering length density profile of a thin film and the sampling of the ground truth physical parameters from user-defined ranges. Secondly, the package provides functionality for the fast simulation of reflectivity curves on the GPU using a vectorized implementation of the Abeles matrix formalism and the augmentation of the theoretical curves with noise informed by experimental considerations. The architecture of the neural network as well as the training callbacks and hyperparameters can be easily customized from YAML configurtation files. Notably, our implementation makes use of a special training procedure described in the paper *Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge*, in which prior boundaries for the target parameters are provided alongside the reflectivity curve as an additional input to the neural network.
+We introduce `reflectorch`, a Python package which facilitates the full machine learning pipeline for the data domain of X-ray and neutron reflectivity. Firstly, the package allows the choice of different parameterizations of the scattering length density profile of a thin film and the sampling of the ground truth physical parameters from user-defined ranges. Secondly, the package provides functionality for the fast simulation of reflectivity curves on the GPU using a vectorized implementation of the Abelès matrix formalism [@Abeles1950] and the augmentation of the theoretical curves with noise informed by experimental considerations. The architecture of the neural network as well as the training callbacks and hyperparameters can be easily customized from YAML configurtation files. Notably, our implementation makes use of a special training procedure introduced in our publication [@Munteanu2024], in which prior boundaries for the target parameters are provided alongside the reflectivity curve as an additional input to the neural network.
 
 
 # Statement of need
@@ -54,8 +49,9 @@ We introduce `reflectorch`, a Python package which facilitates the full machine 
 
 The core
 
-`Reflectorch` was designed to be used by researchers both at their home institutes and at synchrotron facilities [@Pearson:2017].
+`Reflectorch` was designed to be used by researchers both at their home institutes and at synchrotron facilities.
 
+...Utilized in closed-loop experiments at the beamline... [@Pithan2023]
 
 # General workflow
 
@@ -63,7 +59,7 @@ Several types of parameterizations of the scattering length density profile are 
 
 # Related Work
 
-There are several well-established packages designed for the classical analysis of X-ray and neutron reflectivity data such as `GenX` and `refnx`, as well as some newer ones such as `easyreflectometry`. While several machine learning approaches pertaining to X-ray or neutron reflectometry have been proposed in various publications, `mlreflect` is the only other properly packaged and documented software. Also previously developed in our research group, `mlreflect` is Python package using the Tensorflow deep learning framework and has limited functionality compared to `reflectorch`. 
+There are several well-established packages designed for the classical analysis of X-ray and neutron reflectivity data such as `GenX` [@GlaviGenX], `refnx` [@NelsonRefnx] and `refl1d` [@Maranville2020]. While several machine learning approaches pertaining to X-ray or neutron reflectometry have been proposed in various publications, `mlreflect` [@Greco2022Neural] is the only other properly packaged and documented software. Previously developed in our research group, `mlreflect` is built in the Tensorflow deep learning framework and has limited functionality compared to `reflectorch`. Still, it has been successfully adopted for usage by people in the scattering community such as in the publication [@Schumi-Marecek2024]. 
 
 
 <!-- # Mathematics
