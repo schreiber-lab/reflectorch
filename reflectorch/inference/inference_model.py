@@ -3,6 +3,9 @@ import logging
 import numpy as np
 import torch
 from torch import Tensor
+from typing import List, Tuple
+import ipywidgets as widgets
+from IPython.display import display
 
 from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
@@ -19,6 +22,121 @@ from reflectorch.inference.sampler_solution import simple_sampler_solution, get_
 from reflectorch.inference.record_time import print_time
 from reflectorch.utils import to_t
 
+class EasyInferenceModel(object):
+    def __init__(self, config_name: str = None, config_dir:str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None, device='cuda'):
+        self.config_name = config_name
+        self.config_dir = config_dir
+        self.trainer = trainer
+        self.device = device
+        self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
+
+        if trainer is None and self.config_name is not None:
+            self.load_model(self.config_name, self.config_dir)
+
+    def load_model(self, config_name: str, config_dir: str) -> None:
+        print(f"Loading model {config_name}")
+        if self.config_name == config_name and self.trainer is not None:
+            return
+        
+        self.config_name = config_name
+        self.config_dir = config_dir
+        self.trainer = get_trainer_by_name(config_name=config_name, config_dir=config_dir, load_weights=True)
+        self.trainer.model.eval()
+        print(f"Model {config_name} is loaded.")
+
+    def predict(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor, prior_bounds: List[Tuple]):
+        scaled_curve = self._scale_curve(reflectivity_curve)
+        scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
+
+        if not isinstance(q_values, Tensor):
+            q_values = torch.from_numpy(q_values)
+        q_values = torch.atleast_2d(q_values).to(scaled_curve)
+
+        scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
+        with torch.no_grad():
+            self.trainer.model.eval()
+            if self.trainer.train_with_q_input:
+                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, q_values)
+            else:
+                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+        
+        restored_predictions = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
+
+        return restored_predictions.parameters
+    
+    def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
+
+        NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
+        param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
+
+        print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
+        print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+        print(f'Please fill in the values of the minimum and maximum prior bound for each parameter and press the button!')
+
+        def create_interval_widgets(n):
+            intervals = []
+            for i in range(n):
+                interval_label = widgets.Label(value=f'{param_labels[i]}')
+                min_val = widgets.FloatText(
+                    value=0.0,
+                    description='min',
+                    layout=widgets.Layout(width='100px'),
+                    style={'description_width': '30px'}
+                )
+                max_val = widgets.FloatText(
+                    value=1.0,
+                    description='max',
+                    layout=widgets.Layout(width='100px'),
+                    style={'description_width': '30px'}
+                )
+                interval_row = widgets.HBox([interval_label, min_val, max_val])
+                intervals.append((min_val, max_val, interval_row))
+            return intervals
+        
+        interval_widgets = create_interval_widgets(NUM_INTERVALS)
+        interval_box = widgets.VBox([widget[2] for widget in interval_widgets])
+        display(interval_box)
+
+        button = widgets.Button(description="Make prediction")
+        display(button)
+
+        def store_values(b):
+            values = []
+            for min_widget, max_widget, _ in interval_widgets:
+                values.append((min_widget.value, max_widget.value))
+            array_values = np.array(values)
+            
+            predicted_params = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values)
+            print(f'The prediction is: {predicted_params.squeeze().cpu().numpy()}')
+            return predicted_params.squeeze().cpu().numpy()
+
+        button.on_click(store_values)
+
+    def _scale_curve(self, curve: np.ndarray or Tensor):
+        if not isinstance(curve, Tensor):
+            curve = torch.from_numpy(curve).float()
+        curve = torch.atleast_2d(curve).to(self.device)
+        scaled_curve = self.trainer.loader.curves_scaler.scale(curve)
+        return scaled_curve
+    
+    def _scale_prior_bounds(self, prior_bounds: List[Tuple]):
+        prior_bounds = torch.tensor(prior_bounds)
+        prior_bounds = prior_bounds.to(self.device).T
+        min_bounds, max_bounds = prior_bounds[:, None]
+
+        scaled_bounds = torch.cat([
+            self.trainer.loader.prior_sampler.scale_bounds(min_bounds), 
+            self.trainer.loader.prior_sampler.scale_bounds(max_bounds)
+        ], -1)
+
+        return scaled_bounds.float()
+    
+        #inference_model = EasyInferenceModel(config_name='c1_trained')
+        #prior_bounds = [(300., 400.), (-10., 500.), (0., 60.), (0., 60.), (0., 60.), (-25., 25.), (-25., 25.), (0., 1.)]
+        #refl_curve = inference_model.trainer.loader.get_batch(1)['scaled_noisy_curves']
+        #refl_curve = inference_model.trainer.loader.curves_scaler.restore(refl_curve).squeeze().cpu().numpy()
+        #q_values = inference_model.trainer.loader.get_batch(1)['q_values'].squeeze().cpu().numpy()
+        #pred = inference_model.predict(refl_curve, q_values, prior_bounds)
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
