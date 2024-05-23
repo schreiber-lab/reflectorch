@@ -1,5 +1,5 @@
 general:
-  name: c_L5_d200_s150_r60_ws5_q03_nq256.yaml
+  name: c_L5_d200_s150_r60_ws5_q03_nq256
   root_dir: null
   
 dset:
@@ -19,13 +19,15 @@ dset:
       constrained_roughness: true
       max_thickness_share: 0.5
       logdist: false
-      scale_params_by_ranges: true
+      scale_params_by_ranges: false
       scaled_range: [-1., 1.]
+      device: 'cuda'
       
   q_generator:
     cls: ConstantQ
     kwargs:
       q: [0.02, 0.3, 256]
+      device: 'cuda'
       
   intensity_noise:
     cls: BasicExpIntensityNoise
@@ -38,12 +40,6 @@ dset:
       shift_range: [-0.05, 0.05]
       apply_scaling: false
       scale_range: [-0.01, 0.01]
-
-  # q_noise:
-  #   cls: BasicQNoiseGenerator
-  #   kwargs:
-  #     shift_std: 1.0e-3
-  #     noise_std: [0., 1.0e-3]
       
   curves_scaler:
     cls: LogAffineCurvesScaler
@@ -56,6 +52,7 @@ model:
   network:
     cls: NetworkWithPriorsConvEmb
     pretrained_name: null
+    device: 'cuda'
     kwargs:
       in_channels: 1
       hidden_channels: [32, 64, 128, 256, 512]
@@ -64,8 +61,8 @@ model:
       embedding_net_activation: 'gelu'
       use_batch_norm: true
       dim_out: 17
-      layer_width: 512
-      num_blocks: 8
+      layer_width: 1024
+      num_blocks: 6
       repeats_per_block: 2
       mlp_activation: 'gelu'
       dropout_rate: 0.0 
