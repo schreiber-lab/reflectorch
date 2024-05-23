@@ -84,7 +84,7 @@ dset:
       eps: 1.0e-10
 
 model:
-  encoder:
+  network:
     cls: SubPriorConvFCEncoder
     pretrained_name: null
     kwargs:

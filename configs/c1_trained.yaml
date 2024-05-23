@@ -19,11 +19,13 @@ dset:
       constrained_roughness: true
       max_thickness_share: 0.5
       logdist: false
+      device: 'cuda'
       
   q_generator:
     cls: ConstantQ
     kwargs:
       q: [0.02, 0.15, 128]
+      device: 'cuda'
       
   intensity_noise:
     cls: BasicExpIntensityNoise
@@ -51,9 +53,10 @@ dset:
       eps: 1.0e-10
 
 model:
-  encoder:
-    cls: PriorInformedNetworkConvEmb
+  network:
+    cls: NetworkWithPriorsConvEmb
     pretrained_name: null
+    device: 'cuda'
     kwargs:
       in_channels: 1
       hidden_channels: [32, 64, 128, 256, 512]

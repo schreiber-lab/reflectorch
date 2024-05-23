@@ -8,7 +8,7 @@ from reflectorch.models.encoders.conv_encoder import ConvEncoder
 from reflectorch.models.encoders.fno import FnoEncoder
 from reflectorch.models.utils import activation_by_name
 
-class PriorInformedNetworkConvEmb(nn.Module):
+class NetworkWithPriorsConvEmb(nn.Module):
     def __init__(self,
                  in_channels: int = 1,
                  hidden_channels: tuple = (32, 64, 128, 256, 512),
@@ -357,7 +357,7 @@ class SubPriorConvFCEncoder_FiLM(nn.Module):
         return x
     
     
-class PriorInformedNetworkFnoEmb(nn.Module):
+class NetworkWithPriorsFnoEmb(nn.Module):
     def __init__(self,
                  in_channels: int = 2,
                  dim_embedding: int = 128,

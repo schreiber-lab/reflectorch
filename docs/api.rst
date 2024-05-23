@@ -50,7 +50,7 @@ API Reference
               Logger,
               Loggers,
               PrintLogger,
-              PriorInformedNetworkConvEmb, 
+              NetworkWithPriorsConvEmb, 
               ConvEncoder,
               FnoEncoder,
               apply_attenuation_correction,

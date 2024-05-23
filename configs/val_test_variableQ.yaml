@@ -89,8 +89,8 @@ dset:
       eps: 1.0e-10
 
 # model:
-#   encoder:
-#     cls: PriorInformedNetworkConvEmb
+#   network:
+#     cls: NetworkWithPriorsConvEmb
 #     pretrained_name: null
 #     kwargs:
 #        in_channels: 2
@@ -108,8 +108,8 @@ dset:
 #        pass_bounds: false
 #        pretrained_conv: null
 model:
-  encoder:
-    cls: PriorInformedNetworkFnoEmb
+  network:
+    cls: NetworkWithPriorsFnoEmb
     pretrained_name: null
     kwargs:
        latent_dim: 8 

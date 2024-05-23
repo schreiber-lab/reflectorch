@@ -47,8 +47,8 @@ dset:
       eps: 1.0e-10
 
 model:
-  encoder:
-    cls: PriorInformedNetworkConvEmb
+  network:
+    cls: NetworkWithPriorsConvEmb
     pretrained_name: null
     kwargs:
       in_channels: 1

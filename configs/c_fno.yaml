@@ -9,7 +9,7 @@ dset:
       param_ranges:
         thicknesses: [0., 500.]
         roughnesses: [0., 60.]
-        slds: [-25., 25.]
+        slds: [0., 25.]
       bound_width_ranges:
         thicknesses: [1.0e-2, 500.]
         roughnesses: [1.0e-2, 60.]
@@ -19,6 +19,9 @@ dset:
       constrained_roughness: true
       max_thickness_share: 0.5
       logdist: false
+      scale_params_by_ranges: false
+      scaled_range: [-1., 1.]
+      device: 'cuda'
       
   q_generator:
     cls: VariableQ
@@ -26,6 +29,7 @@ dset:
       q_min_range: [0.01, 0.03]
       q_max_range: [0.15, 0.3]
       n_q_range: [64, 256]
+      device: 'cuda'
       
   intensity_noise:
     cls: BasicExpIntensityNoise
@@ -53,9 +57,10 @@ dset:
       eps: 1.0e-10
 
 model:
-  encoder:
-    cls: PriorInformedNetworkFnoEmb
+  network:
+    cls: NetworkWithPriorsFnoEmb
     pretrained_name: null
+    device: 'cuda'
     kwargs:
       in_channels: 2
       dim_embedding: 256

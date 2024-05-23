@@ -16,7 +16,7 @@ __all__ = [
     "ConvResidualNet1D",
     "ResidualMLP",
     "ResidualMLP_FiLM",
-    "PriorInformedNetworkConvEmb",
+    "NetworkWithPriorsConvEmb",
     "SubPriorConvFCEncoder_FiLM",
-    "PriorInformedNetworkFnoEmb",
+    "NetworkWithPriorsFnoEmb",
 ]

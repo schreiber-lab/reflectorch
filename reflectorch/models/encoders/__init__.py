@@ -13,9 +13,9 @@ from reflectorch.models.encoders.fno import FnoEncoder, SpectralConv1d
 from reflectorch.models.encoders.transformers import TransformerEncoder
 from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
 from reflectorch.models.encoders.conv_fc_encoder import (
-    PriorInformedNetworkConvEmb,
+    NetworkWithPriorsConvEmb,
     SubPriorConvFCEncoder_FiLM,
-    PriorInformedNetworkFnoEmb,
+    NetworkWithPriorsFnoEmb,
     ResidualMLP_FiLM,
 )
 from reflectorch.models.encoders.residual_net import ResidualMLP
@@ -31,7 +31,7 @@ __all__ = [
     "SpectralConv1d",
     "ResidualMLP",
     "ResidualMLP_FiLM",
-    "PriorInformedNetworkConvEmb",
+    "NetworkWithPriorsConvEmb",
     "SubPriorConvFCEncoder_FiLM",
-    "PriorInformedNetworkFnoEmb",
+    "NetworkWithPriorsFnoEmb",
 ]

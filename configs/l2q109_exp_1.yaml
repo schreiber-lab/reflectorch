@@ -41,7 +41,7 @@ dset:
       gauss_num: 31
       share_smeared: 0.2
 model:
-  encoder:
+  network:
     cls: SubPriorConvFCEncoder
     pretrained_name: null
     kwargs:

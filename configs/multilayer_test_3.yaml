@@ -47,7 +47,7 @@ dset:
       shift_std: 1.0e-5
       noise_std: [0., 0.001]
 model:
-  encoder:
+  network:
     cls: SeqConvFCEncoder
     pretrained_name: null
     kwargs:

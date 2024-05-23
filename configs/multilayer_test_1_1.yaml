@@ -43,7 +43,7 @@ dset:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
 model:
-  encoder:
+  network:
     cls: SeqConvFCEncoder
     pretrained_name: multilayer_test_1
     kwargs:

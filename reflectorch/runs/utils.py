@@ -153,7 +153,7 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
     folder_paths = folder_paths or get_paths_from_config(config)
 
-    model = init_encoder(config['model']['encoder'], folder_paths['saved_models'])
+    model = init_network(config['model']['network'], folder_paths['saved_models'])
 
     train_conf = config['training']
 
@@ -190,7 +190,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         Trainer: the trainer object
     """
     config = load_config(config_name, config_dir)
-    config['model']['encoder']['pretrained_name'] = None
+    config['model']['network']['pretrained_name'] = None
     config['training']['logger']['use_neptune'] = False
     trainer = get_trainer_from_config(config)
 
@@ -232,11 +232,12 @@ def get_callbacks_by_name(config_name, config_dir=None):
     return callbacks
 
 
-def init_encoder(config: dict, saved_models_dir: Path):
+def init_network(config: dict, saved_models_dir: Path):
     """Initializes the network based on the configuration dictionary and optionally loades the weights from a pretrained model"""
-    encoder = init_from_conf(config).cuda()
-    encoder = load_pretrained(encoder, config.get('pretrained_name', None), saved_models_dir)
-    return encoder
+    device = config.get('device', 'cuda')
+    network = init_from_conf(config).to(device)
+    network = load_pretrained(network, config.get('pretrained_name', None), saved_models_dir)
+    return network
 
 
 def load_pretrained(model, model_name: str, saved_models_dir: Path):
@@ -274,7 +275,7 @@ def init_dset(config: dict):
     dset_cls = globals().get(config['cls']) if 'cls' in config else ReflectivityDataLoader
     prior_sampler = init_from_conf(config['prior_sampler'])
     intensity_noise = init_from_conf(config['intensity_noise'])
-    q_generator = init_from_conf(config['q_generator'], device='cuda')
+    q_generator = init_from_conf(config['q_generator'])
     curves_scaler = init_from_conf(config['curves_scaler']) if 'curves_scaler' in config else None
     smearing = init_from_conf(config['smearing']) if 'smearing' in config else None
     q_noise = init_from_conf(config['q_noise']) if 'q_noise' in config else None
