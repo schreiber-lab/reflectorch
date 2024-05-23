@@ -47,7 +47,7 @@ class BasicSamplerStrategy(SamplerStrategy):
             total_max_delta (Tensor): maximum widths of the subprior intervals
 
         Returns:
-            function: a function which samples the values of the parameters and their prior bounds. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
+            tuple(Tensor): samples the values of the parameters and their prior bounds (params, min_bounds, max_bounds). The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
         """
         return basic_sampler(
             batch_size,
@@ -94,7 +94,7 @@ class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
             total_max_delta (Tensor): maximum widths of the subprior intervals
 
         Returns:
-            function: a function which samples the values of the parameters and their prior bounds, the roughnesses being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
+            tuple(Tensor): samples the values of the parameters and their prior bounds (params, min_bounds, max_bounds), the roughnesses being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
         """
         device = total_min_bounds.device
         return constrained_roughness_sampler(
@@ -153,7 +153,7 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
             total_max_delta (Tensor): maximum widths of the subprior intervals
 
         Returns:
-            function: a function which samples the values of the parameters and their prior bounds, the roughnesses and imaginary slds being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
+            tuple(Tensor): samples the values of the parameters and their prior bounds (params, min_bounds, max_bounds), the roughnesses and imaginary slds being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
         """
         device = total_min_bounds.device
         return constrained_roughness_and_isld_sampler(
