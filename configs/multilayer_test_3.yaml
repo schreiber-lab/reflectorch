@@ -6,7 +6,7 @@ dset:
   prior_sampler:
     cls: SimpleMultilayerSampler
     kwargs:
-      model_name: model3
+      model_name: repeating_multilayer_v3
       max_num_layers: 30
       params:
           d_full_rel: [0, 25]

@@ -63,7 +63,7 @@ API Reference
               PoissonLogLikelihood,
               Params,
               UniformSubPriorParams,
-              ParametricParams,
+              BasicParams,
               PriorSampler,
               UniformSubPriorSampler,
               SubpriorParametricSampler,

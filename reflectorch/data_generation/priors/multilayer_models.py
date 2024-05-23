@@ -24,7 +24,7 @@ class MultilayerModel(object):
 
 
 class BasicMultilayerModel1(MultilayerModel):
-    NAME = 'model1'
+    NAME = 'repeating_multilayer_v1'
 
     PARAMETER_NAMES = (
         "d_full_rel",
@@ -48,7 +48,7 @@ class BasicMultilayerModel1(MultilayerModel):
 
 
 class BasicMultilayerModel2(MultilayerModel):
-    NAME = 'model1'
+    NAME = 'repeating_multilayer_v2'
 
     PARAMETER_NAMES = (
         "d_full_rel",
@@ -74,7 +74,7 @@ class BasicMultilayerModel2(MultilayerModel):
 
 
 class BasicMultilayerModel3(MultilayerModel):
-    NAME = 'model3'
+    NAME = 'repeating_multilayer_v3'
 
     PARAMETER_NAMES = (
         "d_full_rel",
@@ -101,9 +101,9 @@ class BasicMultilayerModel3(MultilayerModel):
 
 
 MULTILAYER_MODELS = {
-    'model1': BasicMultilayerModel1,
-    'model2': BasicMultilayerModel2,
-    'model3': BasicMultilayerModel3,
+    'repeating_multilayer_v1': BasicMultilayerModel1,
+    'repeating_multilayer_v2': BasicMultilayerModel2,
+    'repeating_multilayer_v3': BasicMultilayerModel3,
 }
 
 

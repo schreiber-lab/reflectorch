@@ -23,7 +23,7 @@ from reflectorch.data_generation.priors.parametric_models import (
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
 
 
-class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
+class BasicParams(AbstractParams):
     """Parameter class compatible with different parameterizations of the SLD profile. It stores the parameters as well as their minimum and maximum subprior bounds.
 
         Args:
@@ -152,7 +152,7 @@ class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
             params (Tensor): Pytorch tensor containing the parameter values, min subprior bounds and max subprior bounds
 
         Returns:
-            ParametricParams: the instance of the class
+            BasicParams: the instance of the class
         """
         num_params = params.shape[-1] // 3
 
@@ -179,7 +179,7 @@ class ParametricParams(AbstractParams):  # TODO change the name ParametricParams
 
 
 class SubpriorParametricSampler(PriorSampler, ScalerMixin):
-    PARAM_CLS = ParametricParams
+    PARAM_CLS = BasicParams
 
     def __init__(self,
                  param_ranges: Dict[str, Tuple[float, float]],
@@ -240,20 +240,20 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         """get the number of parameters (parameter dimensionality)"""
         return self._param_dim
 
-    def sample(self, batch_size: int) -> ParametricParams:
+    def sample(self, batch_size: int) -> BasicParams:
         """sample a batch of parameters
 
         Args:
             batch_size (int): the batch size
 
         Returns:
-            ParametricParams: sampled parameters
+            BasicParams: sampled parameters
         """
         params, min_bounds, max_bounds = self.param_model.sample(
             batch_size, self.min_bounds, self.max_bounds, self.min_delta, self.max_delta
         )
 
-        params = ParametricParams(
+        params = BasicParams(
             parameters=params,
             min_bounds=min_bounds,
             max_bounds=max_bounds,
@@ -263,11 +263,11 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
 
         return params
 
-    def scale_params(self, params: ParametricParams) -> Tensor:
+    def scale_params(self, params: BasicParams) -> Tensor:
         """scale the parameters to a ML-friendly range
 
         Args:
-            params (ParametricParams): the parameters to be scaled
+            params (BasicParams): the parameters to be scaled
 
         Returns:
             Tensor: the scaled parameters
@@ -287,14 +287,14 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             ], -1)
             return scaled_params
 
-    def restore_params(self, scaled_params: Tensor) -> ParametricParams:
+    def restore_params(self, scaled_params: Tensor) -> BasicParams:
         """restore the parameters to their original range
 
         Args:
             scaled_params (Tensor): the scaled parameters
 
         Returns:
-            ParametricParams: the parameters restored to their original range
+            BasicParams: the parameters restored to their original range
         """
         num_params = scaled_params.shape[-1] // 3
         scaled_params, scaled_min_bounds, scaled_max_bounds = torch.split(
@@ -309,7 +309,7 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             max_bounds = self._restore(scaled_max_bounds, self.min_bounds, self.max_bounds)
             params = self._restore(scaled_params, min_bounds, max_bounds)
 
-        return ParametricParams(
+        return BasicParams(
             parameters=params,
             min_bounds=min_bounds,
             max_bounds=max_bounds,
@@ -320,32 +320,32 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
     def scale_bounds(self, bounds: Tensor) -> Tensor:
         return self._scale(bounds, self.min_bounds, self.max_bounds)
 
-    def log_prob(self, params: ParametricParams) -> Tensor:
+    def log_prob(self, params: BasicParams) -> Tensor:
         log_prob = torch.zeros(params.batch_size, device=self.device, dtype=self.dtype)
         log_prob[~self.get_indices_within_bounds(params)] = -float('inf')
         return log_prob
 
-    def get_indices_within_domain(self, params: ParametricParams) -> Tensor:
+    def get_indices_within_domain(self, params: BasicParams) -> Tensor:
         return self.get_indices_within_bounds(params)
 
-    def get_indices_within_bounds(self, params: ParametricParams) -> Tensor:
+    def get_indices_within_bounds(self, params: BasicParams) -> Tensor:
         return (
                 torch.all(params.parameters >= params.min_bounds, -1) &
                 torch.all(params.parameters <= params.max_bounds, -1)
         )
 
-    def filter_params(self, params: ParametricParams) -> ParametricParams:
+    def filter_params(self, params: BasicParams) -> BasicParams:
         indices = self.get_indices_within_domain(params)
         return params[indices]
 
     def clamp_params(
-            self, params: ParametricParams, inplace: bool = False
-    ) -> ParametricParams:
+            self, params: BasicParams, inplace: bool = False
+    ) -> BasicParams:
         if inplace:
             params.parameters = torch.clamp_(params.parameters, params.min_bounds, params.max_bounds)
             return params
 
-        return ParametricParams(
+        return BasicParams(
             parameters=torch.clamp(params.parameters, params.min_bounds, params.max_bounds),
             min_bounds=params.min_bounds.clone(),
             max_bounds=params.max_bounds.clone(),

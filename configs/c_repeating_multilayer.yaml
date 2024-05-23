@@ -42,7 +42,7 @@ dset:
           s_si: [0.01, 10]
           r_sio2: [0.01, 2]
           r_si: [0.01, 2]
-      model_name: model3
+      model_name: repeating_multilayer_v3
       max_num_layers: 30
       logdist: false
       scale_params_by_ranges: false
