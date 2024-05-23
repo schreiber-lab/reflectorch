@@ -12,7 +12,7 @@
 [![Documentation build status](https://readthedocs.org/projects/reflectorch/badge/)](https://reflectorch.readthedocs.io)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
 [![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://reflectorch.readthedocs.io)
-[![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<!-- [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) -->
 
 
 **Reflectorch** is a machine learning Python package for the analysis of X-ray and neutron reflectometry data based on Pytorch. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and neural network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://doi.org/10.1107/S1600576724002115).
@@ -35,11 +35,11 @@ Users with Nvidia GPUs need to additionally install Pytorch with CUDA support co
 
 ## Get started
 
-We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
+<!-- We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br> -->
 
 ## Documentation
 
-The documentation is built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and is hosted at [reflectorch.readthedocs.io](https://reflectorch.readthedocs.io).
+<!-- The documentation is built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and is hosted at [reflectorch.readthedocs.io](https://reflectorch.readthedocs.io). -->
 
 ## Citation
 If you find our work useful in your research, please cite:
