@@ -24,6 +24,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
                  dropout_rate: float = 0.0,
                  use_selu_init: bool = False,
                  pretrained_embedding_net: str = None,
+                 residual: bool = True,
                  ):
         super().__init__()
 
@@ -51,6 +52,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
             activation=mlp_activation,
             use_batch_norm=use_batch_norm,
             dropout_rate=dropout_rate,
+            residual=residual,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':
@@ -373,6 +375,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
                  mlp_activation: str = 'gelu',
                  dropout_rate: float = 0.0,
                  use_selu_init: bool = False,
+                 residual: bool = True,
                  ):
         super().__init__()
 
@@ -398,6 +401,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             activation=mlp_activation,
             use_batch_norm=use_batch_norm,
             dropout_rate=dropout_rate,
+            residual=residual,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':

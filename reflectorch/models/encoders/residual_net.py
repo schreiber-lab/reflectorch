@@ -10,15 +10,16 @@ class ResidualMLP(nn.Module):
 
     def __init__(
             self,
-            dim_in,
-            dim_out,
-            dim_condition=None,
-            layer_width=512,
-            num_blocks=4,
-            repeats_per_block=2,
-            activation='relu',
-            use_batch_norm=True,
-            dropout_rate=0.0,
+            dim_in: int,
+            dim_out: int,
+            dim_condition: int = None,
+            layer_width: int = 512,
+            num_blocks: int = 4,
+            repeats_per_block: int = 2,
+            activation: str = 'relu',
+            use_batch_norm: bool = True,
+            dropout_rate: float = 0.0,
+            residual: bool = True
     ):
         super().__init__()
 
@@ -33,6 +34,7 @@ class ResidualMLP(nn.Module):
                     activation=activation,
                     use_batch_norm=use_batch_norm,
                     dropout_rate=dropout_rate,
+                    residual=residual,
                 )
                 for _ in range(num_blocks)
             ]
@@ -57,13 +59,13 @@ class ResidualBlock(nn.Module):
 
     def __init__(
             self,
-            layer_width,
-            dim_condition=None,
-            repeats_per_block=2,
-            activation='relu',
-            use_batch_norm=False,
-            dropout_rate=0.0,
-            residual=True,
+            layer_width: int,
+            dim_condition: int = None,
+            repeats_per_block: int = 2,
+            activation: str = 'relu',
+            use_batch_norm: bool = False,
+            dropout_rate: float = 0.0,
+            residual: bool = True,
     ):
         super().__init__()
          
