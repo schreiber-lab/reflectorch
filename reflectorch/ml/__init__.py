@@ -32,5 +32,6 @@ __all__ = [
     'MultilayerDataLoader',
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
+    'VAETrainer',
     'PointEstimatorTrainer',
 ]

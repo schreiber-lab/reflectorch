@@ -9,7 +9,8 @@ from reflectorch.models.encoders import *
 __all__ = [
     "ConvEncoder",
     "ConvDecoder",
-    "Autoencoder",
+    "ConvAutoencoder",
+    "ConvVAE",
     "TransformerEncoder",
     "FnoEncoder",
     "SpectralConv1d",

@@ -7,6 +7,7 @@
 import logging
 from pathlib import Path
 
+import torch
 from torch import nn, load
 
 from reflectorch.models.utils import activation_by_name
@@ -15,7 +16,8 @@ from reflectorch.paths import SAVED_MODELS_DIR
 __all__ = [
     "ConvEncoder",
     "ConvDecoder",
-    "Autoencoder",
+    "ConvAutoencoder",
+    "ConvVAE",
 ]
 
 logger = logging.getLogger(__name__)
@@ -104,7 +106,7 @@ class ConvDecoder(nn.Module):
                  dim_latent: int = 64, 
                  in_size: int = 8,
                  use_batch_norm: bool = True,
-                 activation: str = 'relu'
+                 activation: str = 'relu',
                  ):
 
         super().__init__()
@@ -155,12 +157,54 @@ class ConvDecoder(nn.Module):
         return x
 
 
-class Autoencoder(nn.Module):
-    """A basic autoencoder wrapper"""
-    def __init__(self, encoder, decoder):
+class ConvAutoencoder(nn.Module):
+    """A 1D convolutional denoising autoencoder"""
+    def __init__(self,
+                 in_channels: int = 1,
+                 encoder_hidden_channels: tuple = (32, 64, 128, 256, 512),
+                 decoder_hidden_channels: tuple = (512, 256, 128, 64, 32),
+                 dim_latent: int = 64,
+                 dim_avpool: int = 1,
+                 use_batch_norm: bool = True,
+                 activation: str = 'relu',
+                 decoder_in_size: int = 8,
+                 **kwargs
+                 ):
         super().__init__()
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder = ConvEncoder(in_channels, encoder_hidden_channels, dim_latent, dim_avpool, use_batch_norm, activation, **kwargs)
+        self.decoder = ConvDecoder(decoder_hidden_channels, dim_latent, decoder_in_size, use_batch_norm, activation, **kwargs)
 
     def forward(self, x):
         return self.decoder(self.encoder(x))
+    
+class ConvVAE(nn.Module):
+    """A 1D convolutional variational autoencoder"""
+    def __init__(self,
+                 in_channels: int = 1,
+                 encoder_hidden_channels: tuple = (32, 64, 128, 256, 512),
+                 decoder_hidden_channels: tuple = (512, 256, 128, 64, 32),
+                 dim_latent: int = 64,
+                 dim_avpool: int = 1,
+                 use_batch_norm: bool = True,
+                 activation: str = 'relu',
+                 decoder_in_size: int = 8,
+                 **kwargs
+                 ):
+        super().__init__()
+        self.encoder = ConvEncoder(in_channels, encoder_hidden_channels, 2*dim_latent, dim_avpool, use_batch_norm, activation, **kwargs)
+        self.decoder = ConvDecoder(decoder_hidden_channels, dim_latent, decoder_in_size, use_batch_norm, activation, **kwargs)
+
+    def forward(self, x):
+        z_mu, z_logvar = self.encoder(x).chunk(2, dim=-1)
+        z = self.reparameterize(z_mu, z_logvar)
+
+        x_r_mu, x_r_logvar = self.decoder(z).chunk(2, dim=-1)
+        x = self.reparameterize(x_r_mu, x_r_logvar)
+
+        return x, (z_mu, z_logvar, x_r_mu, x_r_logvar)
+    
+    @staticmethod
+    def reparameterize(mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std).to(std)
+        return mu + eps * std

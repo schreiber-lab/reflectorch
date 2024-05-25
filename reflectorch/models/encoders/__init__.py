@@ -7,7 +7,8 @@
 from reflectorch.models.encoders.conv_encoder import (
     ConvEncoder,
     ConvDecoder,
-    Autoencoder,
+    ConvAutoencoder,
+    ConvVAE,
 )
 from reflectorch.models.encoders.fno import FnoEncoder, SpectralConv1d
 from reflectorch.models.encoders.transformers import TransformerEncoder
@@ -25,7 +26,8 @@ __all__ = [
     "TransformerEncoder",
     "ConvEncoder",
     "ConvDecoder",
-    "Autoencoder",
+    "ConvAutoencoder",
+    "ConvVAE",
     "ConvResidualNet1D",
     "FnoEncoder",
     "SpectralConv1d",
