@@ -25,6 +25,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
                  use_selu_init: bool = False,
                  pretrained_embedding_net: str = None,
                  residual: bool = True,
+                 adaptive_activation: bool = False,
                  ):
         super().__init__()
 
@@ -53,6 +54,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
             use_batch_norm=use_batch_norm,
             dropout_rate=dropout_rate,
             residual=residual,
+            adaptive_activation=adaptive_activation,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':

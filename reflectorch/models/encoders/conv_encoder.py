@@ -51,7 +51,7 @@ class ConvEncoder(nn.Module):
         for h in hidden_channels:
             layers = [
                 nn.Conv1d(in_channels, out_channels=h, kernel_size=3, stride=2, padding=1),
-                activation,
+                activation(),
             ]
 
             if use_batch_norm:
@@ -130,7 +130,7 @@ class ConvDecoder(nn.Module):
                         output_padding=1,
                     ),
                     nn.BatchNorm1d(hidden_channels[i + 1]) if use_batch_norm else nn.Identity(),
-                    activation,
+                    activation(),
                 )
             )
 
@@ -144,7 +144,7 @@ class ConvDecoder(nn.Module):
                                padding=1,
                                output_padding=1),
             nn.BatchNorm1d(hidden_channels[-1]) if use_batch_norm else nn.Identity(),
-            activation,
+            activation(),
             nn.Conv1d(hidden_channels[-1], out_channels=1,
                       kernel_size=3, padding=1)
         )

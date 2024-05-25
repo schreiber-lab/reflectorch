@@ -19,7 +19,8 @@ class ResidualMLP(nn.Module):
             activation: str = 'relu',
             use_batch_norm: bool = True,
             dropout_rate: float = 0.0,
-            residual: bool = True
+            residual: bool = True,
+            adaptive_activation: bool = False,
     ):
         super().__init__()
 
@@ -35,6 +36,7 @@ class ResidualMLP(nn.Module):
                     use_batch_norm=use_batch_norm,
                     dropout_rate=dropout_rate,
                     residual=residual,
+                    adaptive_activation=adaptive_activation,
                 )
                 for _ in range(num_blocks)
             ]
@@ -66,6 +68,7 @@ class ResidualBlock(nn.Module):
             use_batch_norm: bool = False,
             dropout_rate: float = 0.0,
             residual: bool = True,
+            adaptive_activation: bool = False,
     ):
         super().__init__()
          
@@ -73,7 +76,14 @@ class ResidualBlock(nn.Module):
         self.repeats_per_block = repeats_per_block
         self.use_batch_norm = use_batch_norm
         self.dropout_rate = dropout_rate
-        self.activation = activation_by_name(activation)
+        self.adaptive_activation = adaptive_activation
+
+        if not adaptive_activation:
+            self.activation = activation_by_name(activation)()
+        else:
+            self.activation_layers = nn.ModuleList(
+                [activation_by_name(activation)() for _ in range(repeats_per_block)]
+            )
 
         if use_batch_norm:
             self.batch_norm_layers = nn.ModuleList(
@@ -96,7 +106,10 @@ class ResidualBlock(nn.Module):
         for i in range(self.repeats_per_block):
             if self.use_batch_norm:
                 x = self.batch_norm_layers[i](x)
-            x = self.activation(x)
+            if not self.adaptive_activation:
+                x = self.activation(x)
+            else:
+                x = self.activation_layers[i](x)
             if self.dropout_rate > 0 and i == self.repeats_per_block - 1:
                 x = self.dropout(x)
             x = self.linear_layers[i](x)
