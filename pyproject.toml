@@ -33,7 +33,8 @@ dependencies = [
     "PyYAML",
     "click",
     "matplotlib",
-    "ipywidgets"
+    "ipywidgets",
+    "torchinfo",
 ]
 
 [project.optional-dependencies]
