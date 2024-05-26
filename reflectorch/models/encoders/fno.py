@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from reflectorch.models.utils import activation_by_name
+
 class SpectralConv1d(nn.Module):
     def __init__(self, in_channels, out_channels, modes):
         super().__init__()
@@ -55,7 +57,7 @@ class FnoEncoder(nn.Module):
             modes: int = 32, 
             width_fno: int = 64, 
             n_fno_blocks: int = 6, 
-            activation=nn.GELU()
+            activation='gelu',
             ):
         super().__init__()
 
@@ -66,7 +68,7 @@ class FnoEncoder(nn.Module):
         self.modes = modes
         self.width_fno = width_fno
         self.n_fno_blocks = n_fno_blocks
-        self.activation = activation
+        self.activation = activation_by_name(activation)()
         
 
         self.fc0 = nn.Linear(ch_in, width_fno) #(r(q), q)

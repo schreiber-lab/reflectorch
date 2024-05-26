@@ -378,6 +378,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
                  dropout_rate: float = 0.0,
                  use_selu_init: bool = False,
                  residual: bool = True,
+                 adaptive_activation: bool = False,
                  ):
         super().__init__()
 
@@ -387,7 +388,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             modes=modes, 
             width_fno=width_fno, 
             n_fno_blocks=n_fno_blocks, 
-            activation=activation_by_name(embedding_net_activation)
+            activation=embedding_net_activation
         )
 
         self.dim_prior_bounds = 2 * dim_out
@@ -404,6 +405,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             use_batch_norm=use_batch_norm,
             dropout_rate=dropout_rate,
             residual=residual,
+            adaptive_activation=adaptive_activation,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':
