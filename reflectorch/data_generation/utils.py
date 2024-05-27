@@ -137,3 +137,17 @@ def get_param_labels(
     roughness_labels = [f'{roughness_name} L{num_layers - i}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
     sld_labels = [f'{sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{sld_name} {substrate_name}']
     return thickness_labels + roughness_labels + sld_labels
+
+def get_param_labels_absorption_model(
+        num_layers: int, *,
+        thickness_name: str = 'Thickness',
+        roughness_name: str = 'Roughness',
+        real_sld_name: str = 'SLD real',
+        imag_sld_name: str = 'SLD imag',
+        substrate_name: str = 'sub',
+) -> List[str]:
+    thickness_labels = [f'{thickness_name} L{num_layers - i}' for i in range(num_layers)]
+    roughness_labels = [f'{roughness_name} L{num_layers - i}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
+    real_sld_labels = [f'{real_sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{real_sld_name} {substrate_name}']
+    imag_sld_labels = [f'{imag_sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{imag_sld_name} {substrate_name}']
+    return thickness_labels + roughness_labels + real_sld_labels + imag_sld_labels
