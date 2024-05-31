@@ -4,7 +4,7 @@ import math
 import torch
 from torch import nn, cat, split
 
-from reflectorch.models.encoders.residual_net import ResidualMLP, ResidualMLP_FiLM
+from reflectorch.models.encoders.residual_net import ResidualMLP
 from reflectorch.models.encoders.conv_encoder import ConvEncoder
 from reflectorch.models.encoders.fno import FnoEncoder
 from reflectorch.models.utils import activation_by_name
@@ -47,7 +47,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
         self.mlp = ResidualMLP(
             dim_in=dim_mlp_in,
             dim_out=dim_out,
-            dim_condition=None,
+            dim_condition=0,
             layer_width=layer_width,
             num_blocks=num_blocks,
             repeats_per_block=repeats_per_block,
