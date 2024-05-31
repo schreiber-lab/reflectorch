@@ -121,7 +121,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
         self.mlp = ResidualMLP(
             dim_in=dim_mlp_in,
             dim_out=dim_out,
-            dim_condition=None,
+            dim_condition=0,
             layer_width=layer_width,
             num_blocks=num_blocks,
             repeats_per_block=repeats_per_block,
