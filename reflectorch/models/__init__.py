@@ -16,8 +16,6 @@ __all__ = [
     "SpectralConv1d",
     "ConvResidualNet1D",
     "ResidualMLP",
-    "ResidualMLP_FiLM",
     "NetworkWithPriorsConvEmb",
-    "SubPriorConvFCEncoder_FiLM",
     "NetworkWithPriorsFnoEmb",
 ]
