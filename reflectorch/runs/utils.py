@@ -164,9 +164,10 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
     train_with_q_input = train_conf.get('train_with_q_input', False)
     clip_grad_norm_max = train_conf.get('clip_grad_norm_max', None)
 
+    trainer_cls = globals().get(train_conf['trainer_cls']) if 'trainer_cls' in train_conf else PointEstimatorTrainer
     trainer_kwargs = train_conf.get('trainer_kwargs', {})
 
-    trainer_cls = globals().get(config['trainer']['cls']) if 'trainer' in config else PointEstimatorTrainer
+
     trainer = trainer_cls(
         model, dset, train_conf['lr'], train_conf['batch_size'], clip_grad_norm_max=clip_grad_norm_max,
         logger=logger, optim_cls=optim_cls, train_with_q_input=train_with_q_input, 

@@ -116,7 +116,7 @@ class Trainer(object):
 
                 batch_data = self.get_batch_by_idx(batch_num)
                 loss_dict = self.get_loss_dict(batch_data)
-                loss = sum(loss_dict.values()) / grad_accumulation_steps
+                loss = loss_dict['loss'] / grad_accumulation_steps
                 total_loss += loss.item()
                 _update_loss_dict(avr_loss_dict, loss_dict)
 
