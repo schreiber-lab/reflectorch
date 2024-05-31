@@ -2,10 +2,6 @@ general:
   name: c_ae
   root_dir: null
 
-trainer:
-  cls:
-    DenoisingAETrainer
-
 dset:
   prior_sampler:
     cls: SubpriorParametricSampler
@@ -74,6 +70,8 @@ model:
       decoder_in_size: 4 # n_q / 32
        
 training:
+  trainer_cls:
+    DenoisingAETrainer
   num_iterations: 10000
   batch_size: 4096
   lr: 1.0e-4
