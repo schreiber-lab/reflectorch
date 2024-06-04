@@ -7,13 +7,13 @@ dset:
     cls: SubpriorParametricSampler
     kwargs:
       param_ranges:
-        thicknesses: [0., 500.]
-        roughnesses: [0., 60.]
-        slds: [0., 25.]
+        thicknesses: [0., 300.]
+        roughnesses: [0., 30.]
+        slds: [0., 50.]
       bound_width_ranges:
-        thicknesses: [1.0e-2, 500.]
-        roughnesses: [1.0e-2, 60.]
-        slds: [ 1.0e-2, 4.]
+        thicknesses: [1.0e-2, 300.]
+        roughnesses: [1.0e-2, 30.]
+        slds: [ 1.0e-2, 5.]
       model_name: standard_model
       max_num_layers: 2
       constrained_roughness: true
@@ -27,8 +27,8 @@ dset:
     cls: VariableQ
     kwargs:
       q_min_range: [0.01, 0.03]
-      q_max_range: [0.15, 0.3]
-      n_q_range: [64, 256]
+      q_max_range: [0.15, 0.4]
+      n_q_range: [128, 256]
       device: 'cuda'
       
   intensity_noise:
@@ -38,9 +38,9 @@ dset:
       abs_errors: 0.0
       consistent_rel_err: false
       logdist: false
-      apply_shift: true
+      apply_shift: false
       shift_range: [-0.3, 0.3]
-      apply_scaling: true
+      apply_scaling: false
       scale_range: [-0.02, 0.02]
 
   q_noise:
@@ -66,12 +66,12 @@ model:
       dim_embedding: 256
       width_fno: 128
       n_fno_blocks : 6
-      modes: 32
+      modes: 16
       embedding_net_activation: 'gelu'
       use_batch_norm: True
       dim_out: 8
       layer_width: 512
-      num_blocks: 6
+      num_blocks: 5
       repeats_per_block: 2
       mlp_activation: 'gelu'
       dropout_rate: 0.0 
