@@ -75,6 +75,7 @@ class BasicDataset(object):
         q_values: Tensor = self.q_generator.get_batch(batch_size, batch_data)
 
         if self.q_noise:
+            batch_data['original_q_values'] = q_values
             q_values = self.q_noise.apply(q_values, batch_data)
 
         batch_data['q_values'] = q_values
