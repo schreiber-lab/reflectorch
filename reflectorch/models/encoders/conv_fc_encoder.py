@@ -75,11 +75,9 @@ class NetworkWithPriorsConvEmb(nn.Module):
             curves, bounds = split(x, [x.shape[-1]-self.dim_prior_bounds, self.dim_prior_bounds], dim=-1)
             
         if q_values is not None:
-            curves = cat([curves[:, None, :], q_values.float()[:, None, :]], dim=1)
+            curves = cat([curves[:, None, :], q_values[:, None, :]], dim=1)
         
-        curves_embedding = self.embedding_net(curves)
-
-        x = cat([curves_embedding, bounds], dim=-1)
+        x = cat([self.embedding_net(curves), bounds], dim=-1)
         x = self.mlp(x)
 
         return x
@@ -146,8 +144,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             curves, bounds = split(x, [x.shape[-1]-self.dim_prior_bounds, self.dim_prior_bounds], dim=-1)
             
         if q_values is not None:
-            q_input = 4 * q_values.float()[:, None, :] - 1
-            curves = cat([curves[:, None, :], q_input], dim=1)
+            curves = cat([curves[:, None, :], q_values[:, None, :]], dim=1)
         else:
             curves = curves[:, None, :]
 

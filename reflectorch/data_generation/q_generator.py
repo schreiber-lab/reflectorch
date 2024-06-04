@@ -111,6 +111,19 @@ class VariableQ(QGenerator):
         q = torch.from_numpy(np.linspace(q_min, q_max, n_q).T).to(self.device).to(self.dtype)
         
         return q
+    
+    def scale_q(self, q):
+        """scales the q values to the range [-1, 1]
+
+        Args:
+            q (Tensor): unscaled q values
+
+        Returns:
+            Tensor: scaled q values
+        """
+        scaled_q_01 = (q - self.q_min_range[0]) / (self.q_max_range[1] - self.q_min_range[0]) 
+
+        return 2.0 * (scaled_q_01 - 0.5)
 
 
 class ConstantAngle(QGenerator):

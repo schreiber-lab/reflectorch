@@ -51,7 +51,7 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
             sigmas = self.loader.curves_scaler.scale(batch_data['sigmas'])
             context = torch.cat([context, sigmas], dim=-1)
             
-        scaled_params, context = scaled_params.to(torch.float32), context.to(torch.float32)
+        scaled_params, context, q_values = scaled_params.to(torch.float32), context.to(torch.float32), q_values.to(torch.float32)
         scaled_params, context = batch_data['params'].rearrange_context_from_params(scaled_params, context)
 
         return scaled_params, context, q_values
@@ -62,7 +62,8 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
         scaled_params, context, q_values = batch_data
 
         if self.train_with_q_input:
-            predicted_params = self.model(context, q_values)
+            scaled_q_values = self.loader.q_generator.scale_q(q_values)
+            predicted_params = self.model(context, scaled_q_values)
         else:
             predicted_params = self.model(context)
             
