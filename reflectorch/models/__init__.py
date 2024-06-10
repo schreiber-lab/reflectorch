@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from reflectorch.models.encoders import *
+from reflectorch.models.networks import *
 
 __all__ = [
     "ConvEncoder",
