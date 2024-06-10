@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from reflectorch.models.utils import activation_by_name
+from reflectorch.models.activations import activation_by_name
 
 class SpectralConv1d(nn.Module):
     def __init__(self, in_channels, out_channels, modes):

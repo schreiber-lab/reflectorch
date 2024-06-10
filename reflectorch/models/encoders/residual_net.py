@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn import init
 
-from reflectorch.models.utils import activation_by_name
+from reflectorch.models.activations import activation_by_name
 
 class ResidualMLP(nn.Module):
     """Multilayer perceptron with residual blocks (BN-Act-Linear-BN-Act-Linear)"""

@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 from torch import nn, load
 
-from reflectorch.models.utils import activation_by_name
+from reflectorch.models.activations import activation_by_name
 from reflectorch.paths import SAVED_MODELS_DIR
 
 __all__ = [
