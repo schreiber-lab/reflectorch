@@ -4,7 +4,7 @@ import math
 import torch
 from torch import nn, cat, split
 
-from reflectorch.models.encoders.residual_net import ResidualMLP
+from reflectorch.models.networks.residual_net import ResidualMLP
 from reflectorch.models.encoders.conv_encoder import ConvEncoder
 from reflectorch.models.encoders.fno import FnoEncoder
 from reflectorch.models.activations import activation_by_name
