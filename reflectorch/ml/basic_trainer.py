@@ -4,7 +4,7 @@
 # This source code is licensed under the GPL license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple, Iterable, Any, Union, Type
+from typing import Optional, Tuple, Iterable, Any, Union, Type
 from collections import defaultdict
 
 from tqdm.notebook import trange
@@ -26,6 +26,20 @@ __all__ = [
 
 
 class Trainer(object):
+    """Trainer class
+    
+    Args:
+        model (nn.Module): neural network
+        loader (DataLoader): data loader
+        lr (float): learning rate
+        batch_size (int): batch size
+        clip_grad_norm (int, optional): maximum norm for gradient clipping if it is not None. Defaults to None.
+        logger (Union[Logger, Tuple[Logger, ...], Loggers], optional): logger. Defaults to None.
+        optim_cls (Type[torch.optim.Optimizer], optional): Pytorch optimizer. Defaults to torch.optim.Adam.
+        optim_kwargs (dict, optional): optimizer arguments. Defaults to None.
+        train_with_q_input (bool, optional): if True the q values are also used as input. Defaults to False.
+    """
+
     TOTAL_LOSS_KEY: str = 'total_loss'
 
     def __init__(self,
@@ -33,25 +47,27 @@ class Trainer(object):
                  loader: 'DataLoader',
                  lr: float,
                  batch_size: int,
+                 clip_grad_norm_max: Optional[int] = None,
+                 train_with_q_input: bool = False,
                  logger: Union[Logger, Tuple[Logger, ...], Loggers] = None,
                  optim_cls: Type[torch.optim.Optimizer] = torch.optim.Adam,
                  optim_kwargs: dict = None,
-                 train_with_q_input: bool = False,
                  **kwargs
                  ):
-
+        
         self.model = model
         self.loader = loader
         self.batch_size = batch_size
+        self.clip_grad_norm_max = clip_grad_norm_max
         self.train_with_q_input = train_with_q_input
 
         self.optim = self.configure_optimizer(optim_cls, lr=lr, **(optim_kwargs or {}))
-        self.losses = defaultdict(list)
-        self.logger = _init_logger(logger)
-
-        self.callback_params = {}
         self.lrs = []
+        self.losses = defaultdict(list)
 
+        self.logger = _init_logger(logger)
+        self.callback_params = {}
+        
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -61,18 +77,25 @@ class Trainer(object):
         pass
 
     def log(self, name: str, data):
+        """log data"""
         self.logger.log(name, data)
 
-    def train_epoch(self,
+    def train(self,
                     num_batches: int,
                     callbacks: Union[Tuple['TrainerCallback', ...], 'TrainerCallback'] = (),
                     disable_tqdm: bool = False,
                     update_tqdm_freq: int = 10,
                     grad_accumulation_steps: int = 1,
                     ):
+        """starts the training process
 
-        if not grad_accumulation_steps:
-            return
+        Args:
+            num_batches (int): number of training iterations
+            callbacks (Union[Tuple['TrainerCallback'], 'TrainerCallback']: trainer callbacks. Defaults to ().
+            disable_tqdm (bool, optional): disable the progress bar if True. Defaults to False.
+            update_tqdm_freq (int, optional): frequency for updating the progress bar. Defaults to 10.
+            grad_accumulation_steps (int, optional): number of gradient accumulation steps. Defaults to 1.
+        """
 
         if isinstance(callbacks, TrainerCallback):
             callbacks = (callbacks,)
@@ -85,6 +108,7 @@ class Trainer(object):
 
         for batch_num in pbar:
             self.model.train()
+
             self.optim.zero_grad()
             total_loss, avr_loss_dict = 0, defaultdict(list)
 
@@ -92,7 +116,7 @@ class Trainer(object):
 
                 batch_data = self.get_batch_by_idx(batch_num)
                 loss_dict = self.get_loss_dict(batch_data)
-                loss = sum(loss_dict.values()) / grad_accumulation_steps
+                loss = loss_dict['loss'] / grad_accumulation_steps
                 total_loss += loss.item()
                 _update_loss_dict(avr_loss_dict, loss_dict)
 
@@ -101,7 +125,10 @@ class Trainer(object):
 
                 loss.backward()
 
+            if self.clip_grad_norm_max is not None:
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.clip_grad_norm_max)
             self.optim.step()
+
             avr_loss_dict = {k: np.mean(v) for k, v in avr_loss_dict.items()}
             self._update_losses(avr_loss_dict, total_loss)
 
@@ -132,24 +159,56 @@ class Trainer(object):
         self.lrs.append(self.lr())
 
     def configure_optimizer(self, optim_cls, lr: float, **kwargs) -> torch.optim.Optimizer:
+        """configure the optimizer based on the optimizer class, the learning rate and the optimizer keyword arguments
+
+        Args:
+            optim_cls: the class of the optimizer
+            lr (float): the learning rate
+
+        Returns:
+            torch.optim.Optimizer:
+        """
         optim = optim_cls(self.model.parameters(), lr,  **kwargs)
         return optim
 
     def lr(self, param_group: int = 0) -> float:
+        """get the learning rate"""
         return self.optim.param_groups[param_group]['lr']
 
     def set_lr(self, lr: float, param_group: int = 0) -> None:
+        """set the learning rate"""
         self.optim.param_groups[param_group]['lr'] = lr
 
 
 class TrainerCallback(object):
+    """Base class for trainer callbacks
+    """
     def start_training(self, trainer: Trainer) -> None:
+        """add functionality the start of training
+
+        Args:
+            trainer (Trainer): the trainer object
+        """
         pass
 
     def end_training(self, trainer: Trainer) -> None:
+        """add functionality at the end of training
+
+        Args:
+            trainer (Trainer): the trainer object
+        """
         pass
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> Union[bool, None]:
+        """add functionality at the end of the iteration / batch
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the index of the current iteration / batch
+
+        Returns:
+            Union[bool, None]:
+        """
         pass
 
     def __repr__(self):
@@ -161,11 +220,26 @@ class DataLoader(TrainerCallback):
 
 
 class PeriodicTrainerCallback(TrainerCallback):
+    """Base class for trainer callbacks which perform an action periodically after a number of iterations
+        
+    Args:
+        step (int, optional): Number of iterations after which the action is repeated. Defaults to 1.
+        last_epoch (int, optional): the last training  iteration for which the action is performed. Defaults to -1.
+    """
     def __init__(self, step: int = 1, last_epoch: int = -1):
         self.step = step
         self.last_epoch = last_epoch
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> Union[bool, None]:
+        """add functionality at the end of the iteration / batch
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the index of the current iteration / batch
+
+        Returns:
+            Union[bool, None]:
+        """
         if (
                 is_divisor(batch_num, self.step) and
                 (self.last_epoch == -1 or batch_num < self.last_epoch)

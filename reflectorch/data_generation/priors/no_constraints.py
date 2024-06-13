@@ -49,6 +49,7 @@ DEFAULT_SCALED_RANGE: Tuple[float, float] = (-sqrt(3.), sqrt(3.))
 
 
 class BasicPriorSampler(PriorSampler, ScalerMixin):
+    """Prior samplers for thicknesses, roughnesses and slds"""
     def __init__(self,
                  thickness_range: Tuple[float, float] = DEFAULT_THICKNESS_RANGE,
                  roughness_range: Tuple[float, float] = DEFAULT_ROUGHNESS_RANGE,

@@ -16,6 +16,7 @@ from reflectorch.runs.utils import (
     get_paths_from_config,
     get_callbacks_from_config,
     get_trainer_by_name,
+    get_callbacks_by_name,
 )
 
 from reflectorch.runs.config import load_config
@@ -29,5 +30,6 @@ __all__ = [
     'get_paths_from_config',
     'get_callbacks_from_config',
     'get_trainer_by_name',
+    'get_callbacks_by_name',
     'load_config',
 ]

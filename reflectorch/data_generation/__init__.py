@@ -20,12 +20,13 @@ from reflectorch.data_generation.priors import (
     ExpUniformSubPriorSampler,
     SimpleMultilayerSampler,
     SubpriorParametricSampler,
-    ParametricParams,
+    BasicParams,
     ParametricModel,
     MULTILAYER_MODELS,
     SamplerStrategy,
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
+    ConstrainedRoughnessAndImgSldSamplerStrategy,
 )
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
@@ -50,7 +51,7 @@ from reflectorch.data_generation.noise import (
 from reflectorch.data_generation.scale_curves import (
     CurvesScaler,
     LogAffineCurvesScaler,
-    MeanNormalization,
+    MeanNormalizationCurvesScaler,
 )
 from reflectorch.data_generation.utils import (
     get_reversed_params,
@@ -86,8 +87,12 @@ __all__ = [
     "MultiplicativeLogNormalNoiseGenerator",
     "PoissonNoiseGenerator",
     "CurvesScaler",
+    "ShiftNoise",
+    "ScalingNoise",
+    "QNormalNoiseGenerator",
+    "QSystematicShiftGenerator",
     "LogAffineCurvesScaler",
-    "MeanNormalization",
+    "MeanNormalizationCurvesScaler",
     "get_reversed_params",
     "get_density_profiles",
     "logdist_sampler",
@@ -113,10 +118,11 @@ __all__ = [
     "BasicQNoiseGenerator",
     "ConstantAngle",
     "SubpriorParametricSampler",
-    "ParametricParams",
+    "BasicParams",
     "ParametricModel",
     "MULTILAYER_MODELS",
     "SamplerStrategy",
     "BasicSamplerStrategy",
     "ConstrainedRoughnessSamplerStrategy",
+    "ConstrainedRoughnessAndImgSldSamplerStrategy",
 ]

@@ -1,0 +1,13 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro
+options:  # The options key will be applied to all chapters, but not sub-sections
+  numbered: True
+chapters:
+- file: installation
+- file: using_reflectorch
+- file: training_reflectorch
+- file: advanced_functionality
+- file: api

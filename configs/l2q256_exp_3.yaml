@@ -49,7 +49,7 @@ dset:
       constant_dq: true
 
 model:
-  encoder:
+  network:
     cls: SubPriorConvFCEncoder
     pretrained_name: null
     kwargs:

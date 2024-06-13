@@ -17,11 +17,18 @@ from reflectorch.ml.utils import is_divisor
 __all__ = [
     'SaveBestModel',
     'LogLosses',
-    'PretrainSubpriors',
 ]
 
 
 class SaveBestModel(TrainerCallback):
+    """Callback for periodically saving the best model weights
+
+    Args:
+        path (str): path for saving the model weights
+        freq (int, optional): frequency in iterations at which the current average loss is evaluated. Defaults to 50.
+        average (int, optional): number of recent iterations over which the average loss is computed. Defaults to 10.
+    """
+
     def __init__(self, path: str, freq: int = 50, average: int = 10):
         self.path = path
         self.average = average
@@ -29,6 +36,12 @@ class SaveBestModel(TrainerCallback):
         self.freq = freq
 
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
+        """checks if the current average loss has improved from the previous save, if true the model is saved
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the current iteration / batch
+        """
         if is_divisor(batch_num, self.freq):
 
             loss = np.mean(trainer.losses['total_loss'][-self.average:])
@@ -38,6 +51,13 @@ class SaveBestModel(TrainerCallback):
                 self.save(trainer, batch_num)
 
     def save(self, trainer: Trainer, batch_num: int):
+        """saves a dictionary containing the network weights, the learning rates, the losses and the current \
+            best loss with its corresponding iteration to the disk
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the current iteration / batch
+        """
         prev_save = trainer.callback_params.pop('saved_iteration', 0)
         trainer.callback_params['saved_iteration'] = batch_num
         save_dict = {
@@ -52,20 +72,15 @@ class SaveBestModel(TrainerCallback):
 
 
 class LogLosses(TrainerCallback):
+    """Callback for logging the training losses"""
     def end_batch(self, trainer: Trainer, batch_num: int) -> None:
+        """log loss at the current iteration
+
+        Args:
+            trainer (Trainer): the trainer object
+            batch_num (int): the index of the current iteration / batch
+        """
         try:
             trainer.log('train/total_loss', trainer.losses[trainer.TOTAL_LOSS_KEY][-1])
         except IndexError:
             pass
-
-
-class PretrainSubpriors(TrainerCallback):
-    def __init__(self, num_pretrain_iterations: int):
-        self.num_pretrain_iterations = num_pretrain_iterations
-
-    def start_training(self, trainer: Trainer) -> None:
-        trainer.subprior_pretraining = True
-
-    def end_batch(self, trainer: Trainer, batch_num: int) -> None:
-        if batch_num > self.num_pretrain_iterations:
-            trainer.subprior_pretraining = False

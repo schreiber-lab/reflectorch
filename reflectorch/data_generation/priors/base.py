@@ -14,23 +14,30 @@ __all__ = [
 
 
 class PriorSampler(object):
+    """Base class for prior samplers"""
+    
     PARAM_CLS = Params
 
     @property
     def param_dim(self) -> int:
+        """gets the number of parameters (i.e. the parameter dimensionality)"""
         return self.PARAM_CLS.layers_num2size(self.max_num_layers)
 
     @property
     def max_num_layers(self) -> int:
+        """gets the number of layers"""
         raise NotImplementedError
 
     def sample(self, batch_size: int) -> Params:
+        """sample a batch of parameters"""
         raise NotImplementedError
 
     def scale_params(self, params: Params) -> Tensor:
+        """scale the parameters to a ML-friendly range"""
         raise NotImplementedError
 
     def restore_params(self, scaled_params: Tensor) -> Params:
+        """restore the parameters to their original range"""
         raise NotImplementedError
 
     def log_prob(self, params: Params) -> Tensor:

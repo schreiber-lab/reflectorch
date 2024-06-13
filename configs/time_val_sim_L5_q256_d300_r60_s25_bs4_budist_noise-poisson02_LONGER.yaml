@@ -1,0 +1,130 @@
+general:
+  name: time_val_sim_L5_q256_d300_r60_s25_bs4_budist_noise-poisson02_LONGER
+  root_dir: null
+  
+dset:
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+        thicknesses: [1., 300.]
+        roughnesses: [0., 60.]
+        slds: [0., 25.]
+      bound_width_ranges:
+        thicknesses: [1.0e-2, 300.]
+        roughnesses: [1.0e-2, 60.]
+        slds: [ 1.0e-2, 4.]
+      model_name: standard_model
+      max_num_layers: 5
+      constrained_roughness: true
+      max_thickness_share: 0.5
+      logdist: false
+      
+#   prior_sampler:   
+#     cls: UniformSubPriorSampler
+#     kwargs:
+#       thickness_range: [0., 300.]
+#       roughness_range: [0., 20.]
+#       sld_range: [0., 25.]
+#       num_layers: 2
+#       use_drho: false
+#       scale_by_subpriors: false
+#       logdist: false
+#       smaller_roughnesses: false
+#       relative_min_bound_width: 1.0e-4
+      
+  q_generator:
+    cls: ConstantQ
+    kwargs:
+      q: [0.02, 0.3, 256]
+      remove_zero: false
+      fixed_zero: true
+      
+#   intensity_noise:
+#     cls: BasicExpIntensityNoise
+#     kwargs:
+#       relative_errors: [0.05, 0.2]
+#       abs_errors: 1.0e-10
+#       consistent_rel_err: false
+#       logdist: true
+#       apply_shift: false
+#       shift_range: [-0.1, 0.002]
+#       apply_scaling: false
+#       scale_range: [-0.02, 0.02]
+  intensity_noise: #no noise
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.0, 0.2] #[0.01, 0.02]
+      abs_errors: 0.0
+      consistent_rel_err: false
+      logdist: false
+      apply_shift: false
+      shift_range: [-0.001, 0.001]
+      apply_scaling: false
+      scale_range: [-0.001, 0.001] #[-0.02, 0.02]
+
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 1.0e-7 #5.0e-4
+      noise_std: [0., 1.0e-6] #[0., 1.0e-3] #[0., 0.001]
+    
+#   smearing:
+#     cls: Smearing
+#     kwargs:
+#       sigma_range: [8.0e-4, 5.0e-3]
+#       gauss_num: 31
+#       share_smeared: 0.2
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2 #0.2
+      bias: 1.0 #1.0
+      eps: 1.0e-10
+
+model:
+  network:
+    cls: NetworkWithPriorsConvEmb
+    pretrained_name: null
+    kwargs:
+       hidden_dims: [32, 64, 128, 256, 512]
+       latent_dim: 17 #output_dim
+       conv_latent_dim: 128
+       avpool: 8
+       use_batch_norm: true
+       in_features: 256
+       prior_in_features: 34
+       hidden_features: 1024
+       num_blocks: 6  #3
+       fc_activation: 'gelu'
+       conv_activation: 'gelu' #'lrelu'
+       pass_bounds: false
+       pretrained_conv: null
+training:
+  train_with_q_input: False
+  num_iterations: 10000
+  batch_size: 4096
+  lr: 1.0e-4
+  update_tqdm_freq: 1
+  grad_accumulation_steps: 1
+  logger:
+    use_neptune: false
+  optimizer: AdamW
+#   trainer_kwargs
+#     optim_kwargs:
+#       betas:
+
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+#     lr_scheduler:
+#       cls: LogCyclicLR
+#       kwargs:
+#         base_lr: 1.0e-5
+#         max_lr: 5.0e-4
+#         period: 5000
+#         gamma: 0.95
+#         log: false
+#         start_period: 10

@@ -4,7 +4,6 @@ except ImportError:
     from typing_extensions import Literal
 
 import numpy as np
-from numpy import ndarray
 from scipy.special import erf
 
 __all__ = [
@@ -18,12 +17,24 @@ BEAM_SHAPE = Literal["gauss", "box"]
 
 
 def apply_footprint_correction(
-    intensity: ndarray,
-    scattering_angle: ndarray,
+    intensity: np.ndarray,
+    scattering_angle: np.ndarray,
     beam_width: float,
     sample_length: float,
     beam_shape: BEAM_SHAPE = "gauss",
-):
+) -> np.ndarray:
+    """applies footprint correction to an experimental reflectivity curve
+
+    Args:
+        intensity (np.ndarray): reflectivity curve
+        scattering_angle (np.ndarray): array of scattering angles
+        beam_width (float): the beam width
+        sample_length (float): the sample length
+        beam_shape (BEAM_SHAPE, optional): the shape of the beam, either "gauss" or "box". Defaults to "gauss".
+
+    Returns:
+        np.ndarray: the footprint corrected reflectivity curve
+    """
     factors = _get_factors_by_beam_shape(
         scattering_angle, beam_width, sample_length, beam_shape
     )
@@ -31,8 +42,8 @@ def apply_footprint_correction(
 
 
 def remove_footprint_correction(
-    intensity: ndarray,
-    scattering_angle: ndarray,
+    intensity: np.ndarray,
+    scattering_angle: np.ndarray,
     beam_width: float,
     sample_length: float,
     beam_shape: BEAM_SHAPE = "gauss",
@@ -44,7 +55,7 @@ def remove_footprint_correction(
 
 
 def _get_factors_by_beam_shape(
-    scattering_angle: ndarray, beam_width: float, sample_length: float, beam_shape: BEAM_SHAPE
+    scattering_angle: np.ndarray, beam_width: float, sample_length: float, beam_shape: BEAM_SHAPE
 ):
     if beam_shape == "gauss":
         return gaussian_factors(scattering_angle, beam_width, sample_length)

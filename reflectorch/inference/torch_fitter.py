@@ -7,6 +7,20 @@ from reflectorch.data_generation import LogLikelihood, reflectivity, PriorSample
 
 
 class ReflGradientFit(object):
+    """Directly optimizes the thin film parameters using a Pytorch optimizer
+
+    Args:
+        q (Tensor): the q positions
+        exp_curve (Tensor): the experimental reflectivity curve
+        prior_sampler (PriorSampler): the prior sampler
+        params (Tensor): the initial thin film parameters
+        fit_indices (Tensor): the indices of the thin film parameters which are to be fitted
+        sigmas (Tensor, optional): error bars of the reflectivity curve, if not provided they are derived from rel_err and abs_err. Defaults to None.
+        optim_cls (_type_, optional): the Pytorch optimizer class. Defaults to None.
+        lr (float, optional): the learning rate. Defaults to 1e-2.
+        rel_err (float, optional): the relative error in the reflectivity curve. Defaults to 0.1.
+        abs_err (float, optional): the absolute error in the reflectivity curve. Defaults to 1e-7.
+    """
     def __init__(self,
                  q: Tensor,
                  exp_curve: Tensor,
@@ -19,7 +33,6 @@ class ReflGradientFit(object):
                  rel_err: float = 0.1,
                  abs_err: float = 1e-7,
                  ):
-
         self.q = q
 
         if sigmas is None:
@@ -54,6 +67,12 @@ class ReflGradientFit(object):
         return reflectivity(self.q, d, sigma, rho)
 
     def run(self, num_iterations: int = 500, disable_tqdm: bool = False):
+        """Runs the optimization process
+
+        Args:
+            num_iterations (int, optional): number of iterations the optimization is run for. Defaults to 500.
+            disable_tqdm (bool, optional): whether to disable the prograss bar. Defaults to False.
+        """
         pbar = trange(num_iterations, disable=disable_tqdm)
 
         for _ in pbar:

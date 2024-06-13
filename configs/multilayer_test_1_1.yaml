@@ -2,11 +2,11 @@ general:
   name: multilayer_test_1_1
   root_dir: null
 dset:
-  cls: MultilayerDataset
+  cls: MultilayerDataLoader
   prior_sampler:
     cls: SimpleMultilayerSampler
     kwargs:
-      model_name: model1
+      model_name: repeating_multilayer_v1
       max_num_layers: 30
       params:
           d_full_rel: [0, 25]
@@ -43,7 +43,7 @@ dset:
       shift_std: 5.0e-4
       noise_std: [0., 0.001]
 model:
-  encoder:
+  network:
     cls: SeqConvFCEncoder
     pretrained_name: multilayer_test_1
     kwargs:

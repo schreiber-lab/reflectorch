@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from reflectorch.models.activations import activation_by_name
+
 class SpectralConv1d(nn.Module):
     def __init__(self, in_channels, out_channels, modes):
         super().__init__()
@@ -35,10 +37,30 @@ class SpectralConv1d(nn.Module):
         x = torch.fft.irfft(out_ft, n=x.size(-1))
         return x
     
-    
-class FNO_Enc(nn.Module):
-    def __init__(self, ch_in=2, dim_embedding=128, modes=32, width_fno=64, n_fno_blocks=6, activation=nn.GELU()):
+
+class FnoEncoder(nn.Module):
+    """An embedding network based on the Fourier Neural Operator (FNO) architecture
+
+    Args:
+        ch_in (int): number of input channels
+        dim_embedding (int): dimension of the output embedding
+        modes (int): number of Fourier modes
+        width_fno (int): number of channels of the intermediate representations
+        n_fno_blocks (int): number of FNO blocks
+        activation (nn.Module): Pytorch activation function module
+
+    """
+    def __init__(
+            self, 
+            ch_in: int = 2, 
+            dim_embedding: int = 128, 
+            modes: int = 32, 
+            width_fno: int = 64, 
+            n_fno_blocks: int = 6, 
+            activation='gelu',
+            ):
         super().__init__()
+
 
         self.ch_in = ch_in
         self.dim_embedding = dim_embedding
@@ -46,7 +68,7 @@ class FNO_Enc(nn.Module):
         self.modes = modes
         self.width_fno = width_fno
         self.n_fno_blocks = n_fno_blocks
-        self.activation = activation
+        self.activation = activation_by_name(activation)()
         
 
         self.fc0 = nn.Linear(ch_in, width_fno) #(r(q), q)
@@ -55,6 +77,7 @@ class FNO_Enc(nn.Module):
         self.fc_out = nn.Linear(width_fno, dim_embedding)
         
     def forward(self, x):
+        """"""
 
         x = x.permute(0, 2, 1)
         x = self.fc0(x)

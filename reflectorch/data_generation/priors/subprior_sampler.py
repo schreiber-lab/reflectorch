@@ -32,6 +32,7 @@ from reflectorch.data_generation.priors.no_constraints import (
 
 
 class UniformSubPriorParams(Params):
+    """Parameters class for thicknesses, roughnesses, slds together with their subprior bounds."""
     __slots__ = ('thicknesses', 'roughnesses', 'slds', 'min_bounds', 'max_bounds')
     PARAM_NAMES = __slots__
 
@@ -124,6 +125,22 @@ class UniformSubPriorParams(Params):
 
 
 class UniformSubPriorSampler(BasicPriorSampler):
+    """Prior sampler for thicknesses, roughnesses, slds and their subprior bounds
+
+    Args:
+        thickness_range (Tuple[float, float], optional): the range of the layer thicknesses. Defaults to DEFAULT_THICKNESS_RANGE.
+        roughness_range (Tuple[float, float], optional): the range of the interlayer roughnesses. Defaults to DEFAULT_ROUGHNESS_RANGE.
+        sld_range (Tuple[float, float], optional): the range of the layer SLDs. Defaults to DEFAULT_SLD_RANGE.
+        num_layers (int, optional): the number of layers. Defaults to DEFAULT_NUM_LAYERS.
+        use_drho (bool, optional): whether to use differences in SLD values between neighboring layers instead of the actual SLD values. Defaults to DEFAULT_USE_DRHO.
+        device (torch.device, optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
+        dtype (torch.dtype, optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
+        scaled_range (Tuple[float, float], optional): the range for scaling the parameters. Defaults to DEFAULT_SCALED_RANGE.
+        scale_by_subpriors (bool, optional): if True the film parameters are scaled with respect to their subprior bounds. Defaults to False.
+        smaller_roughnesses (bool, optional): if True the sampled roughnesses are biased towards smaller values. Defaults to False.
+        logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
+        relative_min_bound_width (float, optional): defines the interval [relative_min_bound_width, 1.0] from which the relative bound widths for each parameter are sampled. Defaults to 1e-2.
+    """
     PARAM_CLS = UniformSubPriorParams
 
     def __init__(self,
@@ -309,6 +326,7 @@ class UniformSubPriorSampler(BasicPriorSampler):
 
 
 class NarrowSldUniformSubPriorSampler(UniformSubPriorSampler):
+    """Prior sampler for thicknesses, roughnesses, slds and their subprior bounds. The subprior bound widths for SLDs are restricted to be lower than a specified value. """
     def __init__(self,
                  thickness_range: Tuple[float, float] = DEFAULT_THICKNESS_RANGE,
                  roughness_range: Tuple[float, float] = DEFAULT_ROUGHNESS_RANGE,

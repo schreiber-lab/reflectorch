@@ -1,0 +1,16 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/tritonserver:21.08-py3
+
+%files
+	/ /
+
+%post
+    	export ML_SERVER=true
+        python3 setup.py install --user --e
+
+%runscript
+        tritonserver --model-repository=../triton_models/
+
+###USAGE:
+#singularity build --fakeroot triton.sif triton_singularity
+#singularity shell --nv -e --pwd $PWD triton.sif

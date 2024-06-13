@@ -31,12 +31,13 @@ from reflectorch.data_generation.priors.parametric_models import (
 )
 from reflectorch.data_generation.priors.parametric_subpriors import (
     SubpriorParametricSampler,
-    ParametricParams,
+    BasicParams,
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
+    ConstrainedRoughnessAndImgSldSamplerStrategy,
 )
 
 __all__ = [
@@ -55,10 +56,11 @@ __all__ = [
     "SimpleMultilayerSampler",
     "MultilayerStructureParams",
     "SubpriorParametricSampler",
-    "ParametricParams",
+    "BasicParams",
     "ParametricModel",
     "MULTILAYER_MODELS",
     "SamplerStrategy",
     "BasicSamplerStrategy",
     "ConstrainedRoughnessSamplerStrategy",
+    "ConstrainedRoughnessAndImgSldSamplerStrategy",
 ]

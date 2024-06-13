@@ -5,19 +5,18 @@
 # LICENSE file in the root directory of this source tree.
 
 from reflectorch.models.encoders import *
+from reflectorch.models.networks import *
 
 __all__ = [
     "ConvEncoder",
     "ConvDecoder",
-    "Autoencoder",
+    "ConvAutoencoder",
+    "ConvVAE",
     "TransformerEncoder",
+    "FnoEncoder",
+    "SpectralConv1d",
     "ConvResidualNet1D",
-    "ResidualNet",
-    "ResidualNet_FiLM",
-    "ConvFCEncoder",
-    "SubPriorConvFCEncoder",
-    "SubPriorConvFCEncoder_V2",
-    "SubPriorConvFCEncoder_FiLM",
-    "SubPrior_FNO_MLP",
-    "SeqConvFCEncoder",
+    "ResidualMLP",
+    "NetworkWithPriorsConvEmb",
+    "NetworkWithPriorsFnoEmb",
 ]

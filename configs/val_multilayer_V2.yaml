@@ -2,7 +2,7 @@ general:
   name: val_multilayer_V2
   root_dir: null
 dset:
-  #cls: MultilayerDataset
+  #cls: MultilayerDataLoader
   prior_sampler:
     cls: SubpriorParametricSampler
     kwargs:
@@ -42,7 +42,7 @@ dset:
           s_si: [0.01, 10]
           r_sio2: [0.01, 2]
           r_si: [0.01, 2]
-      model_name: model3
+      model_name: repeating_multilayer_v3
       max_num_layers: 30
       logdist: false
 #   q_generator:
@@ -81,8 +81,8 @@ dset:
       eps: 1.0e-10
       
 model:
-  encoder:
-    cls: SubPriorConvFCEncoder_V2
+  network:
+    cls: NetworkWithPriorsConvEmb
     pretrained_name: null
     kwargs:
        hidden_dims: [32, 64, 128, 256, 512]
@@ -108,7 +108,7 @@ training:
   logger:
     use_neptune: false
   optimizer: AdamW
-#   init_kwargs
+#   trainer_kwargs
 #     optim_kwargs:
 #       betas:
 

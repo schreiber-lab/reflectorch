@@ -1,0 +1,102 @@
+general:
+  name: mc-o9
+  root_dir: null
+  
+dset:
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+        thicknesses: [0., 500.]
+        roughnesses: [0., 20.]
+        slds: [0., 50.]
+      bound_width_ranges:
+        thicknesses: [1.0e-2, 500.]
+        roughnesses: [1.0e-2, 20.]
+        slds: [ 1.0e-2, 5.]
+      model_name: standard_model
+      max_num_layers: 2
+      constrained_roughness: true
+      max_thickness_share: 0.5
+      logdist: false
+      scale_params_by_ranges: false
+      scaled_range: [-1., 1.]
+      device: 'cuda'
+      
+  q_generator:
+    cls: VariableQ
+    kwargs:
+      q_min_range: [0.01, 0.05]
+      q_max_range: [0.15, 0.4]
+      n_q_range: [128, 256]
+      device: 'cuda'
+      
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.0, 0.2]
+      abs_errors: 0.0
+      consistent_rel_err: true
+      logdist: false
+      apply_shift: false
+      shift_range: [-0.3, 0.3]
+      apply_scaling: false
+      scale_range: [-0.02, 0.02]
+
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 1.0e-3
+      noise_std: [0., 1.0e-3]
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2
+      bias: 1.0
+      eps: 1.0e-10
+
+model:
+  network:
+    cls: NetworkWithPriorsFnoEmb
+    pretrained_name: null
+    device: 'cuda'
+    kwargs:
+      in_channels: 2
+      dim_embedding: 512
+      width_fno: 128
+      n_fno_blocks : 1
+      modes: 16
+      embedding_net_activation: 'gelu'
+      use_batch_norm: True
+      dim_out: 8
+      layer_width: 1024
+      num_blocks: 6
+      repeats_per_block: 2
+      mlp_activation: 'gelu'
+      dropout_rate: 0.0 
+       
+training:
+  num_iterations: 50000
+  batch_size: 1024
+  lr: 1.0e-4
+  grad_accumulation_steps: 1
+  clip_grad_norm_max: 1.0
+  train_with_q_input: True
+  update_tqdm_freq: 1
+  optimizer: AdamW
+  trainer_kwargs:
+    optim_kwargs:
+      betas: [0.9, 0.999]
+      weight_decay: 0.0005
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+    lr_scheduler:
+      cls: StepLR
+      kwargs:
+        step_size: 2000
+        gamma: 0.9
+  logger:
+    use_neptune: false

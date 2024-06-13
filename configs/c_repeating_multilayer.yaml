@@ -1,0 +1,126 @@
+general:
+  name: c_repeating_multilayer
+  root_dir: null
+  
+dset:
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+          d_full_rel: [0, 25]
+          rel_sigmas: [0, 5]
+          dr_sigmoid_rel_pos: [-10, 10]
+          dr_sigmoid_rel_width: [0, 20]
+          d_block1_rel: [0.01, 0.99]
+          d_block: [10, 20]
+          s_block_rel: [0., 0.3]
+          r_block: [0., 20.] 
+          dr: [-10., 10.]
+          d3_rel: [0, 1] 
+          s3_rel: [0, 1] 
+          r3: [0., 25] 
+          d_sio2: [0, 10] 
+          s_sio2: [0, 10] 
+          s_si: [0., 10] 
+          r_sio2: [17., 19.]
+          r_si: [19., 21.]
+      bound_width_ranges:
+          d_full_rel: [0.1, 25]
+          rel_sigmas: [0.1, 5]
+          dr_sigmoid_rel_pos: [0.1, 20]
+          dr_sigmoid_rel_width: [0.1, 20]
+          d_block1_rel: [0.01, 1.0]
+          d_block: [0.1, 10.]
+          s_block_rel: [0.1, 0.3]
+          r_block: [0.1, 5.]
+          dr: [0.1, 5.]
+          d3_rel: [0.01, 1]
+          s3_rel: [0.01, 1]
+          r3: [0.01, 25]
+          d_sio2: [0.01, 10]
+          s_sio2: [0.01, 10]
+          s_si: [0.01, 10]
+          r_sio2: [0.01, 2]
+          r_si: [0.01, 2]
+      model_name: repeating_multilayer_v3
+      max_num_layers: 30
+      logdist: false
+      scale_params_by_ranges: false
+      scaled_range: [-1., 1.]
+      device: 'cuda'
+      
+  q_generator:
+    cls: ConstantQ
+    kwargs:
+      q: [0.02, 0.5, 256]
+      device: 'cuda'
+      
+  intensity_noise:
+    cls: BasicExpIntensityNoise
+    kwargs:
+      relative_errors: [0.0, 0.2]
+      abs_errors: 0.0
+      consistent_rel_err: false
+      logdist: false
+      apply_shift: true
+      shift_range: [-0.3, 0.3]
+      apply_scaling: true
+      scale_range: [-0.02, 0.02]
+
+  q_noise:
+    cls: BasicQNoiseGenerator
+    kwargs:
+      shift_std: 1.0e-3
+      noise_std: [0., 1.0e-3]
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2
+      bias: 1.0
+      eps: 1.0e-10
+
+model:
+  network:
+    cls: NetworkWithPriorsConvEmb
+    pretrained_name: null
+    device: 'cuda'
+    kwargs:
+      in_channels: 1
+      hidden_channels: [32, 64, 128, 256, 512]
+      dim_embedding: 128
+      dim_avpool: 1
+      embedding_net_activation: 'gelu'
+      use_batch_norm: true
+      dim_out: 17
+      layer_width: 512
+      num_blocks: 6
+      repeats_per_block: 2
+      mlp_activation: 'gelu'
+      dropout_rate: 0.0 
+      pretrained_embedding_net: null
+       
+training:
+  num_iterations: 10000
+  batch_size: 4096
+  lr: 1.0e-4
+  grad_accumulation_steps: 1
+  clip_grad_norm_max: null
+  train_with_q_input: False
+  update_tqdm_freq: 1
+  optimizer: AdamW
+  trainer_kwargs:
+    optim_kwargs:
+      betas: [0.9, 0.999]
+      weight_decay: 0.0005
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+    lr_scheduler:
+      cls: StepLR
+      kwargs:
+        step_size: 500
+        gamma: 0.5
+  logger:
+    use_neptune: false

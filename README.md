@@ -1,5 +1,59 @@
-# _reflectorch_
+# Reflectorch
 
-## X-ray & neutron reflectometry + prior input (mlreflect 2)
+[![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)](https://pytorch.org/)
+[![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
+[![SciPy](https://img.shields.io/badge/SciPy-%230C55A5.svg?style=for-the-badge&logo=scipy&logoColor=%white)](https://scipy.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)](https://matplotlib.org/)
+[![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)](https://yaml.org/)
 
-Private repo under development.
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
+![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
+[![Documentation build status](https://readthedocs.org/projects/reflectorch/badge/)](https://reflectorch.readthedocs.io)
+![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
+[![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://reflectorch.readthedocs.io)
+<!-- [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) -->
+
+
+**Reflectorch** is a machine learning Python package for the analysis of X-ray and neutron reflectometry data based on Pytorch. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and neural network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://doi.org/10.1107/S1600576724002115).
+
+## Installation
+
+**Reflectorch** can be installed either from [PyPi](https://pypi.org/project/reflectorch/) via *pip* or from [conda-forge](https://anaconda.org/conda-forge/reflectorch/) via *conda*:
+
+```bash
+pip install reflectorch
+```
+
+or
+
+```bash
+conda install -c conda-forge reflectorch
+```
+
+Users with Nvidia GPUs need to additionally install Pytorch with CUDA support corresponding to their hardware and operating system according to the instructions from the [Pytorch website](https://pytorch.org/get-started/locally/)
+
+## Get started
+
+<!-- We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br> -->
+
+## Documentation
+
+<!-- The documentation is built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and is hosted at [reflectorch.readthedocs.io](https://reflectorch.readthedocs.io). -->
+
+## Citation
+If you find our work useful in your research, please cite:
+```
+@Article{Munteanu2024,
+  author    = {Munteanu, Valentin and Starostin, Vladimir and Greco, Alessandro and Pithan, Linus and Gerlach, Alexander and Hinderhofer, Alexander and Kowarik, Stefan and Schreiber, Frank},
+  journal   = {Journal of Applied Crystallography},
+  title     = {Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge},
+  year      = {2024},
+  issn      = {1600-5767},
+  month     = mar,
+  number    = {2},
+  volume    = {57},
+  doi       = {10.1107/s1600576724002115},
+  publisher = {International Union of Crystallography (IUCr)},
+}
+```

@@ -42,7 +42,7 @@ dset:
       noise_std: [0., 0.0005]
 
 model:
-  encoder:
+  network:
     cls: SubPriorConvFCEncoder
     pretrained_name: null
     kwargs:

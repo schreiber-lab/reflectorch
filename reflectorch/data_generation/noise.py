@@ -28,11 +28,18 @@ __all__ = [
 
 
 class QNoiseGenerator(ProcessData):
+    """base class for q noise generators"""
     def apply(self, qs: Tensor, context: dict = None):
         return qs
 
 
 class QNormalNoiseGenerator(QNoiseGenerator):
+    """Q noise generator which adds to each q value of the reflectivity curve a noise sampled from a normal distribution.
+
+    Args:
+        std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution (the same for all curves in the batch if provided as a float, 
+                                                           or uniformly sampled for each curve in the batch if provided as a tuple)
+    """
     def __init__(self,
                  std: Union[float, Tuple[float, float]] = (0, 1e-3),
                  add_to_context: bool = False
@@ -41,6 +48,7 @@ class QNormalNoiseGenerator(QNoiseGenerator):
         self.add_to_context = add_to_context
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies noise to the q values"""
         std = self.std
 
         if isinstance(std, (list, tuple)):
@@ -59,11 +67,17 @@ class QNormalNoiseGenerator(QNoiseGenerator):
 
 
 class QSystematicShiftGenerator(QNoiseGenerator):
+    """Q noise generator which samples a q shift (for each curve in the batch) from a normal distribution adds it to all q values of the curve
+
+    Args:
+        std (float): the standard deviation of the normal distribution
+    """
     def __init__(self, std: float, add_to_context: bool = True):
         self.std = std
         self.add_to_context = add_to_context
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies systematic shifts to the q values"""
         if len(qs.shape) == 1:
             shape = (1,)
         else:
@@ -82,6 +96,16 @@ class QSystematicShiftGenerator(QNoiseGenerator):
 
 
 class BasicQNoiseGenerator(QNoiseGenerator):
+    """Q noise generator which applies both systematic shifts (same change for all q points in the curve) and random noise (different changes per q point in the curve)
+
+    Args:
+        shift_std (float, optional): the standard deviation of the normal distribution for systematic q shifts 
+                                    (i.e. same change applied to all q points in the curve). Defaults to 1e-3.
+        noise_std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution for random q noise 
+                                    (i.e. different changes applied to each q point in the curve). The standard deviation is the same 
+                                    for all curves in the batch if provided as a float, or uniformly sampled for each curve in the batch if provided as a tuple. 
+                                    Defaults to (0, 1e-3).
+    """
     def __init__(self,
                  shift_std: float = 1e-3,
                  noise_std: Union[float, Tuple[float, float]] = (0, 1e-3),
@@ -91,6 +115,7 @@ class BasicQNoiseGenerator(QNoiseGenerator):
         self.q_noise = QNormalNoiseGenerator(noise_std, add_to_context=add_to_context)
 
     def apply(self, qs: Tensor, context: dict = None):
+        """applies random noise to the q values"""
         qs = torch.atleast_2d(qs)
         qs = self.q_shift.apply(qs, context)
         qs = self.q_noise.apply(qs, context)
@@ -98,17 +123,27 @@ class BasicQNoiseGenerator(QNoiseGenerator):
 
 
 class IntensityNoiseGenerator(ProcessData):
+    """Base class for intensity noise generators"""
     def apply(self, curves: Tensor, context: dict = None):
         raise NotImplementedError
 
 
 class MultiplicativeLogNormalNoiseGenerator(IntensityNoiseGenerator):
+    """Noise generator which applies noise as R_n = R * b**(eps), where b is a base and eps is sampled from the normal distribution eps~N(0, std). 
+       In logarithmic space this traslates to log_b(R_n) =log_b(R) + eps
+
+    Args:
+        std (Union[float, Tuple[float, float]]): the standard deviation of the normal distribution from which the noise is sampled. The standard deviation is the same 
+                                                for all curves in the batch if provided as a float, or uniformly sampled for each curve in the batch if provided as a tuple.
+        base (float, optional): the base of the logarithm. Defaults to 10.
+    """
     def __init__(self, std: Union[float, Tuple[float, float]], base: float = 10, add_to_context: bool = False):
         self.std = std
         self.base = base
         self.add_to_context = add_to_context
 
     def apply(self, curves: Tensor, context: dict = None):
+        """applies noise to the curves"""
         std = self.std
 
         if isinstance(std, (list, tuple)):
@@ -139,6 +174,7 @@ class PoissonNoiseGenerator(IntensityNoiseGenerator):
         self.logdist = logdist
 
     def apply(self, curves: Tensor, context: dict = None):
+        """applies noise to the curves"""
         if self.consistent_rel_err:
             sigmas = self._gen_consistent_sigmas(curves)
         else:
@@ -174,6 +210,11 @@ class PoissonNoiseGenerator(IntensityNoiseGenerator):
 
 
 class ScalingNoise(IntensityNoiseGenerator):
+    """_summary_
+
+    Args:
+        scale_range (tuple, optional): _description_. Defaults to (-0.2e-2, 0.2e-2).
+    """
     def __init__(self,
                  scale_range: tuple = (-0.2e-2, 0.2e-2),
                  add_to_context: bool = False,
@@ -182,6 +223,7 @@ class ScalingNoise(IntensityNoiseGenerator):
         self.add_to_context = add_to_context
 
     def apply(self, curves: Tensor, context: dict = None):
+        """applies noise to the curves"""
         scales = uniform_sampler(
             *self.scale_range, curves.shape[0], 1,
             device=curves.device, dtype=curves.dtype
@@ -203,6 +245,7 @@ class ShiftNoise(IntensityNoiseGenerator):
         self.add_to_context = add_to_context
 
     def apply(self, curves: Tensor, context: dict = None):
+        """applies noise to the curves"""
         intensity_shifts = uniform_sampler(
             *self.shift_range, curves.shape[0], 1,
             device=curves.device, dtype=curves.dtype
@@ -242,6 +285,7 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
         ) if apply_shift else None
 
     def apply(self, curves: Tensor, context: dict = None):
+        """applies noise to the curves"""
         if self.scaling_noise:
             curves = self.scaling_noise(curves, context)
         if self.shift_noise:

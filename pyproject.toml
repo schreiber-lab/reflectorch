@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflectorch"
+version = "0.0.2"
+authors = [
+    {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
+]
+maintainers = [
+    {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"},
+]
+description = "A Pytorch-based package for the analysis of reflectometry data"
+keywords = ["reflectometry", "machine learning"]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Development Status :: 4 - Beta",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Intended Audience :: Science/Research",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.18.1",
+    "torch>=1.8.1",
+    "scipy",
+    "tqdm",
+    "PyYAML",
+    "click",
+    "matplotlib",
+    "ipywidgets",
+    "torchinfo",
+]
+
+[project.optional-dependencies]
+tests = ["pytest", "pytest-cov"]
+docs = ["jupyter-book", "sphinx"]
+build = ["build", "twine"]
+
+[project.urls]
+Source = "https://github.com/schreiber-lab/reflectorch/"
+Issues = "https://github.com/schreiber-lab/reflectorch/issues"
+Documentation = "https://reflectorch.readthedocs.io/"
+
+[tool.setuptools]
+packages = ["reflectorch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -20,12 +20,32 @@ __all__ = [
 
 
 def to_np(arr):
+    """Converts Pytorch tensor or Python list to Numpy array
+
+    Args:
+        arr (torch.Tensor or list): Input Pytorch tensor or Python list
+
+    Returns:
+        numpy.ndarray: Converted Numpy array
+    """
+    
     if isinstance(arr, Tensor):
         return arr.detach().cpu().numpy()
     return np.asarray(arr)
 
 
 def to_t(arr, device=None, dtype=None):
+    """Converts Numpy array or Python list to Pytorch tensor
+
+    Args:
+        arr (numpy.ndarray or list): Input 
+        device (torch.device or str, optional): device for the tensor ('cpu', 'cuda')
+        dtype (torch.dtype, optional): data type of the tensor (e.g. torch.float32)
+
+    Returns:
+        torch.Tensor: converted Pytorch tensor
+    """
+    
     if not isinstance(arr, Tensor):
         return tensor(arr, device=device, dtype=dtype)
     return arr
@@ -33,7 +53,6 @@ def to_t(arr, device=None, dtype=None):
 
 # taken from mlreflect package
 # mlreflect/xrrloader/dataloader/transform.py
-
 
 def angle_to_q(scattering_angle: ndarray or float, wavelength: float):
     """Conversion from full scattering angle (degrees) to scattering vector (inverse angstroms)"""
