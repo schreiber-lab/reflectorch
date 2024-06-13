@@ -8,6 +8,7 @@ import ipywidgets as widgets
 from IPython.display import display
 
 from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
+from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
@@ -45,7 +46,6 @@ class EasyInferenceModel(object):
             self.load_model(self.config_name, self.config_dir, self.model_path)
 
     def load_model(self, config_name: str, config_dir: str, model_path: str) -> None:
-        print(f"Loading model {config_name}")
         if self.config_name == config_name and self.trainer is not None:
             return
         
@@ -54,7 +54,21 @@ class EasyInferenceModel(object):
         self.model_path = model_path
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
-        print(f"Model {config_name} is loaded.")
+        
+        print(f'The model corresponds to a parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
+        print(f'Parameter types and total ranges: {self.trainer.loader.prior_sampler.param_ranges}')
+        print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+
+        if isinstance(self.trainer.loader.q_generator, ConstantQ):
+            q_min = self.trainer.loader.q_generator.q[0].item()
+            q_max = self.trainer.loader.q_generator.q[-1].item()
+            n_q = self.trainer.loader.q_generator.q.shape[0]
+            print(f'The model was trained on curves discretized at {n_q} uniform points between between q_min={q_min} and q_max={q_max}')
+        elif isinstance(self.trainer.loader.q_generator, VariableQ):
+            q_min_range = self.trainer.loader.q_generator.q_min_range
+            q_max_range = self.trainer.loader.q_generator.q_max_range
+            n_q_range = self.trainer.loader.q_generator.n_q_range
+            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min={q_min} in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
 
     def load_model_from_hugginface(self, config_name: str):
         raise NotImplementedError
