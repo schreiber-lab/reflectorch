@@ -177,7 +177,7 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
     return trainer
 
 
-def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weights: bool = True):
+def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weights: bool = True, inference_device = None):
     """Initializes a trainer object based on a configuration file (i.e. the model name) and optionally loads \
         saved weights into the network
 
@@ -194,6 +194,12 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
     config = load_config(config_name, config_dir)
     config['model']['network']['pretrained_name'] = None
     config['training']['logger']['use_neptune'] = False
+
+    if inference_device:
+        config['model']['network']['device'] = inference_device
+        config['dset']['prior_sampler']['kwargs']['device'] = inference_device
+        config['dset']['q_generator']['kwargs']['device'] = inference_device
+
     trainer = get_trainer_from_config(config)
 
     num_params = sum(p.numel() for p in trainer.model.parameters())
