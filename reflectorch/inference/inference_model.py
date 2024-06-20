@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -6,10 +7,12 @@ from torch import Tensor
 from typing import List, Tuple
 import ipywidgets as widgets
 from IPython.display import display
+from huggingface_hub import hf_hub_download
 
 from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.paths import CONFIG_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
 )
@@ -34,24 +37,59 @@ class EasyInferenceModel(object):
         preprocessing_parameters (dict, optional): dictionary of parameters for preprocessing raw data. Defaults to None.
         device (str, optional): the Pytorch device ('cuda' or 'cpu'). Defaults to 'cuda'.
     """
-    def __init__(self, config_name: str = None, config_dir: str = None, model_path: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None, device='cuda'):
+    def __init__(self, config_name: str = None, config_dir: str = None, model_name: str = None, model_dir: str = None, repo_id: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None, device='cuda'):
         self.config_name = config_name
         self.config_dir = config_dir
-        self.model_path = model_path
+        self.model_name = model_name
+        self.model_dir = model_dir
+        self.repo_id = repo_id
         self.trainer = trainer
         self.device = device
         self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
 
         if trainer is None and self.config_name is not None:
-            self.load_model(self.config_name, self.config_dir, self.model_path)
+            self.load_model(self.config_name, self.config_dir, self.model_name, self.model_dir)
 
-    def load_model(self, config_name: str, config_dir: str, model_path: str) -> None:
+    def load_model(self, config_name: str, config_dir: str, model_name: str, model_dir: str) -> None:
         if self.config_name == config_name and self.trainer is not None:
             return
         
-        self.config_name = config_name
-        self.config_dir = config_dir
-        self.model_path = model_path
+        if not config_name.endswith('.yaml'):
+            config_name_no_extension = config_name
+            self.config_name = config_name_no_extension + '.yaml'
+        else:
+            config_name_no_extension = config_name[:-5]
+            self.config_name = config_name
+        
+        self.config_dir = config_dir or CONFIG_DIR
+        self.model_name = model_name or 'model_' + config_name_no_extension + '.pt'
+        if not self.model_name.endswith('.pt'):
+            self.model_name += '.pt'
+        self.model_dir = model_dir or SAVED_MODELS_DIR
+
+        config_path = Path(self.config_dir) / self.config_name
+        print(f"Checking for configuration {config_path} locally.")
+        if config_path.exists():
+            print(f"{config_path} found locally.")
+        else:
+            print(f"{config_path} not found locally.")
+            if self.repo_id is None:
+                raise ValueError("repo_id must be provided to download files from Huggingface.")
+            print(f"{config_path} not found locally. Downloading from Huggingface...")
+            hf_hub_download(repo_id=self.repo_id, subfolder='configs', filename=self.config_name, local_dir=config_path.parents[1])
+
+        model_path = Path(self.model_dir) / self.model_name
+        print(f"Checking for model weights {model_path} locally.")
+        if model_path.exists():
+            print(f"{model_path} found locally.")
+        else:
+            print(f"{model_path} not found locally.")
+            if self.repo_id is None:
+                raise ValueError("repo_id must be provided to download files from Huggingface.")
+            print(f"{model_path} not found locally. Downloading from Huggingface...")
+            hf_hub_download(repo_id=self.repo_id, subfolder='saved_models', filename=self.model_name, local_dir=model_path.parents[1])
+
+    
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
         
