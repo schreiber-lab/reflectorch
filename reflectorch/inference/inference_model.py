@@ -31,27 +31,33 @@ class EasyInferenceModel(object):
     """Facilitates the inference process using pretrained models
     
     Args:
-        config_name (str, optional): the name of the configuration file used to initialize the model. Defaults to None.
-        config_dir (str, optional): path to the directory containing the configuration file. Defaults to None.
-        model_path (str, optional): path to the saved weights of the neural network. Defaults to None.
-        trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used instead of initializing from the configuration file . Defaults to None.
-        preprocessing_parameters (dict, optional): dictionary of parameters for preprocessing raw data. Defaults to None.
+        config_name (str, optional): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension). Defaults to None.
+        model_name (str, optional): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: 'model_' + config_name + '.pt'. Defaults to None 
+        root_dir (str, optional): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR). Defaults to None.
+        repo_id (str, optional): the id of the Huggingface repository from which the configuration files and model weights should be downloaded automatically if not found locally (in the 'configs' and 'saved_models' subdirectories of the root directory). Defaults to 'valentinsingularity/reflectivity'.
+        trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used directly instead of being initialized from the configuration file. Defaults to None.
         device (str, optional): the Pytorch device ('cuda' or 'cpu'). Defaults to 'cuda'.
     """
-    def __init__(self, config_name: str = None, model_name: str = None, root_dir:str = None, repo_id: str = None, 
-                 trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None, device='cuda'):
+    def __init__(self, config_name: str = None, model_name: str = None, root_dir:str = None, repo_id: str = 'valentinsingularity/reflectivity', 
+                 trainer: PointEstimatorTrainer = None, device='cuda'):
         self.config_name = config_name
         self.model_name = model_name
         self.root_dir = root_dir
         self.repo_id = repo_id
         self.trainer = trainer
         self.device = device
-        self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
 
         if trainer is None and self.config_name is not None:
             self.load_model(self.config_name, self.model_name, self.root_dir)
 
     def load_model(self, config_name: str, model_name: str, root_dir: str) -> None:
+        """Loads a model for inference
+
+        Args:
+            config_name (str): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension).
+            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: 'model_' + config_name + '.pt'.
+            root_dir (str): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR).
+        """
         if self.config_name == config_name and self.trainer is not None:
             return
         
@@ -70,22 +76,22 @@ class EasyInferenceModel(object):
 
         config_path = Path(self.config_dir) / self.config_name
         if config_path.exists():
-            print(f"{config_path} found locally.")
+            print(f"Configuration file `{config_path}` found locally.")
         else:
-            print(f"{config_path} not found locally.")
+            print(f"Configuration file `{config_path}` not found locally.")
             if self.repo_id is None:
                 raise ValueError("repo_id must be provided to download files from Huggingface.")
-            print(f"{config_path} not found locally. Downloading from Huggingface...")
+            print("Downloading from Huggingface...")
             hf_hub_download(repo_id=self.repo_id, subfolder='configs', filename=self.config_name, local_dir=config_path.parents[1])
 
         model_path = Path(self.model_dir) / self.model_name
         if model_path.exists():
-            print(f"{model_path} found locally.")
+            print(f"Weights file `{model_path}` found locally.")
         else:
-            print(f"{model_path} not found locally.")
+            print(f"Weights file `{model_path}` not found locally.")
             if self.repo_id is None:
                 raise ValueError("repo_id must be provided to download files from Huggingface.")
-            print(f"{model_path} not found locally. Downloading from Huggingface...")
+            print("Downloading from Huggingface...")
             hf_hub_download(repo_id=self.repo_id, subfolder='saved_models', filename=self.model_name, local_dir=model_path.parents[1])
 
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=self.config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
@@ -113,8 +119,27 @@ class EasyInferenceModel(object):
                 polish_prediction: bool = False, 
                 use_q_shift: bool = False, 
                 fit_growth: bool = False, 
-                max_d_change: float = 5.
+                max_d_change: float = 5.,
+                calc_pred_curve: bool = True,
+                calc_pred_sld_profile: bool = False,
                 ):
+        """Predict the thin film parameters
+
+        Args:
+            reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
+            q_values (Union[np.ndarray, Tensor]): The momentum transfer (q) values for the reflectivity curve (in units of reverse angstroms).
+            prior_bounds (Union[np.ndarray, List[Tuple]]): the prior bounds for the thin film parameters.
+            clip_prediction (bool, optional): If True the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
+            polish_prediction (bool, optional): If True the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
+            use_q_shift (bool, optional): . Defaults to False.
+            fit_growth (bool, optional): . Defaults to False.
+            max_d_change (float, optional): . Defaults to 5..
+            calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
+            calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
+
+        Returns:
+            dict: dictionary containing the predictions
+        """
         scaled_curve = self._scale_curve(reflectivity_curve)
         prior_bounds = np.array(prior_bounds)
         scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
@@ -137,26 +162,45 @@ class EasyInferenceModel(object):
         if clip_prediction:
             predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
         
-        predicted_curve = predicted_params.reflectivity(q_values).squeeze().cpu().numpy()
+        
         prediction_dict = {
-            "predicted_params": predicted_params,
-            "predicted_curve": predicted_curve,
+            "predicted_params_object": predicted_params,
+            "predicted_params_array": predicted_params.parameters.squeeze().cpu().numpy(),
         }
+
+        if calc_pred_curve:
+            predicted_curve = predicted_params.reflectivity(q_values).squeeze().cpu().numpy()
+            prediction_dict[ "predicted_curve"] = predicted_curve
+        
+        if calc_pred_sld_profile: 
+            predicted_sld_xaxis, predicted_sld_profile, _ = get_density_profiles(
+                predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024, 
+            ) 
+            prediction_dict['predicted_sld_profile'] = predicted_sld_profile.squeeze().cpu().numpy()
+            prediction_dict['predicted_sld_xaxis'] = predicted_sld_xaxis.squeeze().cpu().numpy()
+        else:
+            predicted_sld_xaxis = None
 
         if polish_prediction:
             polished_dict = self._polish_prediction(q = q_values.squeeze().cpu().numpy(), 
                                                     curve = reflectivity_curve, 
                                                     predicted_params = predicted_params, 
                                                     priors = np.array(prior_bounds), 
-                                                    sld_x_axis = None,
+                                                    sld_x_axis = predicted_sld_xaxis,
                                                     max_d_change = max_d_change, 
-                                                    fit_growth=fit_growth,
+                                                    fit_growth = fit_growth,
+                                                    calc_polished_curve = calc_pred_curve,
+                                                    calc_polished_sld_profile = False,
                                                     )
             prediction_dict.update(polished_dict)
 
         return prediction_dict
     
     def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
+        """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
+           The other arguments are the same as for the `predict` method.
+        """
+
 
         NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
         param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
@@ -238,6 +282,8 @@ class EasyInferenceModel(object):
                            sld_x_axis,
                            fit_growth: bool = False,
                            max_d_change: float = 5.,
+                           calc_polished_curve: bool = True,
+                           calc_polished_sld_profile: bool = False,
                            ) -> dict:
         params = torch.cat([
             predicted_params.thicknesses.squeeze(),
@@ -278,14 +324,15 @@ class EasyInferenceModel(object):
             polished_params_arr = get_prediction_array(polished_params)
             curve_polished = np.zeros_like(q)
 
-        polished_params_dict['polished_params'] = polished_params_arr
-        polished_params_dict['polished_curve'] = curve_polished
+        polished_params_dict['polished_params_array'] = polished_params_arr
+        if calc_polished_curve:
+            polished_params_dict['polished_curve'] = curve_polished
 
-        # sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
-        #     polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
-        # )
-
-        #polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
+        if calc_polished_sld_profile:
+            _, sld_profile_polished, _ = get_density_profiles(
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
+            )
+            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
 
         return polished_params_dict
     
