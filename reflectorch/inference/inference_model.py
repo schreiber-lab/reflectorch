@@ -33,7 +33,7 @@ class EasyInferenceModel(object):
     
     Args:
         config_name (str, optional): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension). Defaults to None.
-        model_name (str, optional): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: 'model_' + config_name + '.pt'. Defaults to None 
+        model_name (str, optional): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`. Defaults to None 
         root_dir (str, optional): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR). Defaults to None.
         repo_id (str, optional): the id of the Huggingface repository from which the configuration files and model weights should be downloaded automatically if not found locally (in the 'configs' and 'saved_models' subdirectories of the root directory). Defaults to 'valentinsingularity/reflectivity'.
         trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used directly instead of being initialized from the configuration file. Defaults to None.
@@ -56,7 +56,7 @@ class EasyInferenceModel(object):
 
         Args:
             config_name (str): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension).
-            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: 'model_' + config_name + '.pt'.
+            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`.
             root_dir (str): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR).
         """
         if self.config_name == config_name and self.trainer is not None:
@@ -111,7 +111,7 @@ class EasyInferenceModel(object):
             q_min_range = self.trainer.loader.q_generator.q_min_range
             q_max_range = self.trainer.loader.q_generator.q_max_range
             n_q_range = self.trainer.loader.q_generator.n_q_range
-            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min={q_min} in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
+            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
 
     def predict(self, reflectivity_curve: Union[np.ndarray, Tensor], 
                 q_values: Union[np.ndarray, Tensor], 
@@ -134,7 +134,7 @@ class EasyInferenceModel(object):
             polish_prediction (bool, optional): If True the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
             use_q_shift (bool, optional): . Defaults to False.
             fit_growth (bool, optional): . Defaults to False.
-            max_d_change (float, optional): . Defaults to 5..
+            max_d_change (float, optional): . Defaults to 5.
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
             calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
 
@@ -167,6 +167,7 @@ class EasyInferenceModel(object):
         prediction_dict = {
             "predicted_params_object": predicted_params,
             "predicted_params_array": predicted_params.parameters.squeeze().cpu().numpy(),
+            "param_names" : self.trainer.loader.prior_sampler.param_model.get_param_labels()
         }
 
         if calc_pred_curve:
@@ -196,61 +197,6 @@ class EasyInferenceModel(object):
             prediction_dict.update(polished_dict)
 
         return prediction_dict
-    
-    # def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
-    #     """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
-    #        The other arguments are the same as for the `predict` method.
-    #     """
-
-
-    #     NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
-    #     param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
-
-    #     print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
-    #     print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
-    #     print(f'Please fill in the values of the minimum and maximum prior bound for each parameter and press the button!')
-
-    #     def create_interval_widgets(n):
-    #         intervals = []
-    #         for i in range(n):
-    #             interval_label = widgets.Label(value=f'{param_labels[i]}')
-    #             min_val = widgets.FloatText(
-    #                 value=0.0,
-    #                 description='min',
-    #                 layout=widgets.Layout(width='100px'),
-    #                 style={'description_width': '30px'}
-    #             )
-    #             max_val = widgets.FloatText(
-    #                 value=1.0,
-    #                 description='max',
-    #                 layout=widgets.Layout(width='100px'),
-    #                 style={'description_width': '30px'}
-    #             )
-    #             interval_row = widgets.HBox([interval_label, min_val, max_val])
-    #             intervals.append((min_val, max_val, interval_row))
-    #         return intervals
-        
-    #     interval_widgets = create_interval_widgets(NUM_INTERVALS)
-    #     interval_box = widgets.VBox([widget[2] for widget in interval_widgets])
-    #     display(interval_box)
-
-    #     button = widgets.Button(description="Make prediction")
-    #     display(button)
-
-    #     def store_values(b):
-    #         values = []
-    #         for min_widget, max_widget, _ in interval_widgets:
-    #             values.append((min_widget.value, max_widget.value))
-    #         array_values = np.array(values)
-            
-    #         predicted_params = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values)
-    #         print(f'The prediction is: ')
-    #         for l, p in zip(get_param_labels(2), predicted_params.parameters.squeeze().cpu().numpy()):
-    #             print(f'{l.ljust(14)} --> Predicted: {p:.2f}')
-
-    #         return predicted_params
-
-    #     button.on_click(store_values)
 
     def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], q_values: Union[np.ndarray, torch.Tensor], **kwargs):
         """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
@@ -258,7 +204,7 @@ class EasyInferenceModel(object):
         """
 
         NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
-        param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
+        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
         min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
         max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
         max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
@@ -277,7 +223,6 @@ class EasyInferenceModel(object):
                     min=min_bounds[i],
                     max=max_bounds[i],
                     step=0.01,
-                    description='Range',
                     layout=widgets.Layout(width='400px'),
                     style={'description_width': '60px'}
                 )
@@ -307,7 +252,6 @@ class EasyInferenceModel(object):
 
         global prediction_result
         prediction_result = None
-        print(prediction_result)
 
         def store_values(b):
             global prediction_result
@@ -316,16 +260,11 @@ class EasyInferenceModel(object):
                 values.append((slider.value[0], slider.value[1]))
             array_values = np.array(values)
             
-            print(prediction_result)
             prediction_result = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values, **kwargs)
-            print(prediction_result)
+            print(prediction_result["predicted_params_array"])
 
         button.on_click(store_values)
 
-        while prediction_result is None:
-            await asyncio.sleep(0.1)
-
-        print(prediction_result)
         return prediction_result
 
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
