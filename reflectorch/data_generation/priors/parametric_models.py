@@ -9,7 +9,7 @@ from reflectorch.data_generation.reflectivity import (
     kinematical_approximation,
 )
 from reflectorch.data_generation.utils import (
-    get_param_labels,
+    get_param_labels, get_param_labels_absorption_model
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
@@ -251,8 +251,7 @@ class ModelWithAbsorption(StandardModel):
         return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
-        raise NotImplementedError
-        # return get_param_labels(self.max_num_layers)
+        return get_param_labels_absorption_model(self.max_num_layers)
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
