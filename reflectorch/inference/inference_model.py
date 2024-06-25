@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 
@@ -196,14 +197,71 @@ class EasyInferenceModel(object):
 
         return prediction_dict
     
-    def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
-        """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
-           The other arguments are the same as for the `predict` method.
-        """
+    # def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
+    #     """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
+    #        The other arguments are the same as for the `predict` method.
+    #     """
 
+
+    #     NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
+    #     param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
+
+    #     print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
+    #     print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+    #     print(f'Please fill in the values of the minimum and maximum prior bound for each parameter and press the button!')
+
+    #     def create_interval_widgets(n):
+    #         intervals = []
+    #         for i in range(n):
+    #             interval_label = widgets.Label(value=f'{param_labels[i]}')
+    #             min_val = widgets.FloatText(
+    #                 value=0.0,
+    #                 description='min',
+    #                 layout=widgets.Layout(width='100px'),
+    #                 style={'description_width': '30px'}
+    #             )
+    #             max_val = widgets.FloatText(
+    #                 value=1.0,
+    #                 description='max',
+    #                 layout=widgets.Layout(width='100px'),
+    #                 style={'description_width': '30px'}
+    #             )
+    #             interval_row = widgets.HBox([interval_label, min_val, max_val])
+    #             intervals.append((min_val, max_val, interval_row))
+    #         return intervals
+        
+    #     interval_widgets = create_interval_widgets(NUM_INTERVALS)
+    #     interval_box = widgets.VBox([widget[2] for widget in interval_widgets])
+    #     display(interval_box)
+
+    #     button = widgets.Button(description="Make prediction")
+    #     display(button)
+
+    #     def store_values(b):
+    #         values = []
+    #         for min_widget, max_widget, _ in interval_widgets:
+    #             values.append((min_widget.value, max_widget.value))
+    #         array_values = np.array(values)
+            
+    #         predicted_params = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values)
+    #         print(f'The prediction is: ')
+    #         for l, p in zip(get_param_labels(2), predicted_params.parameters.squeeze().cpu().numpy()):
+    #             print(f'{l.ljust(14)} --> Predicted: {p:.2f}')
+
+    #         return predicted_params
+
+    #     button.on_click(store_values)
+
+    def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], q_values: Union[np.ndarray, torch.Tensor], **kwargs):
+        """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
+        The other arguments are the same as for the `predict` method.
+        """
 
         NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
         param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
+        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
+        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
+        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
 
         print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
         print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
@@ -213,43 +271,62 @@ class EasyInferenceModel(object):
             intervals = []
             for i in range(n):
                 interval_label = widgets.Label(value=f'{param_labels[i]}')
-                min_val = widgets.FloatText(
-                    value=0.0,
-                    description='min',
-                    layout=widgets.Layout(width='100px'),
-                    style={'description_width': '30px'}
+                initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
+                slider = widgets.FloatRangeSlider(
+                    value=[min_bounds[i], initial_max],
+                    min=min_bounds[i],
+                    max=max_bounds[i],
+                    step=0.01,
+                    description='Range',
+                    layout=widgets.Layout(width='400px'),
+                    style={'description_width': '60px'}
                 )
-                max_val = widgets.FloatText(
-                    value=1.0,
-                    description='max',
-                    layout=widgets.Layout(width='100px'),
-                    style={'description_width': '30px'}
-                )
-                interval_row = widgets.HBox([interval_label, min_val, max_val])
-                intervals.append((min_val, max_val, interval_row))
+                
+                def validate_range(change, slider=slider, max_width=max_deltas[i]):
+                    min_val, max_val = change['new']
+                    if max_val - min_val > max_width:
+                        if change['name'] == 'value':
+                            if change['old'][0] != min_val:
+                                max_val = min_val + max_width
+                            else:
+                                min_val = max_val - max_width
+                        slider.value = [min_val, max_val]
+                
+                slider.observe(validate_range, names='value')
+                
+                interval_row = widgets.HBox([interval_label, slider])
+                intervals.append((slider, interval_row))
             return intervals
         
         interval_widgets = create_interval_widgets(NUM_INTERVALS)
-        interval_box = widgets.VBox([widget[2] for widget in interval_widgets])
+        interval_box = widgets.VBox([widget[1] for widget in interval_widgets])
         display(interval_box)
 
         button = widgets.Button(description="Make prediction")
         display(button)
 
+        global prediction_result
+        prediction_result = None
+        print(prediction_result)
+
         def store_values(b):
+            global prediction_result
             values = []
-            for min_widget, max_widget, _ in interval_widgets:
-                values.append((min_widget.value, max_widget.value))
+            for slider, _ in interval_widgets:
+                values.append((slider.value[0], slider.value[1]))
             array_values = np.array(values)
             
-            predicted_params = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values)
-            print(f'The prediction is: ')
-            for l, p in zip(get_param_labels(2), predicted_params.parameters.squeeze().cpu().numpy()):
-                print(f'{l.ljust(14)} --> Predicted: {p:.2f}')
-
-            return predicted_params
+            print(prediction_result)
+            prediction_result = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values, **kwargs)
+            print(prediction_result)
 
         button.on_click(store_values)
+
+        while prediction_result is None:
+            await asyncio.sleep(0.1)
+
+        print(prediction_result)
+        return prediction_result
 
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
         q = self.q.squeeze().float()
