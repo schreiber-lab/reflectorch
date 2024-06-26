@@ -132,23 +132,20 @@ class EasyInferenceModel(object):
             prior_bounds (Union[np.ndarray, List[Tuple]]): the prior bounds for the thin film parameters.
             clip_prediction (bool, optional): If True the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
             polish_prediction (bool, optional): If True the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
-            use_q_shift (bool, optional): . Defaults to False.
-            fit_growth (bool, optional): . Defaults to False.
-            max_d_change (float, optional): . Defaults to 5.
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
             calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
 
         Returns:
             dict: dictionary containing the predictions
         """
+
         scaled_curve = self._scale_curve(reflectivity_curve)
         prior_bounds = np.array(prior_bounds)
         scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
 
-        if not isinstance(q_values, Tensor):
-            q_values = torch.from_numpy(q_values)
+        q_values = to_t(q_values)
         q_values = torch.atleast_2d(q_values).to(scaled_curve)
-
+            
         scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
         with torch.no_grad():
             self.trainer.model.eval()
@@ -157,12 +154,11 @@ class EasyInferenceModel(object):
                 scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, scaled_q)
             else:
                 scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
-        
-        predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
-        
+            
+            predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
+
         if clip_prediction:
             predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
-        
         
         prediction_dict = {
             "predicted_params_object": predicted_params,
@@ -195,6 +191,9 @@ class EasyInferenceModel(object):
                                                     calc_polished_sld_profile = False,
                                                     )
             prediction_dict.update(polished_dict)
+
+            if fit_growth and "polished_params_array" in prediction_dict:
+                prediction_dict["param_names"].append("max_d_change")
 
         return prediction_dict
 
@@ -268,25 +267,27 @@ class EasyInferenceModel(object):
         return prediction_result
 
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
-        q = self.q.squeeze().float()
-        curve = to_t(curve).to(q)
+        assert isinstance(self.trainer.loader.q_generator, ConstantQ), "Prediction with q shifts available only for models with fixed discretization"
+        q = self.trainer.loader.q_generator.q.squeeze().float()
         dq_max = (q[1] - q[0]) * dq_coef
         q_shifts = torch.linspace(-dq_max, dq_max, num).to(q)
+        print(q.squeeze().shape, curve.shape, q_shifts.shape)
         shifted_curves = _qshift_interp(q.squeeze(), curve, q_shifts)
 
         assert shifted_curves.shape == (num, q.shape[0])
 
         scaled_curves = self.trainer.loader.curves_scaler.scale(shifted_curves)
-        context = torch.cat([scaled_curves, torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)], -1)
+        scaled_prior_bounds = torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)
+        scaled_curve_and_priors = torch.cat([scaled_curves, scaled_prior_bounds], -1)
 
         with torch.no_grad():
             self.trainer.model.eval()
-            scaled_params = self.trainer.model(context)
-            restored_params = self._restore_predicted_params(scaled_params, context)
+            scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+            restored_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
 
             best_param = get_best_mse_param(
                 restored_params,
-                self._get_likelihood(curve),
+                self._get_likelihood(q=self.trainer.loader.q_generator.q, curve=curve),
             )
             return best_param
         
@@ -322,6 +323,7 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[:-1][None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
+                    self.trainer.loader.prior_sampler.param_model
                     )
             else:
                 polished_params_arr, curve_polished = standard_refl_fit(
@@ -333,7 +335,7 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
-                    
+                    self.trainer.loader.prior_sampler.param_model
                     )
         except Exception as err:
             polished_params = predicted_params
@@ -353,7 +355,7 @@ class EasyInferenceModel(object):
         return polished_params_dict
     
 
-    def _scale_curve(self, curve: np.ndarray or Tensor):
+    def _scale_curve(self, curve: Union[np.ndarray, Tensor]):
         if not isinstance(curve, Tensor):
             curve = torch.from_numpy(curve).float()
         curve = torch.atleast_2d(curve).to(self.device)
@@ -371,6 +373,11 @@ class EasyInferenceModel(object):
         ], -1)
 
         return scaled_bounds.float()
+    
+    def _get_likelihood(self, q, curve, rel_err: float = 0.1, abs_err: float = 1e-12):
+        return LogLikelihood(
+            q, curve, self.trainer.loader.prior_sampler, curve * rel_err + abs_err
+        )
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
@@ -698,40 +705,3 @@ def _qshift_interp(q, r, q_shifts):
     ind = torch.clamp(ind - 1, 0, q.shape[0] - 2)
     slopes = (r[1:] - r[:-1]) / (eps + (q[1:] - q[:-1]))
     return r[ind] + slopes[ind] * (qs - q[ind])
-
-
-if __name__ == '__main__':
-    from reflectorch import *
-
-    inference_model = EasyInferenceModel(
-        config_name = 'mc25.yaml',
-        model_name = None,
-        root_dir = None,
-        repo_id = None,
-        trainer = None,
-        preprocessing_parameters = None,
-        device = 'cuda',
-    )
-
-    loaded_data_dict = torch.load(str(ROOT_DIR / 'exp_data/data_PTCDI-C3.pt'))
-    curve_exp = loaded_data_dict['curves'][0]
-    q_exp = loaded_data_dict['q'][0]
-    print(curve_exp.shape, q_exp.shape, q_exp.min(), q_exp.max())
-
-    prior_bounds = [(0., 400.), (0., 10.), #layer thicknesses (top to bottom)
-                    (0., 30.), (0., 15.), (0., 15.), #interlayer roughnesses (top to bottom)
-                    (10., 13.), (20.,21.), (20., 21.)] #real layer slds (top to bottom)
-
-    q_model = inference_model.trainer.loader.q_generator.q.cpu().numpy()
-    exp_curve_interp = interp_reflectivity(q_model, q_exp, curve_exp)
-
-    prediction_dict = inference_model.predict(
-        reflectivity_curve = exp_curve_interp,
-        q_values = q_model,
-        prior_bounds = prior_bounds,
-        clip_prediction = True,
-        polish_prediction = True,
-        fit_growth = False,
-        max_d_change = 5.,
-        use_q_shift = False, 
-    )
