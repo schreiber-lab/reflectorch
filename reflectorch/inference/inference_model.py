@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from pathlib import Path
+import time
 
 import numpy as np
 import torch
@@ -50,6 +51,8 @@ class EasyInferenceModel(object):
 
         if trainer is None and self.config_name is not None:
             self.load_model(self.config_name, self.model_name, self.root_dir)
+
+        self.prediction_result = None
 
     def load_model(self, config_name: str, model_name: str, root_dir: str) -> None:
         """Loads a model for inference
@@ -114,13 +117,13 @@ class EasyInferenceModel(object):
             print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
 
     def predict(self, reflectivity_curve: Union[np.ndarray, Tensor], 
-                q_values: Union[np.ndarray, Tensor], 
-                prior_bounds: Union[np.ndarray, List[Tuple]], 
+                q_values: Union[np.ndarray, Tensor] = None, 
+                prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
                 clip_prediction: bool = False, 
                 polish_prediction: bool = False, 
-                use_q_shift: bool = False, 
                 fit_growth: bool = False, 
                 max_d_change: float = 5.,
+                use_q_shift: bool = False, 
                 calc_pred_curve: bool = True,
                 calc_pred_sld_profile: bool = False,
                 ):
@@ -128,10 +131,13 @@ class EasyInferenceModel(object):
 
         Args:
             reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
-            q_values (Union[np.ndarray, Tensor]): The momentum transfer (q) values for the reflectivity curve (in units of reverse angstroms).
-            prior_bounds (Union[np.ndarray, List[Tuple]]): the prior bounds for the thin film parameters.
-            clip_prediction (bool, optional): If True the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
-            polish_prediction (bool, optional): If True the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
+            q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of reverse angstroms).
+            prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.
+            clip_prediction (bool, optional): If True, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
+            polish_prediction (bool, optional): If True, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.
+            fit_growth (bool, optional): If True, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
+            max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
+            use_q_shift: If True, the the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
             calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
 
@@ -143,19 +149,25 @@ class EasyInferenceModel(object):
         prior_bounds = np.array(prior_bounds)
         scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
 
-        q_values = to_t(q_values)
-        q_values = torch.atleast_2d(q_values).to(scaled_curve)
-            
-        scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
-        with torch.no_grad():
-            self.trainer.model.eval()
-            if self.trainer.train_with_q_input:
-                scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
-                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, scaled_q)
-            else:
-                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
-            
-            predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
+        if not self.trainer.train_with_q_input:
+            q_values = self.trainer.loader.q_generator.q
+        else:
+            q_values = torch.atleast_2d(to_t(q_values)).to(scaled_curve)
+
+        if use_q_shift and not self.trainer.train_with_q_input:
+            predicted_params = self._qshift_prediction(reflectivity_curve, scaled_prior_bounds, num = 1024, dq_coef = 1.)
+
+        else:
+            scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
+            with torch.no_grad():
+                self.trainer.model.eval()
+                if self.trainer.train_with_q_input:
+                    scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
+                    scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, scaled_q)
+                else:
+                    scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+                
+                predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
 
         if clip_prediction:
             predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
@@ -179,16 +191,16 @@ class EasyInferenceModel(object):
         else:
             predicted_sld_xaxis = None
 
-        if polish_prediction:
+        if polish_prediction: #only for standard box-model parameterization
             polished_dict = self._polish_prediction(q = q_values.squeeze().cpu().numpy(), 
                                                     curve = reflectivity_curve, 
                                                     predicted_params = predicted_params, 
                                                     priors = np.array(prior_bounds), 
-                                                    sld_x_axis = predicted_sld_xaxis,
-                                                    max_d_change = max_d_change, 
                                                     fit_growth = fit_growth,
+                                                    max_d_change = max_d_change, 
                                                     calc_polished_curve = calc_pred_curve,
                                                     calc_polished_sld_profile = False,
+                                                    sld_x_axis = predicted_sld_xaxis,
                                                     )
             prediction_dict.update(polished_dict)
 
@@ -197,7 +209,7 @@ class EasyInferenceModel(object):
 
         return prediction_dict
 
-    def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], q_values: Union[np.ndarray, torch.Tensor], **kwargs):
+    async def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], **kwargs):
         """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
         The other arguments are the same as for the `predict` method.
         """
@@ -249,29 +261,44 @@ class EasyInferenceModel(object):
         button = widgets.Button(description="Make prediction")
         display(button)
 
-        global prediction_result
         prediction_result = None
 
-        def store_values(b):
-            global prediction_result
+        def store_values(b, future):
+            print("Debug: Button clicked")
             values = []
             for slider, _ in interval_widgets:
                 values.append((slider.value[0], slider.value[1]))
             array_values = np.array(values)
             
-            prediction_result = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values, **kwargs)
+            nonlocal prediction_result
+            prediction_result = self.predict(reflectivity_curve=reflectivity_curve, prior_bounds=array_values, **kwargs)
             print(prediction_result["predicted_params_array"])
 
-        button.on_click(store_values)
+            print("Prediction completed. Closing widget.")
 
-        return prediction_result
+            for child in interval_box.children:
+                child.close()
+            button.close()
+
+            future.set_result(prediction_result)
+
+        button.on_click(store_values)
+    
+
+        future = asyncio.Future()
+
+        button.on_click(lambda b: store_values(b, future))
+
+        return await future
+
 
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
         assert isinstance(self.trainer.loader.q_generator, ConstantQ), "Prediction with q shifts available only for models with fixed discretization"
         q = self.trainer.loader.q_generator.q.squeeze().float()
         dq_max = (q[1] - q[0]) * dq_coef
         q_shifts = torch.linspace(-dq_max, dq_max, num).to(q)
-        print(q.squeeze().shape, curve.shape, q_shifts.shape)
+
+        curve = to_t(curve).to(scaled_bounds)
         shifted_curves = _qshift_interp(q.squeeze(), curve, q_shifts)
 
         assert shifted_curves.shape == (num, q.shape[0])
@@ -323,7 +350,7 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[:-1][None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
-                    self.trainer.loader.prior_sampler.param_model
+                    #self.trainer.loader.prior_sampler.param_model
                     )
             else:
                 polished_params_arr, curve_polished = standard_refl_fit(
@@ -335,7 +362,7 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
-                    self.trainer.loader.prior_sampler.param_model
+                    #self.trainer.loader.prior_sampler.param_model
                     )
         except Exception as err:
             polished_params = predicted_params
@@ -354,7 +381,6 @@ class EasyInferenceModel(object):
 
         return polished_params_dict
     
-
     def _scale_curve(self, curve: Union[np.ndarray, Tensor]):
         if not isinstance(curve, Tensor):
             curve = torch.from_numpy(curve).float()
