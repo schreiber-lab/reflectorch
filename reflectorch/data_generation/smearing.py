@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 
-from reflectorch.data_generation.priors.params import Params
+from reflectorch.data_generation.priors.parametric_subpriors import BasicParams
 
 
 class Smearing(object):
@@ -29,7 +29,7 @@ class Smearing(object):
         indices[torch.randperm(batch_size, device=device)[:num_smeared]] = True
         return dq, indices
 
-    def get_curves(self, q_values: Tensor, params: Params):
+    def get_curves(self, q_values: Tensor, params: BasicParams):
         dq, indices = self.generate_resolutions(params.batch_size, device=params.device, dtype=params.dtype)
 
         if dq is None:

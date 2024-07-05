@@ -3,13 +3,14 @@ general:
   root_dir: null
   
 dset:
+  cls: ReflectivityDataLoader
   prior_sampler:
     cls: SubpriorParametricSampler
     kwargs:
       param_ranges:
-        thicknesses: [0., 500.]
+        thicknesses: [1., 500.]
         roughnesses: [0., 60.]
-        slds: [-10., 25.]
+        slds: [0., 25.]
       bound_width_ranges:
         thicknesses: [1.0e-2, 500.]
         roughnesses: [1.0e-2, 60.]

@@ -12,7 +12,7 @@ import torch
 from torch import Tensor
 
 from reflectorch.data_generation.utils import uniform_sampler
-from reflectorch.data_generation.priors import Params
+from reflectorch.data_generation.priors import BasicParams
 from reflectorch.utils import angle_to_q
 from reflectorch.data_generation.priors.no_constraints import DEFAULT_DEVICE, DEFAULT_DTYPE
 
@@ -199,7 +199,7 @@ class TransformerQ(QGenerator):
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         assert context is not None
 
-        params: Params = context['params']
+        params: BasicParams = context['params']
         total_thickness = params.thicknesses.sum(-1)
 
         assert total_thickness.shape[0] == batch_size

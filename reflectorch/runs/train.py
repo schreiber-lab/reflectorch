@@ -21,7 +21,7 @@ __all__ = [
 @click.argument('config_name', type=str)
 def run_train(config_name: str):
     """Runs the training from the command line interface
-       Example: python train.py 'conf_name.yaml'
+       Example: python -m reflectorch.train 'conf_name'
 
     Args:
         config_name (str): name of the YAML configuration file
@@ -36,7 +36,7 @@ def run_train(config_name: str):
 @click.argument('num_iterations', type=int, default=10)
 def run_test_config(config_name: str, batch_size: int, num_iterations: int):
     """Run for the purpose of testing the configuration file.
-       Example: python test_config.py 'conf_name.yaml' 512 10
+       Example: python -m reflectorch.test_config 'conf_name.yaml' 512 10
 
     Args:
         config_name (str): name of the YAML configuration file

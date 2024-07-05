@@ -11,8 +11,7 @@ import ipywidgets as widgets
 from IPython.display import display
 from huggingface_hub import hf_hub_download
 
-from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
-from reflectorch.data_generation.priors.parametric_subpriors import BasicParams
+from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
 from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
@@ -714,7 +713,7 @@ class InferenceModel(object):
         )
 
 
-def get_prediction_array(params: Params) -> np.ndarray:
+def get_prediction_array(params: BasicParams) -> np.ndarray:
     predict_arr = torch.cat([
         params.thicknesses.squeeze(),
         params.roughnesses.squeeze(),
