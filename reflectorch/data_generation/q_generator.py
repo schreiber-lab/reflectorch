@@ -83,9 +83,9 @@ class VariableQ(QGenerator):
     """
 
     def __init__(self,
-                 q_min_range: Tuple[float, float] = [0.01, 0.03],
-                 q_max_range: Tuple[float, float] = [0.1, 0.5],
-                 n_q_range: Tuple[int, int] = [64, 256],
+                 q_min_range: Tuple[float, float] = (0.01, 0.03),
+                 q_max_range: Tuple[float, float] = (0.1, 0.5),
+                 n_q_range: Tuple[int, int] = (64, 256),
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
@@ -106,7 +106,10 @@ class VariableQ(QGenerator):
         """
         q_min = np.random.uniform(*self.q_min_range, batch_size)
         q_max = np.random.uniform(*self.q_max_range, batch_size)
-        n_q = np.random.randint(*self.n_q_range)
+        if self.n_q_range[0] == self.n_q_range[1]:
+            n_q = self.n_q_range[0]
+        else:
+            n_q = np.random.randint(self.n_q_range[0], self.n_q_range[1] + 1)
         
         q = torch.from_numpy(np.linspace(q_min, q_max, n_q).T).to(self.device).to(self.dtype)
         

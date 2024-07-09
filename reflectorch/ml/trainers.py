@@ -45,27 +45,29 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
     add_sigmas_to_context: bool = False
         
     def _get_batch(self, batch_data: BATCH_DATA_TYPE):
-        scaled_params, context, q_values = batch_data['scaled_params'], batch_data['scaled_noisy_curves'], batch_data['q_values']
+        scaled_params = batch_data['scaled_params'].to(torch.float32)
+        scaled_curves = batch_data['scaled_noisy_curves'].to(torch.float32)
+        if self.train_with_q_input:
+            q_values = batch_data['q_values'].to(torch.float32)
+            scaled_q_values = self.loader.q_generator.scale_q(q_values)
+        else:
+            scaled_q_values = None
 
-        if self.add_sigmas_to_context:
-            sigmas = self.loader.curves_scaler.scale(batch_data['sigmas'])
-            context = torch.cat([context, sigmas], dim=-1)
-            
-        scaled_params, context, q_values = scaled_params.to(torch.float32), context.to(torch.float32), q_values.to(torch.float32)
-        scaled_params, context = batch_data['params'].rearrange_context_from_params(scaled_params, context)
+        num_params = scaled_params.shape[-1] // 3
+        assert num_params * 3 == scaled_params.shape[-1]
+        scaled_params, scaled_bounds = torch.split(scaled_params, [num_params, 2 * num_params], dim=-1)
 
-        return scaled_params, context, q_values
+        return scaled_params, scaled_bounds, scaled_curves, scaled_q_values
 
     def get_loss_dict(self, batch_data):
         """Returns the regression loss"""
 
-        scaled_params, context, q_values = batch_data
+        scaled_params, scaled_bounds, scaled_curves, scaled_q_values = batch_data
 
         if self.train_with_q_input:
-            scaled_q_values = self.loader.q_generator.scale_q(q_values)
-            predicted_params = self.model(context, scaled_q_values)
+            predicted_params = self.model(scaled_curves, scaled_bounds, scaled_q_values)
         else:
-            predicted_params = self.model(context)
+            predicted_params = self.model(scaled_curves, scaled_bounds)
             
         loss = self.mse(predicted_params, scaled_params)
         return {'loss': loss}

@@ -27,10 +27,12 @@ class NetworkWithPriorsConvEmb(nn.Module):
                  pretrained_embedding_net: str = None,
                  residual: bool = True,
                  adaptive_activation: bool = False,
+                 conditioning: str = 'concat',
                  ):
         super().__init__()
 
         self.in_channels = in_channels
+        self.conditioning = conditioning
 
         self.embedding_net = ConvEncoder(
             in_channels=in_channels, 
@@ -42,12 +44,20 @@ class NetworkWithPriorsConvEmb(nn.Module):
         )
         
         self.dim_prior_bounds = 2 * dim_out
-        dim_mlp_in = dim_embedding + self.dim_prior_bounds
+
+        if conditioning == 'concat':
+            dim_mlp_in = dim_embedding + self.dim_prior_bounds
+            dim_condition = 0
+        elif conditioning == 'glu' or conditioning == 'film':
+            dim_mlp_in = dim_embedding
+            dim_condition = self.dim_prior_bounds
+        else:
+            raise NotImplementedError
 
         self.mlp = ResidualMLP(
             dim_in=dim_mlp_in,
             dim_out=dim_out,
-            dim_condition=0,
+            dim_condition=dim_condition,
             layer_width=layer_width,
             num_blocks=num_blocks,
             repeats_per_block=repeats_per_block,
@@ -56,6 +66,7 @@ class NetworkWithPriorsConvEmb(nn.Module):
             dropout_rate=dropout_rate,
             residual=residual,
             adaptive_activation=adaptive_activation,
+            conditioning=conditioning,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':
@@ -68,17 +79,16 @@ class NetworkWithPriorsConvEmb(nn.Module):
             self.embedding_net.load_weights(pretrained_embedding_net)
 
 
-    def forward(self, x, q_values=None):
-        if isinstance(x, dict):
-            curves, bounds = x['scaled_curves'], x['scaled_bounds']
-        else:
-            curves, bounds = split(x, [x.shape[-1]-self.dim_prior_bounds, self.dim_prior_bounds], dim=-1)
-            
+    def forward(self, curves, bounds, q_values=None):
         if q_values is not None:
-            curves = cat([curves[:, None, :], q_values[:, None, :]], dim=1)
-        
-        x = cat([self.embedding_net(curves), bounds], dim=-1)
-        x = self.mlp(x)
+            curves = torch.cat([curves[:, None, :], q_values[:, None, :]], dim=1)
+
+        if self.conditioning == 'concat': 
+            x = torch.cat([self.embedding_net(curves), bounds], dim=-1)
+            x = self.mlp(x)
+
+        elif self.conditioning == 'glu' or self.conditioning == 'film':
+            x = self.mlp(self.embedding_net(curves), condition=bounds)
 
         return x
     
@@ -91,6 +101,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
                  width_fno: int = 64,
                  embedding_net_activation: str = 'gelu',
                  n_fno_blocks : int = 6,
+                 fusion_self_attention: bool = False,
                  dim_out: int = 8,
                  layer_width: int = 64,
                  num_blocks: int = 3,
@@ -101,8 +112,11 @@ class NetworkWithPriorsFnoEmb(nn.Module):
                  use_selu_init: bool = False,
                  residual: bool = True,
                  adaptive_activation: bool = False,
+                 conditioning: str = 'concat',
                  ):
         super().__init__()
+
+        self.conditioning = conditioning
 
         self.embedding_net = FnoEncoder(
             ch_in=in_channels, 
@@ -110,16 +124,25 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             modes=modes, 
             width_fno=width_fno, 
             n_fno_blocks=n_fno_blocks, 
-            activation=embedding_net_activation
+            activation=embedding_net_activation,
+            fusion_self_attention=fusion_self_attention
         )
 
         self.dim_prior_bounds = 2 * dim_out
-        dim_mlp_in = dim_embedding + self.dim_prior_bounds
+
+        if conditioning == 'concat':
+            dim_mlp_in = dim_embedding + self.dim_prior_bounds
+            dim_condition = 0
+        elif conditioning == 'glu' or conditioning == 'film':
+            dim_mlp_in = dim_embedding
+            dim_condition = self.dim_prior_bounds
+        else:
+            raise NotImplementedError
 
         self.mlp = ResidualMLP(
             dim_in=dim_mlp_in,
             dim_out=dim_out,
-            dim_condition=0,
+            dim_condition=dim_condition,
             layer_width=layer_width,
             num_blocks=num_blocks,
             repeats_per_block=repeats_per_block,
@@ -128,6 +151,7 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             dropout_rate=dropout_rate,
             residual=residual,
             adaptive_activation=adaptive_activation,
+            conditioning=conditioning,
         )
 
         if use_selu_init and embedding_net_activation == 'selu':
@@ -137,19 +161,18 @@ class NetworkWithPriorsFnoEmb(nn.Module):
             self.mlp.apply(selu_init)
 
             
-    def forward(self, x, q_values=None):
-        if isinstance(x, dict):
-            curves, bounds = x['scaled_curves'], x['scaled_bounds']
-        else:
-            curves, bounds = split(x, [x.shape[-1]-self.dim_prior_bounds, self.dim_prior_bounds], dim=-1)
-            
-        if q_values is not None:
-            curves = cat([curves[:, None, :], q_values[:, None, :]], dim=1)
-        else:
+    def forward(self, curves, bounds, q_values=None):
+        if curves.dim() < 3:
             curves = curves[:, None, :]
+        if q_values is not None:
+            curves = torch.cat([curves, q_values[:, None, :]], dim=1)
 
-        x = cat([self.embedding_net(curves), bounds], dim=-1)
-        x = self.mlp(x)
+        if self.conditioning == 'concat': 
+            x = torch.cat([self.embedding_net(curves), bounds], dim=-1)
+            x = self.mlp(x)
+
+        elif self.conditioning == 'glu' or self.conditioning == 'film':
+            x = self.mlp(self.embedding_net(curves), condition=bounds)
 
         return x
 

@@ -71,4 +71,5 @@ API Reference
               BasicSamplerStrategy,
               ConstrainedRoughnessSamplerStrategy,
               ConstrainedRoughnessAndImgSldSamplerStrategy,
+              ParametricModel,
               EasyInferenceModel,

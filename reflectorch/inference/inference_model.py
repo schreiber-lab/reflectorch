@@ -157,14 +157,13 @@ class EasyInferenceModel(object):
             predicted_params = self._qshift_prediction(reflectivity_curve, scaled_prior_bounds, num = 1024, dq_coef = 1.)
 
         else:
-            scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
             with torch.no_grad():
                 self.trainer.model.eval()
                 if self.trainer.train_with_q_input:
                     scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
-                    scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, scaled_q)
+                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds, scaled_q)
                 else:
-                    scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds)
                 
                 predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
 
@@ -304,11 +303,10 @@ class EasyInferenceModel(object):
 
         scaled_curves = self.trainer.loader.curves_scaler.scale(shifted_curves)
         scaled_prior_bounds = torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)
-        scaled_curve_and_priors = torch.cat([scaled_curves, scaled_prior_bounds], -1)
 
         with torch.no_grad():
             self.trainer.model.eval()
-            scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+            scaled_predicted_params = self.trainer.model(scaled_curves, scaled_prior_bounds)
             restored_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
 
             best_param = get_best_mse_param(

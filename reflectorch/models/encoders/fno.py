@@ -57,7 +57,8 @@ class FnoEncoder(nn.Module):
             modes: int = 32, 
             width_fno: int = 64, 
             n_fno_blocks: int = 6, 
-            activation='gelu',
+            activation: str = 'gelu',
+            fusion_self_attention: bool = False,
             ):
         super().__init__()
 
@@ -69,19 +70,23 @@ class FnoEncoder(nn.Module):
         self.width_fno = width_fno
         self.n_fno_blocks = n_fno_blocks
         self.activation = activation_by_name(activation)()
+        self.fusion_self_attention = fusion_self_attention
         
 
         self.fc0 = nn.Linear(ch_in, width_fno) #(r(q), q)
         self.spectral_convs = nn.ModuleList([SpectralConv1d(in_channels=width_fno, out_channels=width_fno, modes=modes) for _ in range(n_fno_blocks)])
         self.w_convs = nn.ModuleList([nn.Conv1d(in_channels=width_fno, out_channels=width_fno, kernel_size=1) for _ in range(n_fno_blocks)])
         self.fc_out = nn.Linear(width_fno, dim_embedding)
+
+        if fusion_self_attention:
+            self.fusion = FusionSelfAttention(width_fno, 2*width_fno)
         
     def forward(self, x):
         """"""
 
-        x = x.permute(0, 2, 1)
+        x = x.permute(0, 2, 1) #(B, D, S) -> (B, S, D)
         x = self.fc0(x)
-        x = x.permute(0, 2, 1) 
+        x = x.permute(0, 2, 1) #(B, S, D) -> (B, D, S) 
 
         for i in range(self.n_fno_blocks):
             x1 = self.spectral_convs[i](x)
@@ -89,8 +94,30 @@ class FnoEncoder(nn.Module):
             
             x = x1 + x2
             x = self.activation(x)
-            
-        x = x.mean(dim=-1)
+
+        if self.fusion_self_attention:
+            x = x.permute(0, 2, 1)
+            x = self.fusion(x)  
+        else:
+            x = x.mean(dim=-1)
+
         x = self.fc_out(x)
         
         return x
+    
+class FusionSelfAttention(nn.Module):
+    def __init__(self, 
+                 embed_dim: int = 64, 
+                 hidden_dim: int = 64,
+                 activation=nn.Tanh,
+                 ):
+        super().__init__()
+        self.fuser = nn.Sequential(nn.Linear(embed_dim, hidden_dim), 
+                                   activation(),
+                                   nn.Linear(hidden_dim, 1, bias=False))
+        
+    def forward(self, c):  # (batch_size x seq_len x embed_dim)
+        a = self.fuser(c)
+        alpha = torch.exp(a)
+        alpha = alpha/alpha.sum(dim=1, keepdim=True)
+        return (alpha*c).sum(dim=1)  # (batch_size x embed_dim)
