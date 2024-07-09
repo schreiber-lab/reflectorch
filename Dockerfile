@@ -1,12 +1,12 @@
-FROM python:3.9
+FROM nvidia/cuda:11.5.2-runtime-ubuntu20.04
 
 WORKDIR /app
 COPY . /app
 
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -e '.[tests,docs,build]'
-
-RUN pip install --no-cache-dir jupyter
+RUN apt-get update && \
+    pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir -e '.[tests,docs,build]' && \
+    pip3 install --no-cache-dir jupyter
 
 EXPOSE 8888
 
