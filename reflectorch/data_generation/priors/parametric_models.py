@@ -331,7 +331,8 @@ class ModelWithAbsorption(StandardModel):
 
 
 class ModelWithShifts(StandardModel):
-    """Variant of the standard box model parameterization in which two additional parameters are considered: the shift in the q positions (additive) and the shift in intensity/normalization (multiplicative)."""
+    """Variant of the standard box model parameterization in which two additional parameters are considered: the shift in the q positions (additive) and the shift in 
+    intensity (multiplicative, or additive in log domain)."""
     NAME = 'model_with_shifts'
 
     PARAMETER_NAMES = (
