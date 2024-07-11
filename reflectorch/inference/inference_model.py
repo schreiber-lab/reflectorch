@@ -101,8 +101,14 @@ class EasyInferenceModel(object):
         self.trainer.model.eval()
         
         print(f'The model corresponds to a parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
-        print(f'Parameter types and total ranges: {self.trainer.loader.prior_sampler.param_ranges}')
-        print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+        # print(f'Parameter types and total ranges: {self.trainer.loader.prior_sampler.param_ranges}')
+        # print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+        print("Parameter types and total ranges:")
+        for param, range_ in self.trainer.loader.prior_sampler.param_ranges.items():
+            print(f"- {param}: {range_}")
+        print("Allowed widths of the prior bound intervals (max-min):")
+        for param, range_ in self.trainer.loader.prior_sampler.bound_width_ranges.items():
+            print(f"- {param}: {range_}")
 
         if isinstance(self.trainer.loader.q_generator, ConstantQ):
             q_min = self.trainer.loader.q_generator.q[0].item()
