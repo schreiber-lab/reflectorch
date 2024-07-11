@@ -100,9 +100,7 @@ class EasyInferenceModel(object):
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=self.config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
         
-        print(f'The model corresponds to a parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
-        # print(f'Parameter types and total ranges: {self.trainer.loader.prior_sampler.param_ranges}')
-        # print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+        print(f'The model corresponds to a `{self.trainer.loader.prior_sampler.param_model.NAME}` parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
         print("Parameter types and total ranges:")
         for param, range_ in self.trainer.loader.prior_sampler.param_ranges.items():
             print(f"- {param}: {range_}")
