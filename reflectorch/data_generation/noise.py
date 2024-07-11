@@ -304,7 +304,7 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
     """
     A composite noise generator that applies Poisson, scaling, shift and background noise to reflectivity curves.
 
-    This class combines three types of noise:
+    This class combines four types of noise:
     1. Poisson noise: Simulates count-based noise common in photon counting experiments.
     2. Scaling noise: Applies a scaling transformation to the curves, equivalent to a vertical stretch or compression in logarithmic space.
     3. Shift noise: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.
