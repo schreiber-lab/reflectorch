@@ -25,7 +25,7 @@ dset:
       logdist: false
       scale_params_by_ranges: false
       scaled_range: [-1., 1.]
-      device: 'cuda'200
+      device: 'cuda'
       
   q_generator:
     cls: ConstantQ
