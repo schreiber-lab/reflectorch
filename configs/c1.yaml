@@ -35,12 +35,14 @@ dset:
     kwargs:
       relative_errors: [0.0, 0.2]
       abs_errors: 0.0
-      consistent_rel_err: false
+      consistent_rel_err: true
       logdist: false
       apply_shift: true
-      shift_range: [-0.02, 0.02]
+      shift_range: [-0.3, 0.3]
       apply_scaling: true
       scale_range: [-0.02, 0.02]
+      apply_background: false
+      background_range: [1.0e-10, 1.0e-8]
 
   q_noise:
     cls: BasicQNoiseGenerator
