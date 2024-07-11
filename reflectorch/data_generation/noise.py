@@ -22,6 +22,7 @@ __all__ = [
     "MultiplicativeLogNormalNoiseGenerator",
     "ScalingNoise",
     "ShiftNoise",
+    "BackgroundNoise",
     "BasicExpIntensityNoise",
     "BasicQNoiseGenerator",
 ]
@@ -130,7 +131,7 @@ class IntensityNoiseGenerator(ProcessData):
 
 class MultiplicativeLogNormalNoiseGenerator(IntensityNoiseGenerator):
     """Noise generator which applies noise as R_n = R * b**(eps), where b is a base and eps is sampled from the normal distribution eps~N(0, std). 
-       In logarithmic space this traslates to log_b(R_n) =log_b(R) + eps
+       In logarithmic space this translates to log_b(R_n) =log_b(R) + eps
 
     Args:
         std (Union[float, Tuple[float, float]]): the standard deviation of the normal distribution from which the noise is sampled. The standard deviation is the same 
@@ -160,6 +161,14 @@ class MultiplicativeLogNormalNoiseGenerator(IntensityNoiseGenerator):
 
 
 class PoissonNoiseGenerator(IntensityNoiseGenerator):
+    """Noise generator which applies Poisson noise to the reflectivity curves
+
+    Args:
+        relative_errors (Tuple[float, float], optional): the range of relative errors to apply to the intensity curves. Defaults to (0.05, 0.35).
+        abs_errors (float, optional): a small constant added to prevent division by zero. Defaults to 1e-8.
+        consistent_rel_err (bool, optional): If True, the same relative error is used for all points in a curve.
+        logdist (bool, optional): If True, the relative errors in are sampled in logarithmic space. Defaults to False.
+    """
     def __init__(self,
                  relative_errors: Tuple[float, float] = (0.05, 0.35),
                  abs_errors: float = 1e-8,
@@ -210,10 +219,11 @@ class PoissonNoiseGenerator(IntensityNoiseGenerator):
 
 
 class ScalingNoise(IntensityNoiseGenerator):
-    """_summary_
+    """Noise generator which applies scaling noise to reflectivity curves (equivalent to a vertical stretch or compression of the curve in the logarithmic domain). 
+    The output is R^(1 + scale_factor), which corresponds in logarithmic domain to (1 + scale_factor) * log(R).
 
     Args:
-        scale_range (tuple, optional): _description_. Defaults to (-0.2e-2, 0.2e-2).
+        scale_range (tuple, optional): the range of scaling factors (one factor sampled per curve in the batch). Defaults to (-0.2e-2, 0.2e-2).
     """
     def __init__(self,
                  scale_range: tuple = (-0.2e-2, 0.2e-2),
@@ -241,6 +251,11 @@ class ShiftNoise(IntensityNoiseGenerator):
                  shift_range: tuple = (-0.1, 0.2e-2),
                  add_to_context: bool = False,
                  ):
+        """Noise generator which applies shifting noise to reflectivity curves (equivalent to a vertical shift of the entire curve in the logarithmic domain). 
+        The output is R * (1 + shift_factor), which corresponds in logarithmic domain to log(R) + log(1 + shift_factor).
+        Args:
+            shift_range (tuple, optional): the range of shift factors (one factor sampled per curve in the batch). Defaults to (-0.1, 0.2e-2).
+        """
         self.shift_range = shift_range
         self.add_to_context = add_to_context
 
@@ -256,16 +271,67 @@ class ShiftNoise(IntensityNoiseGenerator):
         curves = curves * (1 + intensity_shifts)
 
         return curves
+    
+class BackgroundNoise(IntensityNoiseGenerator):
+    """
+    Noise generator which adds a constant background to reflectivity curves.
+
+    Args:
+        background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
+    """
+    def __init__(self,
+                 background_range: tuple = (1.0e-10, 1.0e-8),
+                 add_to_context: bool = False,
+                 ):
+        self.background_range = background_range
+        self.add_to_context = add_to_context
+
+    def apply(self, curves: Tensor, context: dict = None) -> Tensor:
+        """applies background noise to the curves"""
+        backgrounds = uniform_sampler(
+            *self.background_range, curves.shape[0], 1,
+            device=curves.device, dtype=curves.dtype
+        )
+        if self.add_to_context and context is not None:
+            context['backgrounds'] = backgrounds
+
+        curves = curves + backgrounds
+
+        return curves
 
 
 class BasicExpIntensityNoise(IntensityNoiseGenerator):
+    """
+    A composite noise generator that applies Poisson, scaling, shift and background noise to reflectivity curves.
+
+    This class combines three types of noise:
+    1. Poisson noise: Simulates count-based noise common in photon counting experiments.
+    2. Scaling noise: Applies a scaling transformation to the curves, equivalent to a vertical stretch or compression in logarithmic space.
+    3. Shift noise: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.
+    4. Background noise: Adds a constant background value to the curves.
+
+    Args:
+        relative_errors (Tuple[float, float], optional): The range of relative errors for Poisson noise. Defaults to (0.001, 0.15).
+        abs_errors (float, optional): A small constant added to prevent division by zero in Poisson noise. Defaults to 1e-8.
+        scale_range (tuple, optional): The range of scaling factors for scaling noise. Defaults to (-2e-2, 2e-2).
+        shift_range (tuple, optional): The range of shift factors for shift noise. Defaults to (-0.1, 0.2e-2).
+        background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
+        apply_shift (bool, optional): If True, applies shift noise to the curves. Defaults to False.
+        apply_scaling (bool, optional): If True, applies scaling noise to the curves. Defaults to False.
+        apply_background (bool, optional): If True, applies background noise to the curves. Defaults to False.
+        consistent_rel_err (bool, optional): If True, uses a consistent relative error for Poisson noise across all points in a curve. Defaults to False.
+        add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.
+        logdist (bool, optional): If True, samples relative errors for Poisson noise in logarithmic space. Defaults to False.
+    """
     def __init__(self,
                  relative_errors: Tuple[float, float] = (0.001, 0.15),
                  abs_errors: float = 1e-8,
                  scale_range: tuple = (-2e-2, 2e-2),
                  shift_range: tuple = (-0.1, 0.2e-2),
+                 background_range: tuple = (1.0e-10, 1.0e-8),
                  apply_shift: bool = False,
                  apply_scaling: bool = False,
+                 apply_background: bool = False,
                  consistent_rel_err: bool = False,
                  add_to_context: bool = False,
                  logdist: bool = False,
@@ -280,16 +346,24 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
         self.scaling_noise = ScalingNoise(
             scale_range=scale_range, add_to_context=add_to_context
         ) if apply_scaling else None
+
         self.shift_noise = ShiftNoise(
             shift_range=shift_range, add_to_context=add_to_context
         ) if apply_shift else None
 
+        self.background_noise = BackgroundNoise(
+            background_range=background_range, add_to_context=add_to_context
+        ) if apply_background else None
+
     def apply(self, curves: Tensor, context: dict = None):
-        """applies noise to the curves"""
+        """applies the specified types of noise to the input curves"""
         if self.scaling_noise:
             curves = self.scaling_noise(curves, context)
         if self.shift_noise:
             curves = self.shift_noise(curves, context)
         curves = self.poisson_noise(curves, context)
+
+        if self.background_noise:
+            curves = self.background_noise.apply(curves, context)
 
         return curves
