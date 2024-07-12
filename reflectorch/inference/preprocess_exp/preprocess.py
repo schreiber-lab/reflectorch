@@ -25,7 +25,7 @@ def standard_preprocessing(
         max_q: float = None,  # if provided, max_angle is ignored
         max_angle: float = None,
 ) -> dict:
-    """Preprocesses a raw experimental reflectivity curve by applying attenuation correction, footprint correction, cutting at a maximum q_value and interpolation to  
+    """Preprocesses a raw experimental reflectivity curve by applying attenuation correction, footprint correction, cutting at a maximum q value and interpolation
 
     Args:
         intensity (np.ndarray): array of intensities of the reflectivity curve

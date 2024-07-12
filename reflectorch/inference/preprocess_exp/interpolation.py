@@ -7,7 +7,7 @@ def interp_reflectivity(q_interp, q, reflectivity, min_value: float = 1e-10):
     Args:
         q_interp (array-like): reciprocal space points used for the interpolation
         q (array-like): reciprocal space points of the measured reflectivity curve
-        reflectivity (array-like): reflectivity curve measured at the points q
+        reflectivity (array-like): reflectivity curve measured at the points ``q``
         min_value (float, optional): minimum intensity of the reflectivity curve. Defaults to 1e-10.
 
     Returns:

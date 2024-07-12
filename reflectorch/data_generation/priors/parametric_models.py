@@ -44,6 +44,7 @@ class ParametricModel(object):
     @property
     def param_dim(self) -> int:
         """get the number of parameters
+        
         Returns:
             int:
         """
@@ -95,7 +96,7 @@ class ParametricModel(object):
             dtype (optional): the Pytorch datatype. Defaults to None.
 
         Returns:
-            Tuple[Tensor, Tensor, Tensor, Tensor]: _description_
+            Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
         ordered_bounds = [param_ranges[k] for k in self.PARAMETER_NAMES]
         delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES]

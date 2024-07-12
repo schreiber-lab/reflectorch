@@ -14,7 +14,7 @@ __all__ = [
 
 
 class ReflectivityDataLoader(BasicDataset, DataLoader):
-    """Class combining functionality from BasicDataset (basic dataset class for reflectivity) and the DataLoader (which inherits from TrainerCallback)"""
+    """Dataloader for reflectivity data, combining functionality from the ``BasicDataset`` (basic dataset class for reflectivity) and the ``DataLoader`` (which inherits from ``TrainerCallback``) classes"""
     pass
 
 

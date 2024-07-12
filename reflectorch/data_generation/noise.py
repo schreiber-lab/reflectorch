@@ -29,7 +29,7 @@ __all__ = [
 
 
 class QNoiseGenerator(ProcessData):
-    """base class for q noise generators"""
+    """Base class for q noise generators"""
     def apply(self, qs: Tensor, context: dict = None):
         return qs
 
@@ -130,8 +130,9 @@ class IntensityNoiseGenerator(ProcessData):
 
 
 class MultiplicativeLogNormalNoiseGenerator(IntensityNoiseGenerator):
-    """Noise generator which applies noise as R_n = R * b**(eps), where b is a base and eps is sampled from the normal distribution eps~N(0, std). 
-       In logarithmic space this translates to log_b(R_n) =log_b(R) + eps
+    """Noise generator which applies noise as :math:`R_n = R * b^{\epsilon}` , where :math:`b` is a base and :math:`\epsilon` is sampled from the normal distribution :math:`\epsilon \sim \mathcal{N}(0, std)` .
+    In logarithmic space, this translates to :math:`\log_b(R_n) = \log_b(R) + \epsilon` .
+
 
     Args:
         std (Union[float, Tuple[float, float]]): the standard deviation of the normal distribution from which the noise is sampled. The standard deviation is the same 
@@ -166,8 +167,8 @@ class PoissonNoiseGenerator(IntensityNoiseGenerator):
     Args:
         relative_errors (Tuple[float, float], optional): the range of relative errors to apply to the intensity curves. Defaults to (0.05, 0.35).
         abs_errors (float, optional): a small constant added to prevent division by zero. Defaults to 1e-8.
-        consistent_rel_err (bool, optional): If True, the same relative error is used for all points in a curve.
-        logdist (bool, optional): If True, the relative errors in are sampled in logarithmic space. Defaults to False.
+        consistent_rel_err (bool, optional): If ``True``, the same relative error is used for all points in a curve.
+        logdist (bool, optional): If ``True``, the relative errors in are sampled in logarithmic space. Defaults to False.
     """
     def __init__(self,
                  relative_errors: Tuple[float, float] = (0.05, 0.35),
@@ -305,10 +306,11 @@ class BasicExpIntensityNoise(IntensityNoiseGenerator):
     A composite noise generator that applies Poisson, scaling, shift and background noise to reflectivity curves.
 
     This class combines four types of noise:
-    1. Poisson noise: Simulates count-based noise common in photon counting experiments.
-    2. Scaling noise: Applies a scaling transformation to the curves, equivalent to a vertical stretch or compression in logarithmic space.
-    3. Shift noise: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.
-    4. Background noise: Adds a constant background value to the curves.
+
+    1. **Poisson noise**: Simulates count-based noise common in photon counting experiments.
+    2. **Scaling noise**: Applies a scaling transformation to the curves, equivalent to a vertical stretch or compression in logarithmic space.
+    3. **Shift noise**: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.
+    4. **Background noise**: Adds a constant background value to the curves.
 
     Args:
         relative_errors (Tuple[float, float], optional): The range of relative errors for Poisson noise. Defaults to (0.001, 0.15).

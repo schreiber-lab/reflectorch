@@ -65,7 +65,7 @@ class BasicParams(AbstractParams):
         return self.param_model.get_param_labels()
 
     def reflectivity(self, q: Tensor, log: bool = False, **kwargs):
-        """computes the reflectivity curves directly from the parameters
+        r"""computes the reflectivity curves directly from the parameters
 
         Args:
             q (Tensor): the q values

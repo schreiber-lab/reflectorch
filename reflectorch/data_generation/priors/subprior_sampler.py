@@ -32,7 +32,7 @@ from reflectorch.data_generation.priors.no_constraints import (
 
 
 class UniformSubPriorParams(Params):
-    """Parameters class for thicknesses, roughnesses, slds together with their subprior bounds."""
+    """Parameters class for thicknesses, roughnesses and slds, together with their subprior bounds."""
     __slots__ = ('thicknesses', 'roughnesses', 'slds', 'min_bounds', 'max_bounds')
     PARAM_NAMES = __slots__
 

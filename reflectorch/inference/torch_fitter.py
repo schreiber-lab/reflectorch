@@ -15,8 +15,8 @@ class ReflGradientFit(object):
         prior_sampler (PriorSampler): the prior sampler
         params (Tensor): the initial thin film parameters
         fit_indices (Tensor): the indices of the thin film parameters which are to be fitted
-        sigmas (Tensor, optional): error bars of the reflectivity curve, if not provided they are derived from rel_err and abs_err. Defaults to None.
-        optim_cls (_type_, optional): the Pytorch optimizer class. Defaults to None.
+        sigmas (Tensor, optional): error bars of the reflectivity curve, if not provided they are derived from ``rel_err`` and ``abs_err``. Defaults to None.
+        optim_cls (Type[torch.optim.Optimizer], optional): the Pytorch optimizer class. Defaults to None.
         lr (float, optional): the learning rate. Defaults to 1e-2.
         rel_err (float, optional): the relative error in the reflectivity curve. Defaults to 0.1.
         abs_err (float, optional): the absolute error in the reflectivity curve. Defaults to 1e-7.

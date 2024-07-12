@@ -41,7 +41,7 @@ class RealTimeSimTrainer(Trainer):
 
 
 class PointEstimatorTrainer(RealTimeSimTrainer):
-    """Point estimator trainer for the inverse problem."""
+    """Trainer for the regression inverse problem with incorporation of prior bounds"""
     add_sigmas_to_context: bool = False
         
     def _get_batch(self, batch_data: BATCH_DATA_TYPE):
@@ -60,7 +60,7 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
         return scaled_params, scaled_bounds, scaled_curves, scaled_q_values
 
     def get_loss_dict(self, batch_data):
-        """Returns the regression loss"""
+        """computes the loss dictionary"""
 
         scaled_params, scaled_bounds, scaled_curves, scaled_q_values = batch_data
 

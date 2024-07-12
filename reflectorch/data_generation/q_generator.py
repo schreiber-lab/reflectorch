@@ -74,9 +74,9 @@ class VariableQ(QGenerator):
     """Q generator for reflectivity curves with variable discretization
 
     Args:
-        q_min_range (list, optional): the range for sampling the minimum q value of the curves, q_min. Defaults to [0.01, 0.03].
-        q_max_range (list, optional): the range for sampling the maximum q value of the curves, q_max. Defaults to [0.1, 0.5].
-        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between q_min and q_max, 
+        q_min_range (list, optional): the range for sampling the minimum q value of the curves, *q_min*. Defaults to [0.01, 0.03].
+        q_max_range (list, optional): the range for sampling the maximum q value of the curves, *q_max*. Defaults to [0.1, 0.5].
+        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between *q_min* and *q_max*, 
                                     the number of points varies between batches but is constant within a batch). Defaults to [64, 256].
         device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
         dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
@@ -133,7 +133,7 @@ class ConstantAngle(QGenerator):
     """Q generator for reflectivity curves measured at equidistant angles
 
     Args:
-        angle_range (Tuple[float, float, int], optional): . Defaults to (0., 0.2, 257).
+        angle_range (Tuple[float, float, int], optional): the range of the incident angles. Defaults to (0., 0.2, 257).
         wavelength (float, optional): the beam wavelength in units of angstroms. Defaults to 1.
         device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
         dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.

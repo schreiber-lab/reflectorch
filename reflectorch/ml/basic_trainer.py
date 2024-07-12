@@ -33,11 +33,11 @@ class Trainer(object):
         loader (DataLoader): data loader
         lr (float): learning rate
         batch_size (int): batch size
-        clip_grad_norm (int, optional): maximum norm for gradient clipping if it is not None. Defaults to None.
+        clip_grad_norm (int, optional): maximum norm for gradient clipping if it is not ``None``. Defaults to None.
         logger (Union[Logger, Tuple[Logger, ...], Loggers], optional): logger. Defaults to None.
         optim_cls (Type[torch.optim.Optimizer], optional): Pytorch optimizer. Defaults to torch.optim.Adam.
         optim_kwargs (dict, optional): optimizer arguments. Defaults to None.
-        train_with_q_input (bool, optional): if True the q values are also used as input. Defaults to False.
+        train_with_q_input (bool, optional): if ``True`` the q values are also used as input. Defaults to False.
     """
 
     TOTAL_LOSS_KEY: str = 'total_loss'
@@ -90,9 +90,9 @@ class Trainer(object):
         """starts the training process
 
         Args:
-            num_batches (int): number of training iterations
-            callbacks (Union[Tuple['TrainerCallback'], 'TrainerCallback']: trainer callbacks. Defaults to ().
-            disable_tqdm (bool, optional): disable the progress bar if True. Defaults to False.
+            num_batches (int): total number of training iterations
+            callbacks (Union[Tuple['TrainerCallback'], 'TrainerCallback']): the trainer callbacks. Defaults to ().
+            disable_tqdm (bool, optional): if ``True``, the progress bar is disabled. Defaults to False.
             update_tqdm_freq (int, optional): frequency for updating the progress bar. Defaults to 10.
             grad_accumulation_steps (int, optional): number of gradient accumulation steps. Defaults to 1.
         """

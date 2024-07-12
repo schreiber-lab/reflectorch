@@ -24,7 +24,7 @@ class BasicDataset(object):
     simulates the reflectivity curves and applies noise to the curves.
 
     Args:
-        q_generator (QGenerator): the momentum transfer (q) genrator
+        q_generator (QGenerator): the momentum transfer (q) generator
         prior_sampler (PriorSampler): the prior sampler
         intensity_noise (IntensityNoiseGenerator, optional): the intensity noise generator. Defaults to None.
         q_noise (QNoiseGenerator, optional): the q noise generator. Defaults to None.
@@ -60,7 +60,7 @@ class BasicDataset(object):
         return params, scaled_params
 
     def get_batch(self, batch_size: int) -> BATCH_DATA_TYPE:
-        """get a batch of data as a dictionary with keys `params`, `scaled_params`, `q_values`, `curves`, `scaled_noisy_curves`
+        """get a batch of data as a dictionary with keys ``params``, ``scaled_params``, ``q_values``, ``curves``, ``scaled_noisy_curves``
 
         Args:
             batch_size (int): the batch size

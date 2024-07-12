@@ -41,14 +41,18 @@ class SpectralConv1d(nn.Module):
 class FnoEncoder(nn.Module):
     """An embedding network based on the Fourier Neural Operator (FNO) architecture
 
+    .. image:: ../docs/fig_reflectometry_embedding_networks.png
+        :width: 400px
+        :align: center
+
     Args:
         ch_in (int): number of input channels
         dim_embedding (int): dimension of the output embedding
         modes (int): number of Fourier modes
         width_fno (int): number of channels of the intermediate representations
         n_fno_blocks (int): number of FNO blocks
-        activation (nn.Module): Pytorch activation function module
-
+        activation (str): the activation function
+        fusion_self_attention (bool): if ``True`` a fusion layer is used after the FNO blocks to produce the final embedding
     """
     def __init__(
             self, 
