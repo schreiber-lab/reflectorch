@@ -72,3 +72,5 @@ API Reference
               ConstrainedRoughnessAndImgSldSamplerStrategy,
               ParametricModel,
               EasyInferenceModel,
+    :show-inheritance:
+    :member-order: bysource
