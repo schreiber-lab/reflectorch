@@ -1,0 +1,775 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.data_generation.noise &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/data_generation/noise';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.data_generation.noise</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the GPL license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log10</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.process_data</span> <span class="kn">import</span> <span class="n">ProcessData</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.utils</span> <span class="kn">import</span> <span class="n">uniform_sampler</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;QNoiseGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;IntensityNoiseGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;QNormalNoiseGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;QSystematicShiftGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PoissonNoiseGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MultiplicativeLogNormalNoiseGenerator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ScalingNoise&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ShiftNoise&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;BackgroundNoise&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;BasicExpIntensityNoise&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;BasicQNoiseGenerator&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="QNoiseGenerator">
+<a class="viewcode-back" href="../../../api.html#reflectorch.QNoiseGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">QNoiseGenerator</span><span class="p">(</span><span class="n">ProcessData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for q noise generators&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">qs</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">QNormalNoiseGenerator</span><span class="p">(</span><span class="n">QNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Q noise generator which adds to each q value of the reflectivity curve a noise sampled from a normal distribution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution (the same for all curves in the batch if provided as a float, </span>
+<span class="sd">                                                           or uniformly sampled for each curve in the batch if provided as a tuple)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">std</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies noise to the q values&quot;&quot;&quot;</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">uniform_sampler</span><span class="p">(</span><span class="o">*</span><span class="n">std</span><span class="p">,</span> <span class="n">qs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">qs</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">qs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
+
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;q_stds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span>
+
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min_</span><span class="p">(</span><span class="n">qs</span> <span class="o">+</span> <span class="n">noise</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">qs</span>
+
+
+<span class="k">class</span> <span class="nc">QSystematicShiftGenerator</span><span class="p">(</span><span class="n">QNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Q noise generator which samples a q shift (for each curve in the batch) from a normal distribution adds it to all q values of the curve</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        std (float): the standard deviation of the normal distribution</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies systematic shifts to the q values&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
+            <span class="n">mean</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">qs</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">qs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;q_shifts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shifts</span>
+
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min_</span><span class="p">(</span><span class="n">qs</span> <span class="o">+</span> <span class="n">shifts</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">qs</span>
+
+
+<div class="viewcode-block" id="BasicQNoiseGenerator">
+<a class="viewcode-back" href="../../../api.html#reflectorch.BasicQNoiseGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">BasicQNoiseGenerator</span><span class="p">(</span><span class="n">QNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Q noise generator which applies both systematic shifts (same change for all q points in the curve) and random noise (different changes per q point in the curve)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shift_std (float, optional): the standard deviation of the normal distribution for systematic q shifts </span>
+<span class="sd">                                    (i.e. same change applied to all q points in the curve). Defaults to 1e-3.</span>
+<span class="sd">        noise_std (Union[float, Tuple[float, float]], optional): the standard deviation of the normal distribution for random q noise </span>
+<span class="sd">                                    (i.e. different changes applied to each q point in the curve). The standard deviation is the same </span>
+<span class="sd">                                    for all curves in the batch if provided as a float, or uniformly sampled for each curve in the batch if provided as a tuple. </span>
+<span class="sd">                                    Defaults to (0, 1e-3).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">shift_std</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+                 <span class="n">noise_std</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_shift</span> <span class="o">=</span> <span class="n">QSystematicShiftGenerator</span><span class="p">(</span><span class="n">shift_std</span><span class="p">,</span> <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_noise</span> <span class="o">=</span> <span class="n">QNormalNoiseGenerator</span><span class="p">(</span><span class="n">noise_std</span><span class="p">,</span> <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasicQNoiseGenerator.apply">
+<a class="viewcode-back" href="../../../api.html#reflectorch.BasicQNoiseGenerator.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies random noise to the q values&quot;&quot;&quot;</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_noise</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">qs</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IntensityNoiseGenerator">
+<a class="viewcode-back" href="../../../api.html#reflectorch.IntensityNoiseGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">IntensityNoiseGenerator</span><span class="p">(</span><span class="n">ProcessData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for intensity noise generators&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+
+<div class="viewcode-block" id="MultiplicativeLogNormalNoiseGenerator">
+<a class="viewcode-back" href="../../../api.html#reflectorch.MultiplicativeLogNormalNoiseGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">MultiplicativeLogNormalNoiseGenerator</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Noise generator which applies noise as :math:`R_n = R * b^{\epsilon}` , where :math:`b` is a base and :math:`\epsilon` is sampled from the normal distribution :math:`\epsilon \sim \mathcal{N}(0, std)` .</span>
+<span class="sd">    In logarithmic space, this translates to :math:`\log_b(R_n) = \log_b(R) + \epsilon` .</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        std (Union[float, Tuple[float, float]]): the standard deviation of the normal distribution from which the noise is sampled. The standard deviation is the same </span>
+<span class="sd">                                                for all curves in the batch if provided as a float, or uniformly sampled for each curve in the batch if provided as a tuple.</span>
+<span class="sd">        base (float, optional): the base of the logarithm. Defaults to 10.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">base</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+<div class="viewcode-block" id="MultiplicativeLogNormalNoiseGenerator.apply">
+<a class="viewcode-back" href="../../../api.html#reflectorch.MultiplicativeLogNormalNoiseGenerator.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies noise to the curves&quot;&quot;&quot;</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">uniform_sampler</span><span class="p">(</span><span class="o">*</span><span class="n">std</span><span class="p">,</span> <span class="n">curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span> <span class="o">*</span> <span class="n">std</span>
+
+        <span class="n">noise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">**</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;std_lognormal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span>
+
+        <span class="k">return</span> <span class="n">noise</span> <span class="o">*</span> <span class="n">curves</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PoissonNoiseGenerator">
+<a class="viewcode-back" href="../../../api.html#reflectorch.PoissonNoiseGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">PoissonNoiseGenerator</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Noise generator which applies Poisson noise to the reflectivity curves</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        relative_errors (Tuple[float, float], optional): the range of relative errors to apply to the intensity curves. Defaults to (0.05, 0.35).</span>
+<span class="sd">        abs_errors (float, optional): a small constant added to prevent division by zero. Defaults to 1e-8.</span>
+<span class="sd">        consistent_rel_err (bool, optional): If ``True``, the same relative error is used for all points in a curve.</span>
+<span class="sd">        logdist (bool, optional): If ``True``, the relative errors in are sampled in logarithmic space. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">relative_errors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>
+                 <span class="n">abs_errors</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">consistent_rel_err</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">logdist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span> <span class="o">=</span> <span class="n">relative_errors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abs_errors</span> <span class="o">=</span> <span class="n">abs_errors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consistent_rel_err</span> <span class="o">=</span> <span class="n">consistent_rel_err</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logdist</span> <span class="o">=</span> <span class="n">logdist</span>
+
+<div class="viewcode-block" id="PoissonNoiseGenerator.apply">
+<a class="viewcode-back" href="../../../api.html#reflectorch.PoissonNoiseGenerator.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies noise to the curves&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consistent_rel_err</span><span class="p">:</span>
+            <span class="n">sigmas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_consistent_sigmas</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigmas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_sigmas</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
+
+        <span class="n">intensities</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">/</span> <span class="n">sigmas</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">intensities</span> <span class="o">*</span> <span class="n">curves</span><span class="p">)</span> <span class="o">/</span> <span class="n">intensities</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;sigmas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmas</span>
+        <span class="k">return</span> <span class="n">curves</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_gen_consistent_sigmas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">):</span>
+        <span class="n">rel_err</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sigmas</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">*</span> <span class="n">rel_err</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_errors</span>
+        <span class="k">return</span> <span class="n">sigmas</span>
+
+    <span class="k">def</span> <span class="nf">_gen_sigmas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">logdist</span><span class="p">:</span>
+            <span class="n">rel_err</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rel_err</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relative_errors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">rel_err</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">rel_err</span>
+
+        <span class="n">sigmas</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">*</span> <span class="n">rel_err</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_errors</span>
+        <span class="k">return</span> <span class="n">sigmas</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">ScalingNoise</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Noise generator which applies scaling noise to reflectivity curves (equivalent to a vertical stretch or compression of the curve in the logarithmic domain). </span>
+<span class="sd">    The output is R^(1 + scale_factor), which corresponds in logarithmic domain to (1 + scale_factor) * log(R).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        scale_range (tuple, optional): the range of scaling factors (one factor sampled per curve in the batch). Defaults to (-0.2e-2, 0.2e-2).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">scale_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.2e-2</span><span class="p">,</span> <span class="mf">0.2e-2</span><span class="p">),</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_range</span> <span class="o">=</span> <span class="n">scale_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies noise to the curves&quot;&quot;&quot;</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="n">uniform_sampler</span><span class="p">(</span>
+            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_range</span><span class="p">,</span> <span class="n">curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;intensity_scales&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scales</span>
+
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">scales</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">curves</span>
+
+
+<span class="k">class</span> <span class="nc">ShiftNoise</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">shift_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2e-2</span><span class="p">),</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Noise generator which applies shifting noise to reflectivity curves (equivalent to a vertical shift of the entire curve in the logarithmic domain). </span>
+<span class="sd">        The output is R * (1 + shift_factor), which corresponds in logarithmic domain to log(R) + log(1 + shift_factor).</span>
+<span class="sd">        Args:</span>
+<span class="sd">            shift_range (tuple, optional): the range of shift factors (one factor sampled per curve in the batch). Defaults to (-0.1, 0.2e-2).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_range</span> <span class="o">=</span> <span class="n">shift_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies noise to the curves&quot;&quot;&quot;</span>
+        <span class="n">intensity_shifts</span> <span class="o">=</span> <span class="n">uniform_sampler</span><span class="p">(</span>
+            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_range</span><span class="p">,</span> <span class="n">curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;intensity_shifts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intensity_shifts</span>
+
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">intensity_shifts</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">curves</span>
+    
+<span class="k">class</span> <span class="nc">BackgroundNoise</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Noise generator which adds a constant background to reflectivity curves.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">background_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0e-10</span><span class="p">,</span> <span class="mf">1.0e-8</span><span class="p">),</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_range</span> <span class="o">=</span> <span class="n">background_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="o">=</span> <span class="n">add_to_context</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies background noise to the curves&quot;&quot;&quot;</span>
+        <span class="n">backgrounds</span> <span class="o">=</span> <span class="n">uniform_sampler</span><span class="p">(</span>
+            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">background_range</span><span class="p">,</span> <span class="n">curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_to_context</span> <span class="ow">and</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s1">&#39;backgrounds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">backgrounds</span>
+
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span> <span class="o">+</span> <span class="n">backgrounds</span>
+
+        <span class="k">return</span> <span class="n">curves</span>
+
+
+<div class="viewcode-block" id="BasicExpIntensityNoise">
+<a class="viewcode-back" href="../../../api.html#reflectorch.BasicExpIntensityNoise">[docs]</a>
+<span class="k">class</span> <span class="nc">BasicExpIntensityNoise</span><span class="p">(</span><span class="n">IntensityNoiseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A composite noise generator that applies Poisson, scaling, shift and background noise to reflectivity curves.</span>
+
+<span class="sd">    This class combines four types of noise:</span>
+
+<span class="sd">    1. **Poisson noise**: Simulates count-based noise common in photon counting experiments.</span>
+<span class="sd">    2. **Scaling noise**: Applies a scaling transformation to the curves, equivalent to a vertical stretch or compression in logarithmic space.</span>
+<span class="sd">    3. **Shift noise**: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.</span>
+<span class="sd">    4. **Background noise**: Adds a constant background value to the curves.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        relative_errors (Tuple[float, float], optional): The range of relative errors for Poisson noise. Defaults to (0.001, 0.15).</span>
+<span class="sd">        abs_errors (float, optional): A small constant added to prevent division by zero in Poisson noise. Defaults to 1e-8.</span>
+<span class="sd">        scale_range (tuple, optional): The range of scaling factors for scaling noise. Defaults to (-2e-2, 2e-2).</span>
+<span class="sd">        shift_range (tuple, optional): The range of shift factors for shift noise. Defaults to (-0.1, 0.2e-2).</span>
+<span class="sd">        background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).</span>
+<span class="sd">        apply_shift (bool, optional): If True, applies shift noise to the curves. Defaults to False.</span>
+<span class="sd">        apply_scaling (bool, optional): If True, applies scaling noise to the curves. Defaults to False.</span>
+<span class="sd">        apply_background (bool, optional): If True, applies background noise to the curves. Defaults to False.</span>
+<span class="sd">        consistent_rel_err (bool, optional): If True, uses a consistent relative error for Poisson noise across all points in a curve. Defaults to False.</span>
+<span class="sd">        add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.</span>
+<span class="sd">        logdist (bool, optional): If True, samples relative errors for Poisson noise in logarithmic space. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">relative_errors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span>
+                 <span class="n">abs_errors</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+                 <span class="n">scale_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">2e-2</span><span class="p">,</span> <span class="mf">2e-2</span><span class="p">),</span>
+                 <span class="n">shift_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2e-2</span><span class="p">),</span>
+                 <span class="n">background_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0e-10</span><span class="p">,</span> <span class="mf">1.0e-8</span><span class="p">),</span>
+                 <span class="n">apply_shift</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">apply_scaling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">apply_background</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">consistent_rel_err</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">add_to_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">logdist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poisson_noise</span> <span class="o">=</span> <span class="n">PoissonNoiseGenerator</span><span class="p">(</span>
+            <span class="n">relative_errors</span><span class="o">=</span><span class="n">relative_errors</span><span class="p">,</span>
+            <span class="n">abs_errors</span><span class="o">=</span><span class="n">abs_errors</span><span class="p">,</span>
+            <span class="n">consistent_rel_err</span><span class="o">=</span><span class="n">consistent_rel_err</span><span class="p">,</span>
+            <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span><span class="p">,</span>
+            <span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaling_noise</span> <span class="o">=</span> <span class="n">ScalingNoise</span><span class="p">(</span>
+            <span class="n">scale_range</span><span class="o">=</span><span class="n">scale_range</span><span class="p">,</span> <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span>
+        <span class="p">)</span> <span class="k">if</span> <span class="n">apply_scaling</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_noise</span> <span class="o">=</span> <span class="n">ShiftNoise</span><span class="p">(</span>
+            <span class="n">shift_range</span><span class="o">=</span><span class="n">shift_range</span><span class="p">,</span> <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span>
+        <span class="p">)</span> <span class="k">if</span> <span class="n">apply_shift</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_noise</span> <span class="o">=</span> <span class="n">BackgroundNoise</span><span class="p">(</span>
+            <span class="n">background_range</span><span class="o">=</span><span class="n">background_range</span><span class="p">,</span> <span class="n">add_to_context</span><span class="o">=</span><span class="n">add_to_context</span>
+        <span class="p">)</span> <span class="k">if</span> <span class="n">apply_background</span> <span class="k">else</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BasicExpIntensityNoise.apply">
+<a class="viewcode-back" href="../../../api.html#reflectorch.BasicExpIntensityNoise.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;applies the specified types of noise to the input curves&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_noise</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling_noise</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shift_noise</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shift_noise</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">poisson_noise</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_noise</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_noise</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">curves</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1156 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.data_generation.priors.parametric_models &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/data_generation/priors/parametric_models';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.data_generation.priors.parametric_models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.reflectivity</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">reflectivity</span><span class="p">,</span>
+    <span class="n">abeles_memory_eff</span><span class="p">,</span>
+    <span class="n">kinematical_approximation</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_param_labels</span><span class="p">,</span>
+    <span class="n">get_param_labels_absorption_model</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.sampler_strategies</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SamplerStrategy</span><span class="p">,</span>
+    <span class="n">BasicSamplerStrategy</span><span class="p">,</span>
+    <span class="n">ConstrainedRoughnessSamplerStrategy</span><span class="p">,</span>
+    <span class="n">ConstrainedRoughnessAndImgSldSamplerStrategy</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;MULTILAYER_MODELS&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ParametricModel&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="ParametricModel">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel">[docs]</a>
+<span class="k">class</span> <span class="nc">ParametricModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for parameterizations of the SLD profile.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        max_num_layers (int): the number of layers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">PARAMETER_NAMES</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">=</span> <span class="n">max_num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler_strategy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sampler_strategy</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BasicSamplerStrategy</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the number of parameters</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SamplerStrategy</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the sampler strategy</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SamplerStrategy:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler_strategy</span>
+
+<div class="viewcode-block" id="ParametricModel.reflectivity">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel.reflectivity">[docs]</a>
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;computes the reflectivity curves </span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            q: the reciprocal space (q) positions</span>
+<span class="sd">            parametrized_model (Tensor): the values of the parameters</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: the computed reflectivity curves</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">from_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">scale_with_q</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="ParametricModel.init_bounds">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel.init_bounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">init_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">param_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">bound_width_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;initializes arrays storing individually the upper and lower bounds from the dictionaries of parameter and bound width ranges </span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            param_ranges (Dict[str, Tuple[float, float]]): parameter ranges</span>
+<span class="sd">            bound_width_ranges (Dict[str, Tuple[float, float]]): bound width ranges</span>
+<span class="sd">            device (optional): the Pytorch device. Defaults to None.</span>
+<span class="sd">            dtype (optional): the Pytorch datatype. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Tensor, Tensor, Tensor, Tensor]:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ordered_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">]</span>
+        <span class="n">delta_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">]</span>
+
+        <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ordered_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">delta_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span></div>
+
+
+<div class="viewcode-block" id="ParametricModel.get_param_labels">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel.get_param_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the list with the name of the parameters</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParametricModel.sample">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel.sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+               <span class="n">total_min_bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+               <span class="n">total_max_bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+               <span class="n">total_min_delta</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+               <span class="n">total_max_delta</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+               <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;samples the parameter values and their prior bounds</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            batch_size (int): the batch size</span>
+<span class="sd">            total_min_bounds (Tensor): lower bounds of the parameter ranges</span>
+<span class="sd">            total_max_bounds (Tensor): upper bounds of the parameter ranges</span>
+<span class="sd">            total_min_delta (Tensor): lower widths of the subprior intervals</span>
+<span class="sd">            total_max_delta (Tensor): upper widths of the subprior intervals</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: sampled parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_strategy</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">total_min_bounds</span><span class="p">,</span>
+            <span class="n">total_max_bounds</span><span class="p">,</span>
+            <span class="n">total_min_delta</span><span class="p">,</span>
+            <span class="n">total_max_delta</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">StandardModel</span><span class="p">(</span><span class="n">ParametricModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameterization for the standard box model. The parameters are the thicknesses, roughnesses and real sld values of the layers.&quot;&quot;&quot;</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;standard_model&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;thicknesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;roughnesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;slds&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">_init_sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                               <span class="n">constrained_roughness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">constrained_roughness</span><span class="p">:</span>
+            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span>
+            <span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">roughness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">thickness_mask</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">roughness_mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">ConstrainedRoughnessSamplerStrategy</span><span class="p">(</span>
+                <span class="n">thickness_mask</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">,</span>
+                <span class="n">max_thickness_share</span><span class="o">=</span><span class="n">max_thickness_share</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BasicSamplerStrategy</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">init_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">param_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">bound_width_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+
+        <span class="n">other_ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">[</span><span class="mi">3</span><span class="p">:]]</span>
+        <span class="n">other_delta_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">[</span><span class="mi">3</span><span class="p">:]]</span>
+
+        <span class="n">ordered_bounds</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;thicknesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;roughnesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;slds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="n">other_ranges</span>
+        <span class="p">)</span>
+        <span class="n">delta_bounds</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;thicknesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;roughnesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;slds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="n">other_delta_bounds</span>
+        <span class="p">)</span>
+
+        <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ordered_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">delta_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span>
+
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">num_layers</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_params</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span>
+        <span class="k">assert</span> <span class="n">num_layers</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="n">num_params</span>
+
+        <span class="n">d</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">sld</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">parametrized_model</span><span class="p">,</span> <span class="p">[</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">thickness</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+            <span class="n">roughness</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ModelWithAbsorption</span><span class="p">(</span><span class="n">StandardModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameterization for the box model in which the imaginary sld values of the layers are additional parameters.&quot;&quot;&quot;</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;model_with_absorption&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;thicknesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;roughnesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;slds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;islds&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">3</span>
+    
+    <span class="k">def</span> <span class="nf">_init_sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                               <span class="n">constrained_roughness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">constrained_isld</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                               <span class="n">max_sld_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">constrained_roughness</span><span class="p">:</span>
+            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span>
+            <span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">roughness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">thickness_mask</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">roughness_mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">constrained_isld</span><span class="p">:</span>
+                <span class="n">sld_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">isld_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">sld_mask</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">isld_mask</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">return</span> <span class="n">ConstrainedRoughnessAndImgSldSamplerStrategy</span><span class="p">(</span>
+                    <span class="n">thickness_mask</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">,</span> <span class="n">sld_mask</span><span class="p">,</span> <span class="n">isld_mask</span><span class="p">,</span>
+                    <span class="n">max_thickness_share</span><span class="o">=</span><span class="n">max_thickness_share</span><span class="p">,</span> <span class="n">max_sld_share</span><span class="o">=</span><span class="n">max_sld_share</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ConstrainedRoughnessSamplerStrategy</span><span class="p">(</span>
+                    <span class="n">thickness_mask</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">,</span>
+                    <span class="n">max_thickness_share</span><span class="o">=</span><span class="n">max_thickness_share</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BasicSamplerStrategy</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">init_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">param_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">bound_width_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+        <span class="n">other_ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">[</span><span class="mi">4</span><span class="p">:]]</span>
+        <span class="n">other_delta_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">[</span><span class="mi">4</span><span class="p">:]]</span>
+
+        <span class="n">ordered_bounds</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;thicknesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;roughnesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;slds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="s2">&quot;islds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="n">other_ranges</span>
+        <span class="p">)</span>
+        <span class="n">delta_bounds</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;thicknesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;roughnesses&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;slds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s2">&quot;islds&quot;</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span>
+                <span class="n">other_delta_bounds</span>
+        <span class="p">)</span>
+
+        <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ordered_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">delta_bounds</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span>
+
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels_absorption_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">num_layers</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_params</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span>
+        <span class="k">assert</span> <span class="n">num_layers</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">==</span> <span class="n">num_params</span>
+
+        <span class="n">d</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="n">isld</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">parametrized_model</span><span class="p">,</span> <span class="p">[</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">thickness</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+            <span class="n">roughness</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">isld</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ModelWithShifts</span><span class="p">(</span><span class="n">StandardModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Variant of the standard box model parameterization in which two additional parameters are considered: the shift in the q positions (additive) and the shift in </span>
+<span class="sd">    intensity (multiplicative, or additive in log domain).&quot;&quot;&quot;</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;model_with_shifts&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;thicknesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;roughnesses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;slds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_shift&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;norm_shift&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">4</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">)</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;q_shift&#39;</span><span class="p">)</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;norm_shift&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\Delta q$ (Å$^{{-1}}$)&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\Delta I$&quot;</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">num_layers</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_params</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span>
+        <span class="k">assert</span> <span class="n">num_layers</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">==</span> <span class="n">num_params</span>
+
+        <span class="n">d</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">parametrized_model</span><span class="p">,</span> <span class="p">[</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">thickness</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+            <span class="n">roughness</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="n">sld</span><span class="o">=</span><span class="n">sld</span><span class="p">,</span>
+            <span class="n">q_shift</span><span class="o">=</span><span class="n">q_shift</span><span class="p">,</span>
+            <span class="n">norm_shift</span><span class="o">=</span><span class="n">norm_shift</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">reflectivity_with_shifts</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">reflectivity_with_shifts</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roughness</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">+</span> <span class="n">q_shift</span>
+    <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roughness</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm_shift</span>
+
+<span class="k">class</span> <span class="nc">NoFresnelModel</span><span class="p">(</span><span class="n">StandardModel</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;no_fresnel_model&#39;</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">kinematical_approximation</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="n">apply_fresnel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BasicMultilayerModel1</span><span class="p">(</span><span class="n">ParametricModel</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;repeating_multilayer_v1&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;d_full_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rel_sigmas&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_block_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_si&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">multilayer_model1</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">abeles_func</span><span class="o">=</span><span class="n">abeles_memory_eff</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BasicMultilayerModel2</span><span class="p">(</span><span class="n">BasicMultilayerModel1</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;repeating_multilayer_v2&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;d_full_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rel_sigmas&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_pos&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_width&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_block_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_si&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">multilayer_model2</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BasicMultilayerModel3</span><span class="p">(</span><span class="n">BasicMultilayerModel1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameterization for a thin film composed of repeating identical monolayers, each monolayer consisting of two boxes with distinct SLDs. </span>
+<span class="sd">    A sigmoid envelope modulating the SLD profile of the monolayers defines the film thickness and the roughness at the top interface. </span>
+<span class="sd">    A second sigmoid envelope can be used to modulate the amplitude of the monolayer SLDs as a function of the displacement from the position of the first sigmoid. </span>
+<span class="sd">    These two sigmoids allow one to model a thin film that is coherently ordered up to a certain coherent thickness and gets incoherently ordered or amorphous toward the top of the film.</span>
+<span class="sd">    In addition, a layer between the substrate and the multilayer (”phase layer”) is introduced to account for the interface structure, </span>
+<span class="sd">    which does not necessarily have to be identical to the multilayer period.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;repeating_multilayer_v3&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;d_full_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rel_sigmas&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_pos&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_width&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block1_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_block_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_si&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">multilayer_model3</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MultilayerModel1WithShifts</span><span class="p">(</span><span class="n">BasicMultilayerModel1</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;repeating_multilayer_v1_with_shifts&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;d_full_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rel_sigmas&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_block_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_shift&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;norm_shift&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">reflectivity_with_shifts</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="n">q_shift</span><span class="o">=</span><span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span><span class="o">=</span><span class="n">norm_shift</span><span class="p">,</span> <span class="n">abeles_func</span><span class="o">=</span><span class="n">abeles_memory_eff</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MultilayerModel3WithShifts</span><span class="p">(</span><span class="n">BasicMultilayerModel3</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;repeating_multilayer_v3_with_shifts&#39;</span>
+
+    <span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;d_full_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rel_sigmas&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_pos&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr_sigmoid_rel_width&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block1_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_block_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_block&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s3_rel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;d_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;s_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_sio2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;r_si&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_shift&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;norm_shift&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">reflectivity_with_shifts</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="n">q_shift</span><span class="o">=</span><span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span><span class="o">=</span><span class="n">norm_shift</span><span class="p">,</span> <span class="n">abeles_func</span><span class="o">=</span><span class="n">abeles_memory_eff</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+
+<span class="n">MULTILAYER_MODELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;standard_model&#39;</span><span class="p">:</span> <span class="n">StandardModel</span><span class="p">,</span>
+    <span class="s1">&#39;model_with_absorption&#39;</span><span class="p">:</span> <span class="n">ModelWithAbsorption</span><span class="p">,</span>
+    <span class="s1">&#39;model_with_shifts&#39;</span><span class="p">:</span> <span class="n">ModelWithShifts</span><span class="p">,</span>
+    <span class="s1">&#39;no_fresnel_model&#39;</span><span class="p">:</span> <span class="n">NoFresnelModel</span><span class="p">,</span>
+    <span class="s1">&#39;repeating_multilayer_v1&#39;</span><span class="p">:</span> <span class="n">BasicMultilayerModel1</span><span class="p">,</span>
+    <span class="s1">&#39;repeating_multilayer_v2&#39;</span><span class="p">:</span> <span class="n">BasicMultilayerModel2</span><span class="p">,</span>
+    <span class="s1">&#39;repeating_multilayer_v3&#39;</span><span class="p">:</span> <span class="n">BasicMultilayerModel3</span><span class="p">,</span>
+    <span class="s1">&#39;repeating_multilayer_v1_with_shifts&#39;</span><span class="p">:</span> <span class="n">MultilayerModel1WithShifts</span><span class="p">,</span>
+    <span class="s1">&#39;repeating_multilayer_v3_with_shifts&#39;</span><span class="p">:</span> <span class="n">MultilayerModel3WithShifts</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">multilayer_model1</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">d_full_rel_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">d_full_rel_max</span>
+
+    <span class="p">(</span>
+        <span class="n">d_full_rel</span><span class="p">,</span>
+        <span class="n">rel_sigmas</span><span class="p">,</span>
+        <span class="n">d_block</span><span class="p">,</span>
+        <span class="n">s_block_rel</span><span class="p">,</span>
+        <span class="n">r_block</span><span class="p">,</span>
+        <span class="n">dr</span><span class="p">,</span>
+        <span class="n">d3_rel</span><span class="p">,</span>
+        <span class="n">s3_rel</span><span class="p">,</span>
+        <span class="n">r3</span><span class="p">,</span>
+        <span class="n">d_sio2</span><span class="p">,</span>
+        <span class="n">s_sio2</span><span class="p">,</span>
+        <span class="n">s_si</span><span class="p">,</span>
+        <span class="n">r_sio2</span><span class="p">,</span>
+        <span class="n">r_si</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">_</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">r_positions</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">r_modulations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">r_positions</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_full_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">/</span> <span class="n">rel_sigmas</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+
+    <span class="n">r_block</span> <span class="o">=</span> <span class="n">r_block</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">dr</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">r_block</span><span class="p">,</span> <span class="n">r_block</span> <span class="o">+</span> <span class="n">dr</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">r_modulations</span> <span class="o">*</span> <span class="n">sld_blocks</span>
+
+    <span class="n">d3</span> <span class="o">=</span> <span class="n">d3_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">thicknesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">d_block</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">d3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">d_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">s_block</span> <span class="o">=</span> <span class="n">s_block_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">roughnesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">s_block</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">s3_rel</span> <span class="o">*</span> <span class="n">d3</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">slds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">sld_blocks</span><span class="p">,</span> <span class="n">r3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">thickness</span><span class="o">=</span><span class="n">thicknesses</span><span class="p">,</span>
+        <span class="n">roughness</span><span class="o">=</span><span class="n">roughnesses</span><span class="p">,</span>
+        <span class="n">sld</span><span class="o">=</span><span class="n">slds</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">params</span>
+
+
+<span class="k">def</span> <span class="nf">multilayer_model2</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">d_full_rel_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">d_full_rel_max</span>
+
+    <span class="p">(</span>
+        <span class="n">d_full_rel</span><span class="p">,</span>
+        <span class="n">rel_sigmas</span><span class="p">,</span>
+        <span class="n">dr_sigmoid_rel_pos</span><span class="p">,</span>
+        <span class="n">dr_sigmoid_rel_width</span><span class="p">,</span>
+        <span class="n">d_block</span><span class="p">,</span>
+        <span class="n">s_block_rel</span><span class="p">,</span>
+        <span class="n">r_block</span><span class="p">,</span>
+        <span class="n">dr</span><span class="p">,</span>
+        <span class="n">d3_rel</span><span class="p">,</span>
+        <span class="n">s3_rel</span><span class="p">,</span>
+        <span class="n">r3</span><span class="p">,</span>
+        <span class="n">d_sio2</span><span class="p">,</span>
+        <span class="n">s_sio2</span><span class="p">,</span>
+        <span class="n">s_si</span><span class="p">,</span>
+        <span class="n">r_sio2</span><span class="p">,</span>
+        <span class="n">r_si</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">_</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">r_positions</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">r_modulations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">r_positions</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_full_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">/</span> <span class="n">rel_sigmas</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+
+    <span class="n">r_block</span> <span class="o">=</span> <span class="n">r_block</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">dr</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">dr_positions</span> <span class="o">=</span> <span class="n">r_positions</span><span class="p">[:,</span> <span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">dr_modulations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span>
+        <span class="o">-</span><span class="p">(</span><span class="n">dr_positions</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d_full_rel</span> <span class="o">*</span> <span class="n">dr_sigmoid_rel_pos</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">/</span> <span class="n">dr_sigmoid_rel_width</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">dr</span> <span class="o">=</span> <span class="n">dr</span> <span class="o">*</span> <span class="n">dr_modulations</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">r_block</span><span class="p">,</span> <span class="n">r_block</span> <span class="o">+</span> <span class="n">dr</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">r_modulations</span> <span class="o">*</span> <span class="n">sld_blocks</span>
+
+    <span class="n">d3</span> <span class="o">=</span> <span class="n">d3_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">thicknesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">d_block</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">d3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">d_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">s_block</span> <span class="o">=</span> <span class="n">s_block_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">roughnesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">s_block</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">s3_rel</span> <span class="o">*</span> <span class="n">d3</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">slds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">sld_blocks</span><span class="p">,</span> <span class="n">r3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">thickness</span><span class="o">=</span><span class="n">thicknesses</span><span class="p">,</span>
+        <span class="n">roughness</span><span class="o">=</span><span class="n">roughnesses</span><span class="p">,</span>
+        <span class="n">sld</span><span class="o">=</span><span class="n">slds</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">params</span>
+
+
+<span class="k">def</span> <span class="nf">multilayer_model3</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">d_full_rel_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">d_full_rel_max</span>
+
+    <span class="p">(</span>
+        <span class="n">d_full_rel</span><span class="p">,</span>
+        <span class="n">rel_sigmas</span><span class="p">,</span>
+        <span class="n">dr_sigmoid_rel_pos</span><span class="p">,</span>
+        <span class="n">dr_sigmoid_rel_width</span><span class="p">,</span>
+        <span class="n">d_block1_rel</span><span class="p">,</span>
+        <span class="n">d_block</span><span class="p">,</span>
+        <span class="n">s_block_rel</span><span class="p">,</span>
+        <span class="n">r_block</span><span class="p">,</span>
+        <span class="n">dr</span><span class="p">,</span>
+        <span class="n">d3_rel</span><span class="p">,</span>
+        <span class="n">s3_rel</span><span class="p">,</span>
+        <span class="n">r3</span><span class="p">,</span>
+        <span class="n">d_sio2</span><span class="p">,</span>
+        <span class="n">s_sio2</span><span class="p">,</span>
+        <span class="n">s_si</span><span class="p">,</span>
+        <span class="n">r_sio2</span><span class="p">,</span>
+        <span class="n">r_si</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">_</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">r_positions</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">dr</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">r_modulations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span>
+        <span class="o">-</span><span class="p">(</span>
+                <span class="n">r_positions</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_full_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">rel_sigmas</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">dr_positions</span> <span class="o">=</span> <span class="n">r_positions</span><span class="p">[:,</span> <span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">dr_modulations</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span>
+        <span class="o">-</span><span class="p">(</span>
+                <span class="n">dr_positions</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d_full_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dr_sigmoid_rel_pos</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">dr_sigmoid_rel_width</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">))</span>
+
+    <span class="n">r_block</span> <span class="o">=</span> <span class="n">r_block</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">dr</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">r_block</span> <span class="o">+</span> <span class="n">dr_modulations</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">d_block1_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]),</span>
+            <span class="n">r_block</span> <span class="o">+</span> <span class="n">dr</span> <span class="o">-</span> <span class="n">dr_modulations</span> <span class="o">*</span> <span class="n">d_block1_rel</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">sld_blocks</span> <span class="o">=</span> <span class="n">r_modulations</span> <span class="o">*</span> <span class="n">sld_blocks</span>
+
+    <span class="n">d3</span> <span class="o">=</span> <span class="n">d3_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">d_block</span> <span class="o">*</span> <span class="n">d_block1_rel</span><span class="p">,</span> <span class="n">d_block</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">d_block1_rel</span><span class="p">)</span>
+
+    <span class="n">thickness_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">d1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">d2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">thicknesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">thickness_blocks</span><span class="p">,</span> <span class="n">d3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">d_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">s_block</span> <span class="o">=</span> <span class="n">s_block_rel</span> <span class="o">*</span> <span class="n">d_block</span>
+
+    <span class="n">roughnesses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">s_block</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">s3_rel</span> <span class="o">*</span> <span class="n">d3</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">s_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">slds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">sld_blocks</span><span class="p">,</span> <span class="n">r3</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_sio2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">r_si</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]],</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">thickness</span><span class="o">=</span><span class="n">thicknesses</span><span class="p">,</span>
+        <span class="n">roughness</span><span class="o">=</span><span class="n">roughnesses</span><span class="p">,</span>
+        <span class="n">sld</span><span class="o">=</span><span class="n">slds</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">params</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

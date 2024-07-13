@@ -1,0 +1,818 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.models.encoders.conv_fc_encoder &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/models/encoders/conv_fc_encoder';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.models.encoders.conv_fc_encoder</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">cat</span><span class="p">,</span> <span class="n">split</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.models.encoders.residual_net</span> <span class="kn">import</span> <span class="n">ResidualMLP</span><span class="p">,</span> <span class="n">ResidualMLP_FiLM</span>
+<span class="kn">from</span> <span class="nn">reflectorch.models.encoders.conv_encoder</span> <span class="kn">import</span> <span class="n">ConvEncoder</span>
+<span class="kn">from</span> <span class="nn">reflectorch.models.encoders.fno</span> <span class="kn">import</span> <span class="n">FnoEncoder</span>
+<span class="kn">from</span> <span class="nn">reflectorch.models.utils</span> <span class="kn">import</span> <span class="n">activation_by_name</span>
+
+<div class="viewcode-block" id="PriorInformedNetworkConvEmb">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.PriorInformedNetworkConvEmb">[docs]</a>
+<span class="k">class</span> <span class="nc">PriorInformedNetworkConvEmb</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
+                 <span class="n">dim_embedding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+                 <span class="n">dim_avpool</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">embedding_net_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">dim_out</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">layer_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
+                 <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+                 <span class="n">repeats_per_block</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                 <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">dropout_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">use_selu_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">pretrained_embedding_net</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">=</span> <span class="n">in_channels</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">ConvEncoder</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> 
+            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span> 
+            <span class="n">dim_latent</span><span class="o">=</span><span class="n">dim_embedding</span><span class="p">,</span> 
+            <span class="n">dim_avpool</span><span class="o">=</span><span class="n">dim_avpool</span><span class="p">,</span>
+            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span> 
+            <span class="n">activation</span><span class="o">=</span><span class="n">embedding_net_activation</span>
+        <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dim_out</span>
+        <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">ResidualMLP</span><span class="p">(</span>
+            <span class="n">dim_in</span><span class="o">=</span><span class="n">dim_mlp_in</span><span class="p">,</span>
+            <span class="n">dim_out</span><span class="o">=</span><span class="n">dim_out</span><span class="p">,</span>
+            <span class="n">dim_condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">layer_width</span><span class="o">=</span><span class="n">layer_width</span><span class="p">,</span>
+            <span class="n">num_blocks</span><span class="o">=</span><span class="n">num_blocks</span><span class="p">,</span>
+            <span class="n">repeats_per_block</span><span class="o">=</span><span class="n">repeats_per_block</span><span class="p">,</span>
+            <span class="n">activation</span><span class="o">=</span><span class="n">mlp_activation</span><span class="p">,</span>
+            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span>
+            <span class="n">dropout_rate</span><span class="o">=</span><span class="n">dropout_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">embedding_net_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">mlp_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pretrained_embedding_net</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">pretrained_embedding_net</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PriorInformedNetworkConvEmb.forward">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.PriorInformedNetworkConvEmb.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_curves&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_bounds&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">q_values</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">curves_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="n">curves_embedding</span><span class="p">,</span> <span class="n">bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
+
+    
+
+
+<span class="c1"># class ConvFCEncoder(nn.Module):</span>
+<span class="c1">#     def __init__(self,</span>
+<span class="c1">#                  hidden_dims: tuple = (16, 32, 64),</span>
+<span class="c1">#                  latent_dim: int = 64,</span>
+<span class="c1">#                  avpool: int = 4,</span>
+<span class="c1">#                  use_batch_norm: bool = False,</span>
+<span class="c1">#                  in_features: int = 64,</span>
+<span class="c1">#                  hidden_features: int = 64,</span>
+<span class="c1">#                  num_blocks: int = 3,</span>
+<span class="c1">#                  conv_activation: str = &#39;lrelu&#39;,</span>
+<span class="c1">#                  fc_activation: str = &#39;relu&#39;,</span>
+<span class="c1">#                  use_selu_init: bool = False,</span>
+<span class="c1">#                  pretrained_conv: str = None,</span>
+<span class="c1">#                  ):</span>
+<span class="c1">#         super().__init__()</span>
+<span class="c1">#         self.conv = ConvEncoder(</span>
+<span class="c1">#             hidden_dims=hidden_dims, latent_dim=latent_dim, avpool=avpool, use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             activation=activation_by_name(conv_activation)</span>
+<span class="c1">#         )</span>
+<span class="c1">#         self.fc = ResidualMLP(</span>
+<span class="c1">#             in_features, latent_dim, hidden_features, num_blocks=num_blocks, use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             activation=activation_by_name(fc_activation)</span>
+<span class="c1">#         )</span>
+<span class="c1">#         self.cat_fc = nn.Linear(latent_dim * 2, latent_dim)</span>
+
+<span class="c1">#         if use_selu_init and conv_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.conv.apply(selu_init)</span>
+
+<span class="c1">#         if use_selu_init and fc_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.fc.apply(selu_init)</span>
+
+<span class="c1">#         if pretrained_conv:</span>
+<span class="c1">#             self.conv.load_weights(pretrained_conv)</span>
+
+<span class="c1">#     def forward(self, x):</span>
+<span class="c1">#         x = cat([self.conv(x), self.fc(x)], dim=-1)</span>
+<span class="c1">#         x = self.cat_fc(x)</span>
+<span class="c1">#         return x</span>
+    
+
+<span class="c1"># class SeqConvFCEncoder(nn.Module):</span>
+<span class="c1">#     def __init__(self,</span>
+<span class="c1">#                  hidden_dims: tuple = (32, 64, 128, 256, 512),</span>
+<span class="c1">#                  latent_dim: int = 128,</span>
+<span class="c1">#                  conv_latent_dim: int = 64,</span>
+<span class="c1">#                  avpool: int = 4,</span>
+<span class="c1">#                  use_batch_norm: bool = False,</span>
+<span class="c1">#                  in_features: int = 64,</span>
+<span class="c1">#                  hidden_features: int = 256,</span>
+<span class="c1">#                  num_blocks: int = 3,</span>
+<span class="c1">#                  conv_activation: str = &#39;lrelu&#39;,</span>
+<span class="c1">#                  fc_activation: str = &#39;relu&#39;,</span>
+<span class="c1">#                  use_selu_init: bool = False,</span>
+<span class="c1">#                  sigmas_input: bool = False,</span>
+<span class="c1">#                  pretrained_conv: str = None,</span>
+<span class="c1">#                  ):</span>
+<span class="c1">#         super().__init__()</span>
+
+<span class="c1">#         self.sigmas_input = sigmas_input</span>
+
+<span class="c1">#         self.conv = ConvEncoder(</span>
+<span class="c1">#             hidden_dims=hidden_dims,</span>
+<span class="c1">#             latent_dim=conv_latent_dim,</span>
+<span class="c1">#             avpool=avpool,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             activation=activation_by_name(conv_activation),</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         fc_in_dim = in_features + conv_latent_dim</span>
+
+<span class="c1">#         if self.sigmas_input:</span>
+<span class="c1">#             fc_in_dim += in_features</span>
+<span class="c1">#             self._split = [in_features, in_features]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             self._split = None</span>
+
+<span class="c1">#         self.fc = ResidualMLP(</span>
+<span class="c1">#             fc_in_dim,</span>
+<span class="c1">#             latent_dim,</span>
+<span class="c1">#             hidden_features,</span>
+<span class="c1">#             num_blocks=num_blocks,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             activation=activation_by_name(fc_activation),</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         if use_selu_init and conv_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.conv.apply(selu_init)</span>
+
+<span class="c1">#         if use_selu_init and fc_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.fc.apply(selu_init)</span>
+
+<span class="c1">#         if pretrained_conv:</span>
+<span class="c1">#             self.conv.load_weights(pretrained_conv)</span>
+
+<span class="c1">#     def forward(self, x):</span>
+<span class="c1">#         if self.sigmas_input:</span>
+<span class="c1">#             return self._forward_with_sigmas(x)</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             return self._forward(x)</span>
+
+<span class="c1">#     def _forward_with_sigmas(self, x):</span>
+<span class="c1">#         if isinstance(x, dict):</span>
+<span class="c1">#             curves, sigmas = x[&#39;scaled_curves&#39;], x[&#39;scaled_sigmas&#39;]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             curves, sigmas = split(x, self._split, dim=-1)</span>
+
+<span class="c1">#         x = cat([curves, sigmas, self.conv(curves)], dim=-1)</span>
+<span class="c1">#         x = self.fc(x)</span>
+<span class="c1">#         return x</span>
+
+<span class="c1">#     def _forward(self, x):</span>
+<span class="c1">#         x = cat([self.conv(x), x], dim=-1)</span>
+<span class="c1">#         x = self.fc(x)</span>
+<span class="c1">#         return x</span>
+
+<span class="c1"># class SubPriorConvFCEncoder(nn.Module):</span>
+<span class="c1">#     def __init__(self,</span>
+<span class="c1">#                  hidden_dims: tuple = (16, 32, 64),</span>
+<span class="c1">#                  latent_dim: int = 64,</span>
+<span class="c1">#                  conv_latent_dim: int = 64,</span>
+<span class="c1">#                  avpool: int = 8,</span>
+<span class="c1">#                  use_batch_norm: bool = False,</span>
+<span class="c1">#                  in_features: int = 64,</span>
+<span class="c1">#                  prior_in_features: int = 16,</span>
+<span class="c1">#                  hidden_features: int = 64,</span>
+<span class="c1">#                  num_blocks: int = 3,</span>
+<span class="c1">#                  conv_activation: str = &#39;lrelu&#39;,</span>
+<span class="c1">#                  fc_activation: str = &#39;gelu&#39;,</span>
+<span class="c1">#                  use_selu_init: bool = False,</span>
+<span class="c1">#                  pass_bounds: bool = False,</span>
+<span class="c1">#                  sigmas_input: bool = False,</span>
+<span class="c1">#                  pretrained_conv: str = None,</span>
+<span class="c1">#                  ):</span>
+<span class="c1">#         super().__init__()</span>
+<span class="c1">#         self.pass_bounds = pass_bounds</span>
+<span class="c1">#         self.sigmas_input = sigmas_input</span>
+
+<span class="c1">#         self.conv = ConvEncoder(</span>
+<span class="c1">#             hidden_dims=hidden_dims, latent_dim=conv_latent_dim, avpool=avpool,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm, activation=activation_by_name(conv_activation)</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         fc_in_dim = in_features + conv_latent_dim + prior_in_features</span>
+
+<span class="c1">#         if self.sigmas_input:</span>
+<span class="c1">#             fc_in_dim += in_features</span>
+
+<span class="c1">#         self.fc = ResidualMLP(</span>
+<span class="c1">#             fc_in_dim,</span>
+<span class="c1">#             latent_dim,</span>
+<span class="c1">#             hidden_features,</span>
+<span class="c1">#             activation=activation_by_name(fc_activation),</span>
+<span class="c1">#             num_blocks=num_blocks,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm</span>
+<span class="c1">#         )</span>
+<span class="c1">#         if self.sigmas_input:</span>
+<span class="c1">#             self._split = [in_features, in_features, prior_in_features]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             self._split = [in_features, prior_in_features]</span>
+
+<span class="c1">#         if use_selu_init and conv_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.conv.apply(selu_init)</span>
+
+<span class="c1">#         if use_selu_init and fc_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.fc.apply(selu_init)</span>
+
+<span class="c1">#         if pretrained_conv:</span>
+<span class="c1">#             self.conv.load_weights(pretrained_conv)</span>
+
+<span class="c1">#     def forward(self, x):</span>
+<span class="c1">#         if self.sigmas_input:</span>
+<span class="c1">#             return self._forward_with_sigmas(x)</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             return self._forward(x)</span>
+
+<span class="c1">#     def _forward_with_sigmas(self, x):</span>
+<span class="c1">#         if isinstance(x, dict):</span>
+<span class="c1">#             curves, sigmas, bounds = x[&#39;scaled_curves&#39;], x[&#39;scaled_sigmas&#39;], x[&#39;scaled_bounds&#39;]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             curves, sigmas, bounds = split(x, self._split, dim=-1)</span>
+<span class="c1">#         x = cat([curves, sigmas, self.conv(curves), bounds], dim=-1)</span>
+<span class="c1">#         x = self.fc(x)</span>
+<span class="c1">#         if self.pass_bounds:</span>
+<span class="c1">#             x = cat([x, bounds], dim=-1)</span>
+<span class="c1">#         return x</span>
+
+<span class="c1">#     def _forward(self, x):</span>
+<span class="c1">#         if isinstance(x, dict):</span>
+<span class="c1">#             curves, bounds = x[&#39;scaled_curves&#39;], x[&#39;scaled_bounds&#39;]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             curves, bounds = split(x, self._split, dim=-1)</span>
+
+<span class="c1">#         x = cat([curves, self.conv(curves), bounds], dim=-1)</span>
+<span class="c1">#         x = self.fc(x)</span>
+<span class="c1">#         if self.pass_bounds:</span>
+<span class="c1">#             x = cat([x, bounds], dim=-1)</span>
+<span class="c1">#         return x</span>
+    
+
+<span class="c1"># class SubPriorNetwork(nn.Module):</span>
+<span class="c1">#     def __init__(self, main_network, embedding_network=nn.Identity):</span>
+<span class="c1">#         super().__init__()</span>
+
+<span class="c1">#         self.main_network = main_network</span>
+<span class="c1">#         self.embedding_network = embedding_network</span>
+    
+<span class="c1">#     def forward(self, x, q_values):</span>
+
+    
+<span class="k">class</span> <span class="nc">SubPriorConvFCEncoder_FiLM</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">hidden_dims</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+                 <span class="n">latent_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">conv_latent_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">avpool</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">in_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">prior_in_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+                 <span class="n">hidden_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">conv_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">fc_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">use_selu_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">pass_bounds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">pretrained_conv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pass_bounds</span> <span class="o">=</span> <span class="n">pass_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">=</span> <span class="n">in_channels</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">ConvEncoder</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="n">hidden_dims</span><span class="p">,</span> <span class="n">latent_dim</span><span class="o">=</span><span class="n">conv_latent_dim</span><span class="p">,</span> <span class="n">avpool</span><span class="o">=</span><span class="n">avpool</span><span class="p">,</span>
+            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation_by_name</span><span class="p">(</span><span class="n">conv_activation</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_in_features</span> <span class="o">=</span> <span class="n">prior_in_features</span>
+        <span class="n">fc_in_dim</span> <span class="o">=</span> <span class="n">conv_latent_dim</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">ResidualMLP_FiLM</span><span class="p">(</span>
+            <span class="n">fc_in_dim</span><span class="p">,</span>
+            <span class="n">prior_in_features</span><span class="p">,</span>
+            <span class="n">latent_dim</span><span class="p">,</span>
+            <span class="n">hidden_features</span><span class="p">,</span>
+            <span class="n">activation</span><span class="o">=</span><span class="n">activation_by_name</span><span class="p">(</span><span class="n">fc_activation</span><span class="p">),</span>
+            <span class="n">num_blocks</span><span class="o">=</span><span class="n">num_blocks</span><span class="p">,</span>
+            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">conv_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">fc_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pretrained_conv</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">pretrained_conv</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_curves&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_bounds&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#curves, bounds = split(x, self._split, dim=-1)</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_in_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_in_features</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">q_values</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pass_bounds</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+    
+    
+<span class="k">class</span> <span class="nc">PriorInformedNetworkFnoEmb</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                 <span class="n">dim_embedding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+                 <span class="n">modes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+                 <span class="n">width_fno</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">embedding_net_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">n_fno_blocks</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+                 <span class="n">dim_out</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">layer_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+                 <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">repeats_per_block</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">dropout_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">use_selu_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">FnoEncoder</span><span class="p">(</span>
+            <span class="n">ch_in</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> 
+            <span class="n">dim_embedding</span><span class="o">=</span><span class="n">dim_embedding</span><span class="p">,</span> 
+            <span class="n">modes</span><span class="o">=</span><span class="n">modes</span><span class="p">,</span> 
+            <span class="n">width_fno</span><span class="o">=</span><span class="n">width_fno</span><span class="p">,</span> 
+            <span class="n">n_fno_blocks</span><span class="o">=</span><span class="n">n_fno_blocks</span><span class="p">,</span> 
+            <span class="n">activation</span><span class="o">=</span><span class="n">activation_by_name</span><span class="p">(</span><span class="n">embedding_net_activation</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dim_out</span>
+        <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">ResidualMLP</span><span class="p">(</span>
+            <span class="n">dim_in</span><span class="o">=</span><span class="n">dim_mlp_in</span><span class="p">,</span>
+            <span class="n">dim_out</span><span class="o">=</span><span class="n">dim_out</span><span class="p">,</span>
+            <span class="n">dim_condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">layer_width</span><span class="o">=</span><span class="n">layer_width</span><span class="p">,</span>
+            <span class="n">num_blocks</span><span class="o">=</span><span class="n">num_blocks</span><span class="p">,</span>
+            <span class="n">repeats_per_block</span><span class="o">=</span><span class="n">repeats_per_block</span><span class="p">,</span>
+            <span class="n">activation</span><span class="o">=</span><span class="n">mlp_activation</span><span class="p">,</span>
+            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span>
+            <span class="n">dropout_rate</span><span class="o">=</span><span class="n">dropout_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">embedding_net_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">FnoEncoder</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">mlp_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+
+            
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_curves&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;scaled_bounds&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">q_input</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">q_values</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">q_input</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">),</span> <span class="n">bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+
+
+<span class="k">def</span> <span class="nf">selu_init</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">)):</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">numel</span><span class="p">()))</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">fan_in</span> <span class="o">=</span> <span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fan_in</span><span class="p">))</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
