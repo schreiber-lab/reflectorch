@@ -1,1 +1,2 @@
-docker run --rm --volume $PWD/paper:/data  --env JOURNAL=joss openjournals/inara
+Linux: docker run --rm --volume $PWD/paper:/data  --env JOURNAL=joss openjournals/inara
+Windows powershell: docker run --rm --volume "${PWD}/paper:/data" --env JOURNAL=joss openjournals/inara
