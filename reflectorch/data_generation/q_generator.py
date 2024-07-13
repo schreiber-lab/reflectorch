@@ -12,7 +12,7 @@ import torch
 from torch import Tensor
 
 from reflectorch.data_generation.utils import uniform_sampler
-from reflectorch.data_generation.priors import Params
+from reflectorch.data_generation.priors import BasicParams
 from reflectorch.utils import angle_to_q
 from reflectorch.data_generation.priors.no_constraints import DEFAULT_DEVICE, DEFAULT_DTYPE
 
@@ -74,18 +74,18 @@ class VariableQ(QGenerator):
     """Q generator for reflectivity curves with variable discretization
 
     Args:
-        q_min_range (list, optional): the range for sampling the minimum q value of the curves, q_min. Defaults to [0.01, 0.03].
-        q_max_range (list, optional): the range for sampling the maximum q value of the curves, q_max. Defaults to [0.1, 0.5].
-        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between q_min and q_max, 
+        q_min_range (list, optional): the range for sampling the minimum q value of the curves, *q_min*. Defaults to [0.01, 0.03].
+        q_max_range (list, optional): the range for sampling the maximum q value of the curves, *q_max*. Defaults to [0.1, 0.5].
+        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between *q_min* and *q_max*, 
                                     the number of points varies between batches but is constant within a batch). Defaults to [64, 256].
         device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
         dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
     """
 
     def __init__(self,
-                 q_min_range: Tuple[float, float] = [0.01, 0.03],
-                 q_max_range: Tuple[float, float] = [0.1, 0.5],
-                 n_q_range: Tuple[int, int] = [64, 256],
+                 q_min_range: Tuple[float, float] = (0.01, 0.03),
+                 q_max_range: Tuple[float, float] = (0.1, 0.5),
+                 n_q_range: Tuple[int, int] = (64, 256),
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
@@ -106,7 +106,10 @@ class VariableQ(QGenerator):
         """
         q_min = np.random.uniform(*self.q_min_range, batch_size)
         q_max = np.random.uniform(*self.q_max_range, batch_size)
-        n_q = np.random.randint(*self.n_q_range)
+        if self.n_q_range[0] == self.n_q_range[1]:
+            n_q = self.n_q_range[0]
+        else:
+            n_q = np.random.randint(self.n_q_range[0], self.n_q_range[1] + 1)
         
         q = torch.from_numpy(np.linspace(q_min, q_max, n_q).T).to(self.device).to(self.dtype)
         
@@ -130,7 +133,7 @@ class ConstantAngle(QGenerator):
     """Q generator for reflectivity curves measured at equidistant angles
 
     Args:
-        angle_range (Tuple[float, float, int], optional): . Defaults to (0., 0.2, 257).
+        angle_range (Tuple[float, float, int], optional): the range of the incident angles. Defaults to (0., 0.2, 257).
         wavelength (float, optional): the beam wavelength in units of angstroms. Defaults to 1.
         device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
         dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
@@ -199,7 +202,7 @@ class TransformerQ(QGenerator):
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         assert context is not None
 
-        params: Params = context['params']
+        params: BasicParams = context['params']
         total_thickness = params.thicknesses.sum(-1)
 
         assert total_thickness.shape[0] == batch_size

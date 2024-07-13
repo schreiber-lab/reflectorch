@@ -23,7 +23,8 @@ class CurvesScaler(object):
 
 
 class LogAffineCurvesScaler(CurvesScaler):
-    """Curve scaler which scales the reflectivity curves according to the logarithmic affine transformation: log10(R + eps) * weight + bias
+    """    Curve scaler which scales the reflectivity curves according to the logarithmic affine transformation:
+    :math:`\log_{10}(R + eps) \cdot weight + bias`.
 
     Args:
         weight (float): multiplication factor in the transformation
@@ -62,7 +63,7 @@ class MeanNormalizationCurvesScaler(CurvesScaler):
     """Curve scaler which scales the reflectivity curves by the precomputed mean of a batch of curves
 
     Args:
-        path (str, optional): path to the precomputed mean of the curves, only used if curves_mean is None. Defaults to None.
+        path (str, optional): path to the precomputed mean of the curves, only used if ``curves_mean`` is None. Defaults to None.
         curves_mean (Tensor, optional): the precomputed mean of the curves. Defaults to None.
         device (torch.device, optional): the Pytorch device. Defaults to 'cuda'.
     """

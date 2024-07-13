@@ -23,11 +23,12 @@ __all__ = [
 
 class ScheduleBatchSize(PeriodicTrainerCallback):
     """Batch size scheduler
+
     Args:
-        step (int): number of iterations after which the batch is modified.
-        gamma (int, optional): 1uantity which is added to or multipied with the current batch. Defaults to 2.
-        last_epoch (int, optional): the last training iteration for which the batch is modified. Defaults to -1.
-        mode (str, optional): 'add' for addition or 'multiply' for multiplication. Defaults to 'add'.
+        step (int): number of iterations after which the batch size is modified.
+        gamma (int, optional): quantity which is added to or multiplied with the current batch size. Defaults to 2.
+        last_epoch (int, optional): the last training iteration for which the batch size is modified. Defaults to -1.
+        mode (str, optional): ``'add'`` for addition or ``'multiply'`` for multiplication. Defaults to 'add'.
     """
     def __init__(self, step: int, gamma: int = 2, last_epoch: int = -1, mode: str = 'add'):
         super().__init__(step, last_epoch)
@@ -46,6 +47,7 @@ class ScheduleBatchSize(PeriodicTrainerCallback):
 
 class ScheduleLR(TrainerCallback):
     """Base class for learning rate schedulers
+
     Args:
         lr_scheduler_cls: class of the learning rate scheduler
     """
@@ -56,7 +58,7 @@ class ScheduleLR(TrainerCallback):
         self.lr_scheduler = None
 
     def start_training(self, trainer: Trainer) -> None:
-        """initializes a learning rate scheduler based on its class and kwargs at the start of training
+        """initializes a learning rate scheduler based on its class and keyword arguments at the start of training
 
         Args:
             trainer (Trainer): the trainer object
@@ -75,7 +77,7 @@ class ScheduleLR(TrainerCallback):
 
 
 class StepLR(ScheduleLR):
-    """Learning rate scheduler which decays the learning rate of each parameter group by gamma every step_size epochs.
+    """Learning rate scheduler which decays the learning rate of each parameter group by gamma every ``step_size`` epochs.
     
     Args:
         step_size (int): Period of learning rate decay
@@ -99,10 +101,10 @@ class CyclicLR(ScheduleLR):
         base_lr (float): Initial learning rate which is the lower boundary in the cycle
         max_lr (float): Upper learning rate boundary in the cycle
         step_size_up (int, optional): Number of training iterations in the increasing half of a cycle. Defaults to 2000.
-        cycle_momentum (bool, optional):  If True, momentum is cycled inversely to learning rate between ‘base_momentum’ and ‘max_momentum’. Defaults to False.
-        gamma (float, optional): Constant in ‘exp_range’ mode scaling function: gamma**(cycle iterations). Defaults to 1..
-        mode (str, optional):  One of: 'triangular' (a basic triangular cycle without amplitude scaling),
-              'triangular2' (a basic triangular cycle that scales initial amplitude by half each cycle), 'exp_range' 
+        cycle_momentum (bool, optional):  If True, momentum is cycled inversely to learning rate between ``base_momentum`` and ``max_momentum``. Defaults to False.
+        gamma (float, optional): Constant in ``‘exp_range’`` mode scaling function: gamma^(cycle iterations). Defaults to 1.
+        mode (str, optional):  One of: ``'triangular'`` (a basic triangular cycle without amplitude scaling),
+              ``'triangular2'`` (a basic triangular cycle that scales initial amplitude by half each cycle), ``'exp_range'`` 
               (a cycle that scales initial amplitude by gamma^iterations at each cycle iteration). Defaults to 'triangular'.
     """
     def __init__(self, base_lr, max_lr, step_size_up: int = 2000,
@@ -127,8 +129,10 @@ class LogCyclicLR(TrainerCallback):
         base_lr (float): Lower learning rate boundary in the cycle
         max_lr (float): Upper learning rate boundary in the cycle
         period (int, optional): Number of training iterations in the cycle. Defaults to 2000.
-        gamma (float, optional): Constant for scaling the amplitude as gamma^iterations. Defaults to 1.
+        gamma (float, optional): Constant for scaling the amplitude as ``gamma`` ^ ``iterations``. Defaults to 1.
         start_period (int, optional): Number of starting iterations with the default learning rate.
+        log (bool, optional): If ``True``, the cycle is in the logarithmic domain.
+        param_groups (tupe, optional): Parameter groups of the optimizer.
     """
     def __init__(self,
                  base_lr,
@@ -224,9 +228,9 @@ class OneCycleLR(ScheduleLR):
         max_lr (float): Upper learning rate boundary in the cycle
         total_steps (int): The total number of steps in the cycle
         pct_start (float, optional): The percentage of the cycle (in number of steps) spent increasing the learning rate. Defaults to 0.3.
-        div_factor (float, optional): Determines the initial learning rate via initial_lr = max_lr/div_factor. Defaults to 25..
-        final_div_factor (float, optional): Determines the minimum learning rate via min_lr = initial_lr/final_div_factor. Defaults to 1e4.
-        three_phase (bool, optional): If ``True``, use a third phase of the schedule to annihilate the learning rate according to ‘final_div_factor’ instead of modifying the second phase. Defaults to True.
+        div_factor (float, optional): Determines the initial learning rate via initial_lr = ``max_lr`` / ``div_factor``. Defaults to 25..
+        final_div_factor (float, optional): Determines the minimum learning rate via min_lr = ``initial_lr`` / ``final_div_factor``. Defaults to 1e4.
+        three_phase (bool, optional): If ``True``, use a third phase of the schedule to annihilate the learning rate according to ``final_div_factor`` instead of modifying the second phase. Defaults to True.
     """
     def __init__(self, max_lr: float, total_steps: int, pct_start: float = 0.3, div_factor: float = 25., 
                  final_div_factor: float = 1e4, three_phase: bool = True, **kwargs):

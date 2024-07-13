@@ -65,6 +65,7 @@ class ConvEncoder(nn.Module):
         self.fc = nn.Linear(hidden_channels[-1] * dim_avpool, dim_latent)
 
     def forward(self, x):
+        """"""
         if len(x.shape) < 3:
             x = x.unsqueeze(1)
         x = self.core(x)

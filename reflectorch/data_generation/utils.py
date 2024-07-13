@@ -71,7 +71,8 @@ def get_density_profiles(
         num: int = 1000
 ):
     """Generates SLD profiles (and their derivative) based on batches of thicknesses, roughnesses and layer SLDs. 
-       The axis has its zero at the top (ambient medium) interface and is positive inside the film.
+    
+    The axis has its zero at the top (ambient medium) interface and is positive inside the film.
 
     Args:
         thicknesses (Tensor): the layer thicknesses (top to bottom)

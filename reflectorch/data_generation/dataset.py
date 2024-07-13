@@ -10,13 +10,13 @@ import warnings
 from torch import Tensor
 import torch
 
-from reflectorch.data_generation.priors import PriorSampler, Params
+from reflectorch.data_generation.priors import PriorSampler, BasicParams
 from reflectorch.data_generation.noise import QNoiseGenerator, IntensityNoiseGenerator
 from reflectorch.data_generation.q_generator import QGenerator
 from reflectorch.data_generation.scale_curves import CurvesScaler, LogAffineCurvesScaler
 from reflectorch.data_generation.smearing import Smearing
 
-BATCH_DATA_TYPE = Dict[str, Union[Tensor, Params]]
+BATCH_DATA_TYPE = Dict[str, Union[Tensor, BasicParams]]
 
 
 class BasicDataset(object):
@@ -24,7 +24,7 @@ class BasicDataset(object):
     simulates the reflectivity curves and applies noise to the curves.
 
     Args:
-        q_generator (QGenerator): the momentum transfer (q) genrator
+        q_generator (QGenerator): the momentum transfer (q) generator
         prior_sampler (PriorSampler): the prior sampler
         intensity_noise (IntensityNoiseGenerator, optional): the intensity noise generator. Defaults to None.
         q_noise (QNoiseGenerator, optional): the q noise generator. Defaults to None.
@@ -55,12 +55,12 @@ class BasicDataset(object):
         pass
 
     def _sample_from_prior(self, batch_size: int):
-        params: Params = self.prior_sampler.sample(batch_size)
+        params: BasicParams = self.prior_sampler.sample(batch_size)
         scaled_params: Tensor = self.prior_sampler.scale_params(params)
         return params, scaled_params
 
     def get_batch(self, batch_size: int) -> BATCH_DATA_TYPE:
-        """get a batch of data as a dictionary with keys `params`, `scaled_params`, `q_values`, `curves`, `scaled_noisy_curves`
+        """get a batch of data as a dictionary with keys ``params``, ``scaled_params``, ``q_values``, ``curves``, ``scaled_noisy_curves``
 
         Args:
             batch_size (int): the batch size
@@ -94,13 +94,10 @@ class BasicDataset(object):
         batch_data['scaled_noisy_curves'] = scaled_noisy_curves
 
         is_finite = torch.all(torch.isfinite(scaled_noisy_curves), -1)
-
         if not torch.all(is_finite).item():
             infinite_indices = ~is_finite
-            to_recalculate = infinite_indices.sum().item()
-            warnings.warn(f'Infinite number appeared in the curve simulation! Recalculate {to_recalculate} curves.')
-            recalculated_batch_data = self.get_batch(to_recalculate)
-            _insert_batch_data(batch_data, recalculated_batch_data, infinite_indices)
+            warnings.warn(f'Batch with {infinite_indices.sum().item()} curves with infinities skipped.')
+            return self.get_batch(batch_size = batch_size)
 
         is_finite = torch.all(torch.isfinite(batch_data['scaled_noisy_curves']), -1)
         assert torch.all(is_finite).item()
@@ -109,7 +106,7 @@ class BasicDataset(object):
 
         return batch_data
 
-    def _calc_curves(self, q_values: Tensor, params: Params):
+    def _calc_curves(self, q_values: Tensor, params: BasicParams):
         if self.smearing:
             curves = self.smearing.get_curves(q_values, params)
         else:
@@ -121,7 +118,7 @@ class BasicDataset(object):
 def _insert_batch_data(tgt_batch_data, add_batch_data, indices):
     for key in tuple(tgt_batch_data.keys()):
         value = tgt_batch_data[key]
-        if isinstance(value, Params) or len(value.shape) == 2:
+        if isinstance(value, BasicParams) or len(value.shape) == 2:
             value[indices] = add_batch_data[key]
         else:
             warnings.warn(f'Ignore {key} while merging batch_data.')

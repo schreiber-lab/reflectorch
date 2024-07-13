@@ -45,6 +45,7 @@ from reflectorch.data_generation.noise import (
     MultiplicativeLogNormalNoiseGenerator,
     ShiftNoise,
     ScalingNoise,
+    BackgroundNoise,
     BasicExpIntensityNoise,
     BasicQNoiseGenerator,
 )
@@ -89,6 +90,7 @@ __all__ = [
     "CurvesScaler",
     "ShiftNoise",
     "ScalingNoise",
+    "BackgroundNoise",
     "QNormalNoiseGenerator",
     "QSystematicShiftGenerator",
     "LogAffineCurvesScaler",

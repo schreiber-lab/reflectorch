@@ -1,10 +1,19 @@
 import torch
 from torch import Tensor
 
-from reflectorch.data_generation.priors.params import Params
+from reflectorch.data_generation.priors.parametric_subpriors import BasicParams
 
 
 class Smearing(object):
+    """Class which applies resolution smearing to the reflectivity curves. 
+    The intensity at a q point will be the average of the intensities of neighbouring q points, weighted by a gaussian profile.
+
+    Args:
+        sigma_range (tuple, optional): the range for sampling the standard deviation of the gaussians. Defaults to (1e-4, 5e-3).
+        constant_dq (bool, optional): whether the smearing is constant for each q point. Defaults to True.
+        gauss_num (int, optional): the number of interpolating gaussian profiles. Defaults to 31.
+        share_smeared (float, optional): the share of curves in the batch for which the resolution smearing is applied. Defaults to 0.2.
+    """
     def __init__(self,
                  sigma_range: tuple = (1e-4, 5e-3),
                  constant_dq: bool = True,
@@ -29,7 +38,7 @@ class Smearing(object):
         indices[torch.randperm(batch_size, device=device)[:num_smeared]] = True
         return dq, indices
 
-    def get_curves(self, q_values: Tensor, params: Params):
+    def get_curves(self, q_values: Tensor, params: BasicParams):
         dq, indices = self.generate_resolutions(params.batch_size, device=params.device, dtype=params.dtype)
 
         if dq is None:

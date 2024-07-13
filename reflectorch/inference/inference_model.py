@@ -1,15 +1,20 @@
+import asyncio
 import logging
+from pathlib import Path
+import time
 
 import numpy as np
 import torch
 from torch import Tensor
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import ipywidgets as widgets
 from IPython.display import display
+from huggingface_hub import hf_hub_download
 
-from reflectorch.data_generation.priors import Params, ExpUniformSubPriorSampler, UniformSubPriorParams
+from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
 )
@@ -27,37 +32,81 @@ class EasyInferenceModel(object):
     """Facilitates the inference process using pretrained models
     
     Args:
-        config_name (str, optional): the name of the configuration file used to initialize the model. Defaults to None.
-        config_dir (str, optional): path to the directory containing the configuration file. Defaults to None.
-        model_path (str, optional): path to the saved weights of the neural network. Defaults to None.
-        trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used instead of initializing from the configuration file . Defaults to None.
-        preprocessing_parameters (dict, optional): dictionary of parameters for preprocessing raw data. Defaults to None.
+        config_name (str, optional): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension). Defaults to None.
+        model_name (str, optional): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`. Defaults to None 
+        root_dir (str, optional): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR). Defaults to None.
+        repo_id (str, optional): the id of the Huggingface repository from which the configuration files and model weights should be downloaded automatically if not found locally (in the 'configs' and 'saved_models' subdirectories of the root directory). Defaults to 'valentinsingularity/reflectivity'.
+        trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used directly instead of being initialized from the configuration file. Defaults to None.
         device (str, optional): the Pytorch device ('cuda' or 'cpu'). Defaults to 'cuda'.
     """
-    def __init__(self, config_name: str = None, config_dir: str = None, model_path: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None, device='cuda'):
+    def __init__(self, config_name: str = None, model_name: str = None, root_dir:str = None, repo_id: str = 'valentinsingularity/reflectivity', 
+                 trainer: PointEstimatorTrainer = None, device='cuda'):
         self.config_name = config_name
-        self.config_dir = config_dir
-        self.model_path = model_path
+        self.model_name = model_name
+        self.root_dir = root_dir
+        self.repo_id = repo_id
         self.trainer = trainer
         self.device = device
-        self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
 
         if trainer is None and self.config_name is not None:
-            self.load_model(self.config_name, self.config_dir, self.model_path)
+            self.load_model(self.config_name, self.model_name, self.root_dir)
 
-    def load_model(self, config_name: str, config_dir: str, model_path: str) -> None:
+        self.prediction_result = None
+
+    def load_model(self, config_name: str, model_name: str, root_dir: str) -> None:
+        """Loads a model for inference
+
+        Args:
+            config_name (str): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension).
+            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`.
+            root_dir (str): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR).
+        """
         if self.config_name == config_name and self.trainer is not None:
             return
         
-        self.config_name = config_name
-        self.config_dir = config_dir
-        self.model_path = model_path
-        self.trainer = get_trainer_by_name(config_name=config_name, config_dir=config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
+        if not config_name.endswith('.yaml'):
+            config_name_no_extension = config_name
+            self.config_name = config_name_no_extension + '.yaml'
+        else:
+            config_name_no_extension = config_name[:-5]
+            self.config_name = config_name
+        
+        self.config_dir = Path(root_dir) / 'configs' if root_dir else CONFIG_DIR
+        self.model_name = model_name or 'model_' + config_name_no_extension + '.pt'
+        if not self.model_name.endswith('.pt'):
+            self.model_name += '.pt'
+        self.model_dir = Path(root_dir) / 'saved_models' if root_dir else SAVED_MODELS_DIR
+
+        config_path = Path(self.config_dir) / self.config_name
+        if config_path.exists():
+            print(f"Configuration file `{config_path}` found locally.")
+        else:
+            print(f"Configuration file `{config_path}` not found locally.")
+            if self.repo_id is None:
+                raise ValueError("repo_id must be provided to download files from Huggingface.")
+            print("Downloading from Huggingface...")
+            hf_hub_download(repo_id=self.repo_id, subfolder='configs', filename=self.config_name, local_dir=config_path.parents[1])
+
+        model_path = Path(self.model_dir) / self.model_name
+        if model_path.exists():
+            print(f"Weights file `{model_path}` found locally.")
+        else:
+            print(f"Weights file `{model_path}` not found locally.")
+            if self.repo_id is None:
+                raise ValueError("repo_id must be provided to download files from Huggingface.")
+            print("Downloading from Huggingface...")
+            hf_hub_download(repo_id=self.repo_id, subfolder='saved_models', filename=self.model_name, local_dir=model_path.parents[1])
+
+        self.trainer = get_trainer_by_name(config_name=config_name, config_dir=self.config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
         
-        print(f'The model corresponds to a parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
-        print(f'Parameter types and total ranges: {self.trainer.loader.prior_sampler.param_ranges}')
-        print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
+        print(f'The model corresponds to a `{self.trainer.loader.prior_sampler.param_model.NAME}` parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
+        print("Parameter types and total ranges:")
+        for param, range_ in self.trainer.loader.prior_sampler.param_ranges.items():
+            print(f"- {param}: {range_}")
+        print("Allowed widths of the prior bound intervals (max-min):")
+        for param, range_ in self.trainer.loader.prior_sampler.bound_width_ranges.items():
+            print(f"- {param}: {range_}")
 
         if isinstance(self.trainer.loader.q_generator, ConstantQ):
             q_min = self.trainer.loader.q_generator.q[0].item()
@@ -68,36 +117,110 @@ class EasyInferenceModel(object):
             q_min_range = self.trainer.loader.q_generator.q_min_range
             q_max_range = self.trainer.loader.q_generator.q_max_range
             n_q_range = self.trainer.loader.q_generator.n_q_range
-            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min={q_min} in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
+            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
 
-    def load_model_from_hugginface(self, config_name: str):
-        raise NotImplementedError
+    def predict(self, reflectivity_curve: Union[np.ndarray, Tensor], 
+                q_values: Union[np.ndarray, Tensor] = None, 
+                prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
+                clip_prediction: bool = False, 
+                polish_prediction: bool = False, 
+                fit_growth: bool = False, 
+                max_d_change: float = 5.,
+                use_q_shift: bool = False, 
+                calc_pred_curve: bool = True,
+                calc_pred_sld_profile: bool = False,
+                ):
+        """Predict the thin film parameters
 
-    def predict(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor, prior_bounds: List[Tuple]):
+        Args:
+            reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
+            q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of inverse angstroms).
+            prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.
+            clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
+            polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.
+            fit_growth (bool, optional): If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
+            max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
+            use_q_shift: If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
+            calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
+            calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
+
+        Returns:
+            dict: dictionary containing the predictions
+        """
+
         scaled_curve = self._scale_curve(reflectivity_curve)
+        prior_bounds = np.array(prior_bounds)
         scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
 
-        if not isinstance(q_values, Tensor):
-            q_values = torch.from_numpy(q_values)
-        q_values = torch.atleast_2d(q_values).to(scaled_curve)
+        if not self.trainer.train_with_q_input:
+            q_values = self.trainer.loader.q_generator.q
+        else:
+            q_values = torch.atleast_2d(to_t(q_values)).to(scaled_curve)
 
-        scaled_curve_and_priors = torch.cat([scaled_curve, scaled_prior_bounds], dim=-1).float()
-        with torch.no_grad():
-            self.trainer.model.eval()
-            if self.trainer.train_with_q_input:
-                scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
-                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors, scaled_q)
-            else:
-                scaled_predicted_params = self.trainer.model(scaled_curve_and_priors)
+        if use_q_shift and not self.trainer.train_with_q_input:
+            predicted_params = self._qshift_prediction(reflectivity_curve, scaled_prior_bounds, num = 1024, dq_coef = 1.)
+
+        else:
+            with torch.no_grad():
+                self.trainer.model.eval()
+                if self.trainer.train_with_q_input:
+                    scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
+                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds, scaled_q)
+                else:
+                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds)
+                
+                predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
+
+        if clip_prediction:
+            predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
         
-        restored_predictions = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
+        prediction_dict = {
+            "predicted_params_object": predicted_params,
+            "predicted_params_array": predicted_params.parameters.squeeze().cpu().numpy(),
+            "param_names" : self.trainer.loader.prior_sampler.param_model.get_param_labels()
+        }
 
-        return restored_predictions
-    
-    def predict_using_widget(self, reflectivity_curve: np.ndarray or Tensor, q_values: np.ndarray or Tensor):
+        if calc_pred_curve:
+            predicted_curve = predicted_params.reflectivity(q_values).squeeze().cpu().numpy()
+            prediction_dict[ "predicted_curve"] = predicted_curve
+        
+        if calc_pred_sld_profile: 
+            predicted_sld_xaxis, predicted_sld_profile, _ = get_density_profiles(
+                predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024, 
+            ) 
+            prediction_dict['predicted_sld_profile'] = predicted_sld_profile.squeeze().cpu().numpy()
+            prediction_dict['predicted_sld_xaxis'] = predicted_sld_xaxis.squeeze().cpu().numpy()
+        else:
+            predicted_sld_xaxis = None
+
+        if polish_prediction: #only for standard box-model parameterization
+            polished_dict = self._polish_prediction(q = q_values.squeeze().cpu().numpy(), 
+                                                    curve = reflectivity_curve, 
+                                                    predicted_params = predicted_params, 
+                                                    priors = np.array(prior_bounds), 
+                                                    fit_growth = fit_growth,
+                                                    max_d_change = max_d_change, 
+                                                    calc_polished_curve = calc_pred_curve,
+                                                    calc_polished_sld_profile = False,
+                                                    sld_x_axis = predicted_sld_xaxis,
+                                                    )
+            prediction_dict.update(polished_dict)
+
+            if fit_growth and "polished_params_array" in prediction_dict:
+                prediction_dict["param_names"].append("max_d_change")
+
+        return prediction_dict
+
+    async def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], **kwargs):
+        """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
+        The other arguments are the same as for the ``predict`` method.
+        """
 
         NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
-        param_labels = get_param_labels(self.trainer.loader.prior_sampler.max_num_layers)
+        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
+        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
+        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
+        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
 
         print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
         print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
@@ -107,77 +230,105 @@ class EasyInferenceModel(object):
             intervals = []
             for i in range(n):
                 interval_label = widgets.Label(value=f'{param_labels[i]}')
-                min_val = widgets.FloatText(
-                    value=0.0,
-                    description='min',
-                    layout=widgets.Layout(width='100px'),
-                    style={'description_width': '30px'}
+                initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
+                slider = widgets.FloatRangeSlider(
+                    value=[min_bounds[i], initial_max],
+                    min=min_bounds[i],
+                    max=max_bounds[i],
+                    step=0.01,
+                    layout=widgets.Layout(width='400px'),
+                    style={'description_width': '60px'}
                 )
-                max_val = widgets.FloatText(
-                    value=1.0,
-                    description='max',
-                    layout=widgets.Layout(width='100px'),
-                    style={'description_width': '30px'}
-                )
-                interval_row = widgets.HBox([interval_label, min_val, max_val])
-                intervals.append((min_val, max_val, interval_row))
+                
+                def validate_range(change, slider=slider, max_width=max_deltas[i]):
+                    min_val, max_val = change['new']
+                    if max_val - min_val > max_width:
+                        if change['name'] == 'value':
+                            if change['old'][0] != min_val:
+                                max_val = min_val + max_width
+                            else:
+                                min_val = max_val - max_width
+                        slider.value = [min_val, max_val]
+                
+                slider.observe(validate_range, names='value')
+                
+                interval_row = widgets.HBox([interval_label, slider])
+                intervals.append((slider, interval_row))
             return intervals
         
         interval_widgets = create_interval_widgets(NUM_INTERVALS)
-        interval_box = widgets.VBox([widget[2] for widget in interval_widgets])
+        interval_box = widgets.VBox([widget[1] for widget in interval_widgets])
         display(interval_box)
 
         button = widgets.Button(description="Make prediction")
         display(button)
 
-        def store_values(b):
+        prediction_result = None
+
+        def store_values(b, future):
+            print("Debug: Button clicked")
             values = []
-            for min_widget, max_widget, _ in interval_widgets:
-                values.append((min_widget.value, max_widget.value))
+            for slider, _ in interval_widgets:
+                values.append((slider.value[0], slider.value[1]))
             array_values = np.array(values)
             
-            predicted_params = self.predict(reflectivity_curve=reflectivity_curve, q_values=q_values, prior_bounds=array_values)
-            print(f'The prediction is: ')
-            for l, p in zip(get_param_labels(2), predicted_params.parameters.squeeze().cpu().numpy()):
-                print(f'{l.ljust(14)} --> Predicted: {p:.2f}')
+            nonlocal prediction_result
+            prediction_result = self.predict(reflectivity_curve=reflectivity_curve, prior_bounds=array_values, **kwargs)
+            print(prediction_result["predicted_params_array"])
 
-            return predicted_params
+            print("Prediction completed. Closing widget.")
+
+            for child in interval_box.children:
+                child.close()
+            button.close()
+
+            future.set_result(prediction_result)
 
         button.on_click(store_values)
+    
 
-    @print_time
-    def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> UniformSubPriorParams:
-        q = self.q.squeeze().float()
-        curve = to_t(curve).to(q)
+        future = asyncio.Future()
+
+        button.on_click(lambda b: store_values(b, future))
+
+        return await future
+
+
+    def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
+        assert isinstance(self.trainer.loader.q_generator, ConstantQ), "Prediction with q shifts available only for models with fixed discretization"
+        q = self.trainer.loader.q_generator.q.squeeze().float()
         dq_max = (q[1] - q[0]) * dq_coef
         q_shifts = torch.linspace(-dq_max, dq_max, num).to(q)
+
+        curve = to_t(curve).to(scaled_bounds)
         shifted_curves = _qshift_interp(q.squeeze(), curve, q_shifts)
 
         assert shifted_curves.shape == (num, q.shape[0])
 
         scaled_curves = self.trainer.loader.curves_scaler.scale(shifted_curves)
-        context = torch.cat([scaled_curves, torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)], -1)
+        scaled_prior_bounds = torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)
 
         with torch.no_grad():
             self.trainer.model.eval()
-            scaled_params = self.trainer.model(context)
-            restored_params = self._restore_predicted_params(scaled_params, context)
+            scaled_predicted_params = self.trainer.model(scaled_curves, scaled_prior_bounds)
+            restored_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
 
             best_param = get_best_mse_param(
                 restored_params,
-                self._get_likelihood(curve),
+                self._get_likelihood(q=self.trainer.loader.q_generator.q, curve=curve),
             )
             return best_param
         
-    @print_time
     def _polish_prediction(self,
                            q: np.ndarray,
                            curve: np.ndarray,
-                           predicted_params: Params,
+                           predicted_params: BasicParams,
                            priors: np.ndarray,
                            sld_x_axis,
-                           fit_growth: bool = True,
+                           fit_growth: bool = False,
                            max_d_change: float = 5.,
+                           calc_polished_curve: bool = True,
+                           calc_polished_sld_profile: bool = False,
                            ) -> dict:
         params = torch.cat([
             predicted_params.thicknesses.squeeze(),
@@ -190,32 +341,48 @@ class EasyInferenceModel(object):
         try:
             if fit_growth:
                 polished_params_arr, curve_polished = get_fit_with_growth(
-                    q, curve, params, bounds=priors.T,
-                    max_d_change=max_d_change,
+                    q = q, 
+                    curve = curve, 
+                    init_params = params, 
+                    bounds = priors.T,
+                    max_d_change = max_d_change,
                 )
-                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[:-1][None]).to(self.q))
+                polished_params = BasicParams(
+                    torch.from_numpy(polished_params_arr[:-1][None]),
+                    torch.from_numpy(priors.T[0][None]),
+                    torch.from_numpy(priors.T[1][None]),
+                    #self.trainer.loader.prior_sampler.param_model
+                    )
             else:
-                polished_params_arr, curve_polished = standard_refl_fit(q, curve, params, bounds=priors.T)
-                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[None]).to(self.q))
+                polished_params_arr, curve_polished = standard_refl_fit(
+                    q = q, 
+                    curve = curve, 
+                    init_params = params, 
+                    bounds=priors.T)
+                polished_params = BasicParams(
+                    torch.from_numpy(polished_params_arr[None]),
+                    torch.from_numpy(priors.T[0][None]),
+                    torch.from_numpy(priors.T[1][None]),
+                    #self.trainer.loader.prior_sampler.param_model
+                    )
         except Exception as err:
-            self.log.exception(err)
             polished_params = predicted_params
             polished_params_arr = get_prediction_array(polished_params)
             curve_polished = np.zeros_like(q)
 
-        polished_params_dict['params_polished'] = polished_params_arr
-        polished_params_dict['curve_polished'] = curve_polished
+        polished_params_dict['polished_params_array'] = polished_params_arr
+        if calc_polished_curve:
+            polished_params_dict['polished_curve'] = curve_polished
 
-        sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
-            polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
-        )
-
-        polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
+        if calc_polished_sld_profile:
+            _, sld_profile_polished, _ = get_density_profiles(
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
+            )
+            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
 
         return polished_params_dict
     
-
-    def _scale_curve(self, curve: np.ndarray or Tensor):
+    def _scale_curve(self, curve: Union[np.ndarray, Tensor]):
         if not isinstance(curve, Tensor):
             curve = torch.from_numpy(curve).float()
         curve = torch.atleast_2d(curve).to(self.device)
@@ -233,6 +400,11 @@ class EasyInferenceModel(object):
         ], -1)
 
         return scaled_bounds.float()
+    
+    def _get_likelihood(self, q, curve, rel_err: float = 0.1, abs_err: float = 1e-12):
+        return LogLikelihood(
+            q, curve, self.trainer.loader.prior_sampler, curve * rel_err + abs_err
+        )
 
 class InferenceModel(object):
     def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
@@ -543,7 +715,7 @@ class InferenceModel(object):
         )
 
 
-def get_prediction_array(params: Params) -> np.ndarray:
+def get_prediction_array(params: BasicParams) -> np.ndarray:
     predict_arr = torch.cat([
         params.thicknesses.squeeze(),
         params.roughnesses.squeeze(),

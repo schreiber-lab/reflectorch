@@ -26,6 +26,7 @@ ACTIVATIONS = {
     'selu': nn.SELU,
     'elu': nn.ELU,
     'sigmoid': nn.Sigmoid,    
+    'tanh': nn.Tanh,
     'silu': nn.SiLU,
     'mish': nn.Mish,
     'rowdy': Rowdy,

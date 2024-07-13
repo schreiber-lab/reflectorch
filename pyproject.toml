@@ -4,12 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflectorch"
-version = "0.0.2"
+version = "1.0.0"
 authors = [
     {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
+    {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"}
 ]
 maintainers = [
     {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"},
+    {name = "Alexander Hinderhofer", email="alexander.hinderhofer@uni-tuebingen.de"}
 ]
 description = "A Pytorch-based package for the analysis of reflectometry data"
 keywords = ["reflectometry", "machine learning"]
@@ -26,7 +28,7 @@ classifiers = [
 ]
 requires-python = ">=3.7"
 dependencies = [
-    "numpy>=1.18.1",
+    "numpy>=1.18.1,<2.0",
     "torch>=1.8.1",
     "scipy",
     "tqdm",
@@ -35,6 +37,7 @@ dependencies = [
     "matplotlib",
     "ipywidgets",
     "torchinfo",
+    "huggingface_hub",
 ]
 
 [project.optional-dependencies]

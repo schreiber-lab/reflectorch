@@ -23,7 +23,7 @@ def apply_footprint_correction(
     sample_length: float,
     beam_shape: BEAM_SHAPE = "gauss",
 ) -> np.ndarray:
-    """applies footprint correction to an experimental reflectivity curve
+    """Applies footprint correction to an experimental reflectivity curve
 
     Args:
         intensity (np.ndarray): reflectivity curve

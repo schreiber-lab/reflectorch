@@ -10,6 +10,7 @@ from reflectorch.data_generation.reflectivity import (
 )
 from reflectorch.data_generation.utils import (
     get_param_labels,
+    get_param_labels_absorption_model,
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
@@ -25,6 +26,11 @@ __all__ = [
 
 
 class ParametricModel(object):
+    """Base class for parameterizations of the SLD profile.
+
+    Args:
+        max_num_layers (int): the number of layers
+    """
     NAME: str = ''
     PARAMETER_NAMES: Tuple[str, ...]
 
@@ -37,13 +43,32 @@ class ParametricModel(object):
 
     @property
     def param_dim(self) -> int:
+        """get the number of parameters
+        
+        Returns:
+            int:
+        """
         return len(self.PARAMETER_NAMES)
 
     @property
     def sampler_strategy(self) -> SamplerStrategy:
+        """get the sampler strategy
+
+        Returns:
+            SamplerStrategy:
+        """
         return self._sampler_strategy
 
     def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        """computes the reflectivity curves 
+
+        Args:
+            q: the reciprocal space (q) positions
+            parametrized_model (Tensor): the values of the parameters
+
+        Returns:
+            Tensor: the computed reflectivity curves
+        """
         params = self.to_standard_params(parametrized_model)
         return reflectivity(q, **params, **kwargs)
 
@@ -62,6 +87,17 @@ class ParametricModel(object):
                     device=None,
                     dtype=None,
                     ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        """initializes arrays storing individually the upper and lower bounds from the dictionaries of parameter and bound width ranges 
+
+        Args:
+            param_ranges (Dict[str, Tuple[float, float]]): parameter ranges
+            bound_width_ranges (Dict[str, Tuple[float, float]]): bound width ranges
+            device (optional): the Pytorch device. Defaults to None.
+            dtype (optional): the Pytorch datatype. Defaults to None.
+
+        Returns:
+            Tuple[Tensor, Tensor, Tensor, Tensor]:
+        """
         ordered_bounds = [param_ranges[k] for k in self.PARAMETER_NAMES]
         delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES]
 
@@ -71,6 +107,11 @@ class ParametricModel(object):
         return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
+        """get the list with the name of the parameters
+
+        Returns:
+            List[str]:
+        """
         return list(self.PARAMETER_NAMES)
 
     def sample(self, batch_size: int,
@@ -79,6 +120,18 @@ class ParametricModel(object):
                total_min_delta: Tensor,
                total_max_delta: Tensor,
                ):
+        """samples the parameter values and their prior bounds
+
+        Args:
+            batch_size (int): the batch size
+            total_min_bounds (Tensor): lower bounds of the parameter ranges
+            total_max_bounds (Tensor): upper bounds of the parameter ranges
+            total_min_delta (Tensor): lower widths of the subprior intervals
+            total_max_delta (Tensor): upper widths of the subprior intervals
+
+        Returns:
+            Tensor: sampled parameters
+        """
         return self.sampler_strategy.sample(
             batch_size,
             total_min_bounds,
@@ -89,6 +142,7 @@ class ParametricModel(object):
 
 
 class StandardModel(ParametricModel):
+    """Parameterization for the standard box model. The parameters are the thicknesses, roughnesses and real sld values of the layers."""
     NAME = 'standard_model'
 
     PARAMETER_NAMES = (
@@ -177,6 +231,7 @@ class StandardModel(ParametricModel):
 
 
 class ModelWithAbsorption(StandardModel):
+    """Parameterization for the box model in which the imaginary sld values of the layers are additional parameters."""
     NAME = 'model_with_absorption'
 
     PARAMETER_NAMES = (
@@ -251,8 +306,7 @@ class ModelWithAbsorption(StandardModel):
         return min_bounds, max_bounds, min_deltas, max_deltas
 
     def get_param_labels(self) -> List[str]:
-        raise NotImplementedError
-        # return get_param_labels(self.max_num_layers)
+        return get_param_labels_absorption_model(self.max_num_layers)
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -278,6 +332,8 @@ class ModelWithAbsorption(StandardModel):
 
 
 class ModelWithShifts(StandardModel):
+    """Variant of the standard box model parameterization in which two additional parameters are considered: the shift in the q positions (additive) and the shift in 
+    intensity (multiplicative, or additive in log domain)."""
     NAME = 'model_with_shifts'
 
     PARAMETER_NAMES = (
@@ -326,6 +382,9 @@ class ModelWithShifts(StandardModel):
             q, **self._params2dict(parametrized_model), **kwargs
         )
 
+def reflectivity_with_shifts(q, thickness, roughness, sld, q_shift, norm_shift, **kwargs):
+    q = torch.atleast_2d(q) + q_shift
+    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift
 
 class NoFresnelModel(StandardModel):
     NAME = 'no_fresnel_model'
@@ -391,6 +450,14 @@ class BasicMultilayerModel2(BasicMultilayerModel1):
 
 
 class BasicMultilayerModel3(BasicMultilayerModel1):
+    """Parameterization for a thin film composed of repeating identical monolayers, each monolayer consisting of two boxes with distinct SLDs. 
+    A sigmoid envelope modulating the SLD profile of the monolayers defines the film thickness and the roughness at the top interface. 
+    A second sigmoid envelope can be used to modulate the amplitude of the monolayer SLDs as a function of the displacement from the position of the first sigmoid. 
+    These two sigmoids allow one to model a thin film that is coherently ordered up to a certain coherent thickness and gets incoherently ordered or amorphous toward the top of the film.
+    In addition, a layer between the substrate and the multilayer (”phase layer”) is introduced to account for the interface structure, 
+    which does not necessarily have to be identical to the multilayer period.
+    """
+
     NAME = 'repeating_multilayer_v3'
 
     PARAMETER_NAMES = (
@@ -478,11 +545,6 @@ class MultilayerModel3WithShifts(BasicMultilayerModel3):
             q, q_shift=q_shift, norm_shift=norm_shift, abeles_func=abeles_memory_eff,
             **self.to_standard_params(parametrized_model), **kwargs
         )
-
-
-def reflectivity_with_shifts(q, thickness, roughness, sld, q_shift, norm_shift, **kwargs):
-    q = torch.atleast_2d(q) + q_shift
-    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift
 
 
 MULTILAYER_MODELS = {

@@ -1,5 +1,5 @@
 general:
-  name: c1
+  name: c_model_with_shifts
   root_dir: null
   
 dset:
@@ -9,13 +9,17 @@ dset:
     kwargs:
       param_ranges:
         thicknesses: [1., 500.]
-        roughnesses: [0., 60.]
+        roughnesses: [0., 20.]
         slds: [0., 25.]
+        q_shift: [-0.002, 0.002]
+        norm_shift: [0.8, 1.2]
       bound_width_ranges:
         thicknesses: [1.0e-2, 500.]
-        roughnesses: [1.0e-2, 60.]
+        roughnesses: [1.0e-2, 20.]
         slds: [ 1.0e-2, 4.]
-      model_name: standard_model
+        q_shift: [1.0e-3, 0.004]
+        norm_shift: [1.0e-2, 0.4]
+      model_name: model_with_shifts
       max_num_layers: 2
       constrained_roughness: true
       max_thickness_share: 0.5
@@ -33,13 +37,13 @@ dset:
   intensity_noise:
     cls: BasicExpIntensityNoise
     kwargs:
-      relative_errors: [0.0, 0.2]
+      relative_errors: [0.0, 0.1]
       abs_errors: 0.0
       consistent_rel_err: true
       logdist: false
-      apply_shift: true
+      apply_shift: false
       shift_range: [-0.3, 0.3]
-      apply_scaling: true
+      apply_scaling: false
       scale_range: [-0.02, 0.02]
       apply_background: false
       background_range: [1.0e-10, 1.0e-8]
@@ -69,7 +73,7 @@ model:
       dim_avpool: 1
       embedding_net_activation: 'gelu'
       use_batch_norm: true
-      dim_out: 8
+      dim_out: 10
       layer_width: 512
       num_blocks: 6
       repeats_per_block: 2

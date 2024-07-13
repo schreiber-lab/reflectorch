@@ -10,7 +10,7 @@ from reflectorch.data_generation.priors.utils import get_max_allowed_roughness
 
 
 class SamplerStrategy(object):
-    """base class for sampler strategies"""
+    """Base class for sampler strategies"""
     def sample(self, batch_size: int,
                total_min_bounds: Tensor,
                total_max_bounds: Tensor,
@@ -21,7 +21,7 @@ class SamplerStrategy(object):
 
 
 class BasicSamplerStrategy(SamplerStrategy):
-    """sampler strategy with no constraints on the values of the parameters
+    """Sampler strategy with no constraints on the values of the parameters
 
     Args:
         logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
@@ -60,12 +60,12 @@ class BasicSamplerStrategy(SamplerStrategy):
 
 
 class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
-    """sampler strategy where the roughnesses are constrained not to exceed a fraction of the two neighboring thicknesses 
+    """Sampler strategy where the roughnesses are constrained not to exceed a fraction of the two neighboring thicknesses 
 
     Args:
         thickness_mask (Tensor): indices in the tensors which correspond to thicknesses
         roughness_mask (Tensor): indices in the tensors which correspond to roughnesses
-        logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
+        logdist (bool, optional): if ``True`` the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
         max_thickness_share (float, optional): fraction of the layer thickness that the roughness should not exceed. Defaults to 0.5.
     """
     def __init__(self,
@@ -94,7 +94,7 @@ class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
             total_max_delta (Tensor): maximum widths of the subprior intervals
 
         Returns:
-            tuple(Tensor): samples the values of the parameters and their prior bounds (params, min_bounds, max_bounds), the roughnesses being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
+            tuple(Tensor): samples the values of the parameters and their prior bounds *(params, min_bounds, max_bounds)*, the roughnesses being constrained. The widths **W** of the subprior interval are sampled first, then the centers **C** of the subprior interval, such that the prior bounds are **C** - **W** / 2 and **C** + **W** / 2, then the parameters are sampled from [**C** - **W** / 2, **C** + **W** / 2] )
         """
         device = total_min_bounds.device
         return constrained_roughness_sampler(
@@ -110,14 +110,14 @@ class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
         )
 
 class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
-    """sampler strategy where the roughnesses are constrained not to exceed a fraction of the two neighboring thicknesses, and the imaginary slds are constrained not to exceed a fraction of the real slds
+    """Sampler strategy where the roughnesses are constrained not to exceed a fraction of the two neighboring thicknesses, and the imaginary slds are constrained not to exceed a fraction of the real slds
 
     Args:
         thickness_mask (Tensor): indices in the tensors which correspond to thicknesses
         roughness_mask (Tensor): indices in the tensors which correspond to roughnesses
         sld_mask (Tensor): indices in the tensors which correspond to real slds
         isld_mask (Tensor): indices in the tensors which correspond to imaginary slds
-        logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
+        logdist (bool, optional): if ``True`` the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
         max_thickness_share (float, optional): fraction of the layer thickness that the roughness should not exceed. Defaults to 0.5
         max_sld_share (float, optional): fraction of the real sld that the imaginary sld should not exceed. Defaults to 0.2.
     """
@@ -153,7 +153,7 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
             total_max_delta (Tensor): maximum widths of the subprior intervals
 
         Returns:
-            tuple(Tensor): samples the values of the parameters and their prior bounds (params, min_bounds, max_bounds), the roughnesses and imaginary slds being constrained. The widths W of the subprior interval are sampled first, then the centers C of the subprior interval, such that the prior bounds are C-W/2 and C+W/2, then the parameters are sampled from [C-W/2, C+W/2] )
+            tuple(Tensor): samples the values of the parameters and their prior bounds *(params, min_bounds, max_bounds)*, the roughnesses and imaginary slds being constrained. The widths **W** of the subprior interval are sampled first, then the centers **C** of the subprior interval, such that the prior bounds are **C** - **W** /2 and **C** + **W** / 2, then the parameters are sampled from [**C** - **W** / 2, **C** + **W** / 2] )
         """
         device = total_min_bounds.device
         return constrained_roughness_and_isld_sampler(

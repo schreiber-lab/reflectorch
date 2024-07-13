@@ -74,7 +74,7 @@ def train_from_config(config: dict):
 
 
 def get_paths_from_config(config: dict, mkdir: bool = False):
-    """Get the folder paths from a configuration dictionary
+    """Get the directory paths from a configuration dictionary
 
     Args:
         config (dict): configuration dictionary
@@ -184,7 +184,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
     Args:
         config_name (str): name of the configuration file
         config_dir (str): path of the configuration directory
-        model_path (str, optional): path to the network weights. The default path is 'saved_models' located in the package directory
+        model_path (str, optional): path to the network weights.
         load_weights (bool, optional): if True the saved network weights are loaded into the network. Defaults to True.
 
 
