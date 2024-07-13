@@ -34,4 +34,5 @@ var/
 *.egg
 
 #Documentation
-docs/_build
+docs/_build/.doctrees
+docs/_build/jupyter_execute
