@@ -41,7 +41,7 @@ class SpectralConv1d(nn.Module):
 class FnoEncoder(nn.Module):
     """An embedding network based on the Fourier Neural Operator (FNO) architecture
 
-    .. image:: ../docs/fig_reflectometry_embedding_networks.png
+    .. image:: ../documentation/fig_reflectometry_embedding_networks.png
         :width: 400px
         :align: center
 

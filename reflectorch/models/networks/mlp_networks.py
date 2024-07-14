@@ -13,7 +13,7 @@ from reflectorch.models.activations import activation_by_name
 class NetworkWithPriorsConvEmb(nn.Module):
     """MLP network with 1D CNN embedding network
 
-    .. image:: ../docs/FigureReflectometryNetwork.png
+    .. image:: ../documentation/FigureReflectometryNetwork.png
         :width: 800px
         :align: center
 

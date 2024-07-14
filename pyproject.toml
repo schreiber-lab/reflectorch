@@ -48,7 +48,7 @@ build = ["build", "twine"]
 [project.urls]
 Source = "https://github.com/schreiber-lab/reflectorch/"
 Issues = "https://github.com/schreiber-lab/reflectorch/issues"
-Documentation = "https://reflectorch.readthedocs.io/"
+Documentation = "https://schreiber-lab.github.io/reflectorch/"
 
 [tool.setuptools]
 packages = ["reflectorch"]
