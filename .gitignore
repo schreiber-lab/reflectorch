@@ -35,3 +35,6 @@ var/
 
 #Documentation
 documentation/_build/*
+
+# Don't ignore .pt files in the exp_data directory
+!exp_data/*.pt
