@@ -15,23 +15,25 @@
 <!-- [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) -->
 
 
-**Reflectorch** is a machine learning Python package for the analysis of X-ray and neutron reflectometry data based on Pytorch (written by [Vladimir Starostin](https://github.com/StarostinV/) & [Valentin Munteanu](https://github.com/valentinsingularity)). It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and neural network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://doi.org/10.1107/S1600576724002115).
+**Reflectorch** is a machine learning Python package for the analysis of X-ray and neutron reflectometry data, written by [Vladimir Starostin](https://github.com/StarostinV/) & [Valentin Munteanu](https://github.com/valentinsingularity) at the University of Tübingen. It provides functionality for the fast simulation of reflectometry curves on the GPU, customizable setup of the physical parameterization model and neural network architecture via YAML configuration files, and prior-aware training of neural networks as described in our paper [Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge](https://doi.org/10.1107/S1600576724002115).
 
 ## Installation
 
-**Reflectorch** can be installed either from [![PyPi](https://img.shields.io/badge/PyPi-3776AB.svg?style=flat&logo=pypi&logoColor=white)](https://pypi.org/project/reflectorch/) via ``pip`` or from [![conda-forge](https://img.shields.io/badge/conda--forge-44A833.svg?style=flat&logo=conda-forge&logoColor=white)](https://anaconda.org/conda-forge/reflectorch/) via ``conda``:
+**Reflectorch** can be installed from [![PyPi](https://img.shields.io/badge/PyPi-3776AB.svg?style=flat&logo=pypi&logoColor=white)](https://pypi.org/project/reflectorch/) via ``pip``:
+
+<!-- or from [![conda-forge](https://img.shields.io/badge/conda--forge-44A833.svg?style=flat&logo=conda-forge&logoColor=white)](https://anaconda.org/conda-forge/reflectorch/) via ``conda``: -->
 
 ```bash
 pip install reflectorch
 ```
 
-or
+<!-- or
 
 ```bash
 conda install -c conda-forge reflectorch
-```
+``` -->
 
-Additionally, one can clone the entire Github repository and install the package in editable mode:
+Alternatively, one can clone the entire Github repository and install the package in editable mode:
 
 ```bash
 git clone https://github.com/schreiber-lab/reflectorch.git
