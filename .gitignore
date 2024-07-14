@@ -34,4 +34,4 @@ var/
 *.egg
 
 #Documentation
-docs/_build/*
+documentation/_build/*
