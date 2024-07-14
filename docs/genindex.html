@@ -1,0 +1,905 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.angle_to_q">angle_to_q() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicExpIntensityNoise.apply">apply() (BasicExpIntensityNoise method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.BasicQNoiseGenerator.apply">(BasicQNoiseGenerator method)</a>
+</li>
+        <li><a href="api.html#reflectorch.MultiplicativeLogNormalNoiseGenerator.apply">(MultiplicativeLogNormalNoiseGenerator method)</a>
+</li>
+        <li><a href="api.html#reflectorch.PoissonNoiseGenerator.apply">(PoissonNoiseGenerator method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.apply_attenuation_correction">apply_attenuation_correction() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.apply_footprint_correction">apply_footprint_correction() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.as_tensor">as_tensor() (BasicParams method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.Params.as_tensor">(Params method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicDataset">BasicDataset (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicExpIntensityNoise">BasicExpIntensityNoise (class in reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicParams">BasicParams (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicQNoiseGenerator">BasicQNoiseGenerator (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicSamplerStrategy">BasicSamplerStrategy (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.LogLikelihood.calc_log_likelihood">calc_log_likelihood() (LogLikelihood method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.PoissonLogLikelihood.calc_log_likelihood">(PoissonLogLikelihood method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.LogLikelihood.calc_log_posterior">calc_log_posterior() (LogLikelihood method)</a>
+</li>
+      <li><a href="api.html#reflectorch.Trainer.configure_optimizer">configure_optimizer() (Trainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.ConstantAngle">ConstantAngle (class in reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.ConstantQ">ConstantQ (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ConstrainedRoughnessAndImgSldSamplerStrategy">ConstrainedRoughnessAndImgSldSamplerStrategy (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ConstrainedRoughnessSamplerStrategy">ConstrainedRoughnessSamplerStrategy (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ConvEncoder">ConvEncoder (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.CurvesScaler">CurvesScaler (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.CyclicLR">CyclicLR (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.Params.d_rhos">d_rhos (Params property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.EasyInferenceModel">EasyInferenceModel (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogCyclicLR.end_batch">end_batch() (LogCyclicLR method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.LogLosses.end_batch">(LogLosses method)</a>
+</li>
+        <li><a href="api.html#reflectorch.PeriodicTrainerCallback.end_batch">(PeriodicTrainerCallback method)</a>
+</li>
+        <li><a href="api.html#reflectorch.ReduceLROnPlateau.end_batch">(ReduceLROnPlateau method)</a>
+</li>
+        <li><a href="api.html#reflectorch.SaveBestModel.end_batch">(SaveBestModel method)</a>
+</li>
+        <li><a href="api.html#reflectorch.ScheduleLR.end_batch">(ScheduleLR method)</a>
+</li>
+        <li><a href="api.html#reflectorch.TrainerCallback.end_batch">(TrainerCallback method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.TrainerCallback.end_training">end_training() (TrainerCallback method)</a>
+</li>
+      <li><a href="api.html#reflectorch.energy_to_wavelength">energy_to_wavelength() (in module reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.FnoEncoder">FnoEncoder (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.NetworkWithPriorsConvEmb.forward">forward() (NetworkWithPriorsConvEmb method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.NetworkWithPriorsFnoEmb.forward">(NetworkWithPriorsFnoEmb method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicParams.from_tensor">from_tensor() (BasicParams class method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.Params.from_tensor">(Params class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicDataset.get_batch">get_batch() (BasicDataset method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.ConstantAngle.get_batch">(ConstantAngle method)</a>
+</li>
+        <li><a href="api.html#reflectorch.ConstantQ.get_batch">(ConstantQ method)</a>
+</li>
+        <li><a href="api.html#reflectorch.VariableQ.get_batch">(VariableQ method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.RealTimeSimTrainer.get_batch_by_idx">get_batch_by_idx() (RealTimeSimTrainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.RealTimeSimTrainer.get_batch_by_size">get_batch_by_size() (RealTimeSimTrainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.get_callbacks_from_config">get_callbacks_from_config() (in module reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.get_density_profiles">get_density_profiles() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.PointEstimatorTrainer.get_loss_dict">get_loss_dict() (PointEstimatorTrainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.get_param_labels">get_param_labels() (BasicParams method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.ParametricModel.get_param_labels">(ParametricModel method)</a>
+</li>
+        <li><a href="api.html#reflectorch.Params.get_param_labels">(Params method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.get_paths_from_config">get_paths_from_config() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.get_trainer_by_name">get_trainer_by_name() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.get_trainer_from_config">get_trainer_from_config() (in module reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.ParametricModel.init_bounds">init_bounds() (ParametricModel method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.IntensityNoiseGenerator">IntensityNoiseGenerator (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.interp_reflectivity">interp_reflectivity() (in module reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.Params.layers_num2size">layers_num2size() (Params static method)</a>
+</li>
+      <li><a href="api.html#reflectorch.load_config">load_config() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.EasyInferenceModel.load_model">load_model() (EasyInferenceModel method)</a>
+</li>
+      <li><a href="api.html#reflectorch.Trainer.log">log() (Trainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogAffineCurvesScaler">LogAffineCurvesScaler (class in reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.LogCyclicLR">LogCyclicLR (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Logger">Logger (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Loggers">Loggers (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogLikelihood">LogLikelihood (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogLosses">LogLosses (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Trainer.lr">lr() (Trainer method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicParams.max_layer_num">max_layer_num (BasicParams property)</a>
+</li>
+      <li><a href="api.html#reflectorch.PriorSampler.max_num_layers">max_num_layers (PriorSampler property)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.max_num_layers">(SubpriorParametricSampler property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.MeanNormalizationCurvesScaler">MeanNormalizationCurvesScaler (class in reflectorch)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="api.html#module-reflectorch">reflectorch</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.MultiplicativeLogNormalNoiseGenerator">MultiplicativeLogNormalNoiseGenerator (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.NetworkWithPriorsConvEmb">NetworkWithPriorsConvEmb (class in reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.NetworkWithPriorsFnoEmb">NetworkWithPriorsFnoEmb (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.num_params">num_params (BasicParams property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.OneCycleLR">OneCycleLR (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.PriorSampler.PARAM_CLS">PARAM_CLS (PriorSampler attribute)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.PARAM_CLS">(SubpriorParametricSampler attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.ParametricModel.param_dim">param_dim (ParametricModel property)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.PriorSampler.param_dim">(PriorSampler property)</a>
+</li>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.param_dim">(SubpriorParametricSampler property)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.ParametricModel">ParametricModel (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Params">Params (class in reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.PeriodicTrainerCallback">PeriodicTrainerCallback (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.PointEstimatorTrainer">PointEstimatorTrainer (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.PoissonLogLikelihood">PoissonLogLikelihood (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.PoissonNoiseGenerator">PoissonNoiseGenerator (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.EasyInferenceModel.predict">predict() (EasyInferenceModel method)</a>
+</li>
+      <li><a href="api.html#reflectorch.EasyInferenceModel.predict_using_widget">predict_using_widget() (EasyInferenceModel method)</a>
+</li>
+      <li><a href="api.html#reflectorch.PrintLogger">PrintLogger (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.PriorSampler">PriorSampler (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.q_to_angle">q_to_angle() (in module reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.QGenerator">QGenerator (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.QNoiseGenerator">QNoiseGenerator (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.RealTimeSimTrainer">RealTimeSimTrainer (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ReduceLROnPlateau">ReduceLROnPlateau (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.reflectivity">reflectivity() (BasicParams method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.reflectivity">(in module reflectorch)</a>
+</li>
+        <li><a href="api.html#reflectorch.ParametricModel.reflectivity">(ParametricModel method)</a>
+</li>
+        <li><a href="api.html#reflectorch.Params.reflectivity">(Params method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.ReflectivityDataLoader">ReflectivityDataLoader (class in reflectorch)</a>
+</li>
+      <li>
+    reflectorch
+
+      <ul>
+        <li><a href="api.html#module-reflectorch">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.ReflGradientFit">ReflGradientFit (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogAffineCurvesScaler.restore">restore() (LogAffineCurvesScaler method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.MeanNormalizationCurvesScaler.restore">(MeanNormalizationCurvesScaler method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.PriorSampler.restore_params">restore_params() (PriorSampler method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.restore_params">(SubpriorParametricSampler method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.BasicParams.roughnesses">roughnesses (BasicParams property)</a>
+</li>
+      <li><a href="api.html#reflectorch.ReflGradientFit.run">run() (ReflGradientFit method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicSamplerStrategy.sample">sample() (BasicSamplerStrategy method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.ConstrainedRoughnessAndImgSldSamplerStrategy.sample">(ConstrainedRoughnessAndImgSldSamplerStrategy method)</a>
+</li>
+        <li><a href="api.html#reflectorch.ConstrainedRoughnessSamplerStrategy.sample">(ConstrainedRoughnessSamplerStrategy method)</a>
+</li>
+        <li><a href="api.html#reflectorch.ParametricModel.sample">(ParametricModel method)</a>
+</li>
+        <li><a href="api.html#reflectorch.PriorSampler.sample">(PriorSampler method)</a>
+</li>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.sample">(SubpriorParametricSampler method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.ParametricModel.sampler_strategy">sampler_strategy (ParametricModel property)</a>
+</li>
+      <li><a href="api.html#reflectorch.SamplerStrategy">SamplerStrategy (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.MeanNormalizationCurvesScaler.save">save() (MeanNormalizationCurvesScaler static method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.SaveBestModel.save">(SaveBestModel method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.SaveBestModel">SaveBestModel (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.LogAffineCurvesScaler.scale">scale() (LogAffineCurvesScaler method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.MeanNormalizationCurvesScaler.scale">(MeanNormalizationCurvesScaler method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.PriorSampler.scale_params">scale_params() (PriorSampler method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.SubpriorParametricSampler.scale_params">(SubpriorParametricSampler method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.VariableQ.scale_q">scale_q() (VariableQ method)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.scale_with_q">scale_with_q() (BasicParams method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.Params.scale_with_q">(Params method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.ScheduleBatchSize">ScheduleBatchSize (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ScheduleLR">ScheduleLR (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Trainer.set_lr">set_lr() (Trainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.Params.size2layers_num">size2layers_num() (Params static method)</a>
+</li>
+      <li><a href="api.html#reflectorch.BasicParams.slds">slds (BasicParams property)</a>
+</li>
+      <li><a href="api.html#reflectorch.Smearing">Smearing (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.standard_preprocessing">standard_preprocessing() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.ScheduleLR.start_training">start_training() (ScheduleLR method)</a>
+
+      <ul>
+        <li><a href="api.html#reflectorch.StepLR.start_training">(StepLR method)</a>
+</li>
+        <li><a href="api.html#reflectorch.TrainerCallback.start_training">(TrainerCallback method)</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#reflectorch.StepLR">StepLR (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.SubpriorParametricSampler">SubpriorParametricSampler (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicParams.thicknesses">thicknesses (BasicParams property)</a>
+</li>
+      <li><a href="api.html#reflectorch.to_np">to_np() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.to_t">to_t() (in module reflectorch)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.Trainer.train">train() (Trainer method)</a>
+</li>
+      <li><a href="api.html#reflectorch.train_from_config">train_from_config() (in module reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.Trainer">Trainer (class in reflectorch)</a>
+</li>
+      <li><a href="api.html#reflectorch.TrainerCallback">TrainerCallback (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.BasicDataset.update_batch_data">update_batch_data() (BasicDataset method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.VariableQ">VariableQ (class in reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#reflectorch.wavelength_to_energy">wavelength_to_energy() (in module reflectorch)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

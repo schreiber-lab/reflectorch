@@ -1,0 +1,758 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.data_generation.priors.parametric_subpriors &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/data_generation/priors/parametric_subpriors';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.data_generation.priors.parametric_subpriors</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the GPL license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.base</span> <span class="kn">import</span> <span class="n">PriorSampler</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.params</span> <span class="kn">import</span> <span class="n">AbstractParams</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.no_constraints</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_DEVICE</span><span class="p">,</span>
+    <span class="n">DEFAULT_DTYPE</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.parametric_models</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MULTILAYER_MODELS</span><span class="p">,</span>
+    <span class="n">ParametricModel</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.scaler_mixin</span> <span class="kn">import</span> <span class="n">ScalerMixin</span>
+
+
+<div class="viewcode-block" id="BasicParams">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams">[docs]</a>
+<span class="k">class</span> <span class="nc">BasicParams</span><span class="p">(</span><span class="n">AbstractParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameter class compatible with different parameterizations of the SLD profile. It stores the parameters as well as their minimum and maximum subprior bounds.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parameters (Tensor): the values of the thin film parameters</span>
+<span class="sd">            min_bounds (Tensor): the minimum subprior bounds of the parameters</span>
+<span class="sd">            max_bounds (Tensor): the maximum subprior bounds of the parameters</span>
+<span class="sd">            max_num_layers (int, optional): the maximum number of layers (for box model parameterizations it is the number of layers). Defaults to None.</span>
+<span class="sd">            param_model (ParametricModel, optional): the parametric model. Defaults to the box model parameterization with number of layers given by max_num_layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s1">&#39;parameters&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;min_bounds&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;max_bounds&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;max_num_layers&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;param_model&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">PARAM_NAMES</span> <span class="o">=</span> <span class="vm">__slots__</span>
+    <span class="n">PARAM_MODEL_CLS</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ParametricModel</span><span class="p">]</span>
+    <span class="n">MAX_NUM_LAYERS</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">parameters</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+                 <span class="n">min_bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+                 <span class="n">max_bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+                 <span class="n">max_num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">param_model</span><span class="p">:</span> <span class="n">ParametricModel</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="p">):</span>
+
+        <span class="n">max_num_layers</span> <span class="o">=</span> <span class="n">max_num_layers</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_NUM_LAYERS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span> <span class="o">=</span> <span class="n">param_model</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAM_MODEL_CLS</span><span class="p">(</span><span class="n">max_num_layers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">=</span> <span class="n">max_num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span> <span class="o">=</span> <span class="n">min_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span> <span class="o">=</span> <span class="n">max_bounds</span>
+
+<div class="viewcode-block" id="BasicParams.get_param_labels">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.get_param_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the parameter labels&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BasicParams.reflectivity">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.reflectivity">[docs]</a>
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;computes the reflectivity curves directly from the parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            q (Tensor): the q values</span>
+<span class="sd">            log (bool, optional): whether to apply logarithm to the curves. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: the simulated reflectivity curves</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_layer_num</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>  <span class="c1"># keep for back compatibility but TODO: unify api among different params</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the maximum number of layers&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the number of parameters (parameter dimensionality)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">param_dim</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">thicknesses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the thicknesses&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;thickness&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roughnesses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the roughnesses&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;roughness&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">slds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the slds&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">rearrange_context_from_params</span><span class="p">(</span>
+            <span class="n">scaled_params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+            <span class="n">context</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+            <span class="n">inference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="n">from_params</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">inference</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">from_params</span><span class="p">:</span>
+                <span class="n">num_params</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">3</span>
+                <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[:,</span> <span class="n">num_params</span><span class="p">:]</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">context</span><span class="p">,</span> <span class="n">scaled_params</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">context</span>
+
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">3</span>
+        <span class="k">assert</span> <span class="n">num_params</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">==</span> <span class="n">scaled_params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">scaled_params</span><span class="p">,</span> <span class="n">bound_context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="p">[</span><span class="n">num_params</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_params</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">context</span><span class="p">,</span> <span class="n">bound_context</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_params</span><span class="p">,</span> <span class="n">context</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">restore_params_from_context</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">scaled_bounds</span> <span class="o">=</span> <span class="n">context</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">num_params</span><span class="p">:]</span>
+        <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_params</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_params</span>
+
+<div class="viewcode-block" id="BasicParams.as_tensor">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.as_tensor">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_bounds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;converts the instance of the class to a Pytorch tensor</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            add_bounds (bool, optional): whether to add the subprior bounds to the tensor. Defaults to True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: the Pytorch tensor obtained from the instance of the class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">add_bounds</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BasicParams.from_tensor">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.from_tensor">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_tensor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;initializes an instance of the class from a Pytorch tensor</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params (Tensor): Pytorch tensor containing the parameter values, min subprior bounds and max subprior bounds</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BasicParams: the instance of the class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">3</span>
+
+        <span class="n">params</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">params</span><span class="p">,</span> <span class="p">[</span><span class="n">num_params</span><span class="p">,</span> <span class="n">num_params</span><span class="p">,</span> <span class="n">num_params</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">params</span><span class="p">,</span>
+            <span class="n">min_bounds</span><span class="p">,</span>
+            <span class="n">max_bounds</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BasicParams.scale_with_q">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.scale_with_q">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_with_q</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;scales the parameters based on the q ratio</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            q_ratio (float): the scaling ratio</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">scale_with_q</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">scale_with_q</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">scale_with_q</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SubpriorParametricSampler">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.SubpriorParametricSampler">[docs]</a>
+<span class="k">class</span> <span class="nc">SubpriorParametricSampler</span><span class="p">(</span><span class="n">PriorSampler</span><span class="p">,</span> <span class="n">ScalerMixin</span><span class="p">):</span>
+    <span class="n">PARAM_CLS</span> <span class="o">=</span> <span class="n">BasicParams</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">param_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                 <span class="n">bound_width_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                 <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">DEFAULT_DEVICE</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">DEFAULT_DTYPE</span><span class="p">,</span>
+                 <span class="n">max_num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+                 <span class="n">logdist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">scale_params_by_ranges</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">scaled_range</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span>
+                 <span class="o">**</span><span class="n">kwargs</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prior sampler for the parameters of a parametric model and their subprior bounds</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            param_ranges (Dict[str, Tuple[float, float]]): dictionary containing the name of each type of parameter together with its range</span>
+<span class="sd">            bound_width_ranges (Dict[str, Tuple[float, float]]): dictionary containing the name of each type of parameter together with the range for sampling the widths of the subprior interval</span>
+<span class="sd">            model_name (str): the name of the parametric model</span>
+<span class="sd">            device (torch.device, optional): the Pytorch device. Defaults to DEFAULT_DEVICE.</span>
+<span class="sd">            dtype (torch.dtype, optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.</span>
+<span class="sd">            max_num_layers (int, optional): the maximum number of layers (for box model parameterizations it is the number of layers). Defaults to 50.</span>
+<span class="sd">            logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.</span>
+<span class="sd">            scale_params_by_ranges (bool, optional): if True the parameters are scaled with respect to their ranges instead of being scaled with respect to their prior bounds. Defaults to False.</span>
+<span class="sd">            scaled_range (Tuple[float, float], optional): the range for scaling the parameters. Defaults to (-1., 1.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaled_range</span> <span class="o">=</span> <span class="n">scaled_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="p">:</span> <span class="n">ParametricModel</span> <span class="o">=</span> <span class="n">MULTILAYER_MODELS</span><span class="p">[</span><span class="n">model_name</span><span class="p">](</span>
+            <span class="n">max_num_layers</span><span class="p">,</span>
+            <span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">max_num_layers</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">PARAM_CLS</span><span class="o">.</span><span class="n">PARAM_MODEL_CLS</span> <span class="o">=</span> <span class="n">MULTILAYER_MODELS</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PARAM_CLS</span><span class="o">.</span><span class="n">MAX_NUM_LAYERS</span> <span class="o">=</span> <span class="n">max_num_layers</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">param_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_delta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">init_bounds</span><span class="p">(</span>
+            <span class="n">param_ranges</span><span class="p">,</span> <span class="n">bound_width_ranges</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span>
+        <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_ranges</span> <span class="o">=</span> <span class="n">param_ranges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bound_width_ranges</span> <span class="o">=</span> <span class="n">bound_width_ranges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logdist</span> <span class="o">=</span> <span class="n">logdist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_params_by_ranges</span> <span class="o">=</span> <span class="n">scale_params_by_ranges</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_num_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the maximum number of layers&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the number of parameters (parameter dimensionality)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_dim</span>
+
+<div class="viewcode-block" id="SubpriorParametricSampler.sample">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.SubpriorParametricSampler.sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasicParams</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;sample a batch of parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            batch_size (int): the batch size</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BasicParams: sampled parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_delta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_delta</span>
+        <span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="n">BasicParams</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">min_bounds</span><span class="o">=</span><span class="n">min_bounds</span><span class="p">,</span>
+            <span class="n">max_bounds</span><span class="o">=</span><span class="n">max_bounds</span><span class="p">,</span>
+            <span class="n">max_num_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span>
+            <span class="n">param_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="SubpriorParametricSampler.scale_params">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.SubpriorParametricSampler.scale_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;scale the parameters to a ML-friendly range</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params (BasicParams): the parameters to be scaled</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: the scaled parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_params_by_ranges</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span> <span class="c1">#parameters and subprior bounds are scaled with respect to the parameter ranges</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span>
+            <span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">scaled_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span> <span class="c1">#each parameter scaled with respect to its subprior bounds</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span> <span class="c1">#the subprior bounds are scaled with respect to the parameter ranges</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span>
+            <span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">scaled_params</span></div>
+
+
+<div class="viewcode-block" id="SubpriorParametricSampler.restore_params">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.SubpriorParametricSampler.restore_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">restore_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaled_params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasicParams</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;restore the parameters to their original range</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scaled_params (Tensor): the scaled parameters</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BasicParams: the parameters restored to their original range</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">3</span>
+        <span class="n">scaled_params</span><span class="p">,</span> <span class="n">scaled_min_bounds</span><span class="p">,</span> <span class="n">scaled_max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">scaled_params</span><span class="p">,</span> <span class="n">num_params</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_params_by_ranges</span><span class="p">:</span>
+            <span class="n">min_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+            <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+            <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_max_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">BasicParams</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">min_bounds</span><span class="o">=</span><span class="n">min_bounds</span><span class="p">,</span>
+            <span class="n">max_bounds</span><span class="o">=</span><span class="n">max_bounds</span><span class="p">,</span>
+            <span class="n">max_num_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span>
+            <span class="n">param_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    
+    <span class="k">def</span> <span class="nf">scale_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">log_prob</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">get_indices_within_bounds</span><span class="p">(</span><span class="n">params</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">log_prob</span>
+
+    <span class="k">def</span> <span class="nf">get_indices_within_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_indices_within_bounds</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_indices_within_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span> <span class="o">&lt;=</span> <span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">filter_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasicParams</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_indices_within_domain</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">clamp_params</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasicParams</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span>
+
+        <span class="k">return</span> <span class="n">BasicParams</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">),</span>
+            <span class="n">min_bounds</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">min_bounds</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span>
+            <span class="n">max_bounds</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">max_bounds</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span>
+            <span class="n">max_num_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span>
+            <span class="n">param_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

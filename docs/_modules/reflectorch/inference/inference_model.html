@@ -1,0 +1,1120 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.inference.inference_model &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/inference/inference_model';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.inference.inference_model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span>
+<span class="kn">from</span> <span class="nn">huggingface_hub</span> <span class="kn">import</span> <span class="n">hf_hub_download</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors</span> <span class="kn">import</span> <span class="n">Params</span><span class="p">,</span> <span class="n">BasicParams</span><span class="p">,</span> <span class="n">ExpUniformSubPriorSampler</span><span class="p">,</span> <span class="n">UniformSubPriorParams</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.q_generator</span> <span class="kn">import</span> <span class="n">ConstantQ</span><span class="p">,</span> <span class="n">VariableQ</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.utils</span> <span class="kn">import</span> <span class="n">get_density_profiles</span><span class="p">,</span> <span class="n">get_param_labels</span>
+<span class="kn">from</span> <span class="nn">reflectorch.paths</span> <span class="kn">import</span> <span class="n">CONFIG_DIR</span><span class="p">,</span> <span class="n">ROOT_DIR</span><span class="p">,</span> <span class="n">SAVED_MODELS_DIR</span>
+<span class="kn">from</span> <span class="nn">reflectorch.runs.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_trainer_by_name</span><span class="p">,</span> <span class="n">train_from_config</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">reflectorch.runs.config</span> <span class="kn">import</span> <span class="n">load_config</span>
+<span class="kn">from</span> <span class="nn">reflectorch.ml.trainers</span> <span class="kn">import</span> <span class="n">PointEstimatorTrainer</span>
+<span class="kn">from</span> <span class="nn">reflectorch.data_generation.likelihoods</span> <span class="kn">import</span> <span class="n">LogLikelihood</span>
+
+<span class="kn">from</span> <span class="nn">reflectorch.inference.preprocess_exp</span> <span class="kn">import</span> <span class="n">StandardPreprocessing</span>
+<span class="kn">from</span> <span class="nn">reflectorch.inference.scipy_fitter</span> <span class="kn">import</span> <span class="n">standard_refl_fit</span><span class="p">,</span> <span class="n">get_fit_with_growth</span>
+<span class="kn">from</span> <span class="nn">reflectorch.inference.sampler_solution</span> <span class="kn">import</span> <span class="n">simple_sampler_solution</span><span class="p">,</span> <span class="n">get_best_mse_param</span>
+<span class="kn">from</span> <span class="nn">reflectorch.inference.record_time</span> <span class="kn">import</span> <span class="n">print_time</span>
+<span class="kn">from</span> <span class="nn">reflectorch.utils</span> <span class="kn">import</span> <span class="n">to_t</span>
+
+<div class="viewcode-block" id="EasyInferenceModel">
+<a class="viewcode-back" href="../../../api.html#reflectorch.EasyInferenceModel">[docs]</a>
+<span class="k">class</span> <span class="nc">EasyInferenceModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Facilitates the inference process using pretrained models</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        config_name (str, optional): the name of the configuration file used to initialize the model (either with or without the &#39;.yaml&#39; extension). Defaults to None.</span>
+<span class="sd">        model_name (str, optional): the name of the file containing the weights of the model (either with or without the &#39;.pt&#39; extension), only required if different than: `&#39;model_&#39; + config_name + &#39;.pt&#39;`. Defaults to None </span>
+<span class="sd">        root_dir (str, optional): path to root directory containing the &#39;configs&#39; and &#39;saved_models&#39; subdirectories, if different from the package root directory (ROOT_DIR). Defaults to None.</span>
+<span class="sd">        repo_id (str, optional): the id of the Huggingface repository from which the configuration files and model weights should be downloaded automatically if not found locally (in the &#39;configs&#39; and &#39;saved_models&#39; subdirectories of the root directory). Defaults to &#39;valentinsingularity/reflectivity&#39;.</span>
+<span class="sd">        trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used directly instead of being initialized from the configuration file. Defaults to None.</span>
+<span class="sd">        device (str, optional): the Pytorch device (&#39;cuda&#39; or &#39;cpu&#39;). Defaults to &#39;cuda&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">:</span><span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">repo_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;valentinsingularity/reflectivity&#39;</span><span class="p">,</span> 
+                 <span class="n">trainer</span><span class="p">:</span> <span class="n">PointEstimatorTrainer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span> <span class="o">=</span> <span class="n">config_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">=</span> <span class="n">root_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo_id</span> <span class="o">=</span> <span class="n">repo_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+
+        <span class="k">if</span> <span class="n">trainer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prediction_result</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="EasyInferenceModel.load_model">
+<a class="viewcode-back" href="../../../api.html#reflectorch.EasyInferenceModel.load_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a model for inference</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config_name (str): the name of the configuration file used to initialize the model (either with or without the &#39;.yaml&#39; extension).</span>
+<span class="sd">            model_name (str): the name of the file containing the weights of the model (either with or without the &#39;.pt&#39; extension), only required if different than: `&#39;model_&#39; + config_name + &#39;.pt&#39;`.</span>
+<span class="sd">            root_dir (str): path to root directory containing the &#39;configs&#39; and &#39;saved_models&#39; subdirectories, if different from the package root directory (ROOT_DIR).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span> <span class="o">==</span> <span class="n">config_name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">config_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.yaml&#39;</span><span class="p">):</span>
+            <span class="n">config_name_no_extension</span> <span class="o">=</span> <span class="n">config_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span> <span class="o">=</span> <span class="n">config_name_no_extension</span> <span class="o">+</span> <span class="s1">&#39;.yaml&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config_name_no_extension</span> <span class="o">=</span> <span class="n">config_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span> <span class="o">=</span> <span class="n">config_name</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="k">if</span> <span class="n">root_dir</span> <span class="k">else</span> <span class="n">CONFIG_DIR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span> <span class="ow">or</span> <span class="s1">&#39;model_&#39;</span> <span class="o">+</span> <span class="n">config_name_no_extension</span> <span class="o">+</span> <span class="s1">&#39;.pt&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pt&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+=</span> <span class="s1">&#39;.pt&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;saved_models&#39;</span> <span class="k">if</span> <span class="n">root_dir</span> <span class="k">else</span> <span class="n">SAVED_MODELS_DIR</span>
+
+        <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_dir</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_name</span>
+        <span class="k">if</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Configuration file `</span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">` found locally.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Configuration file `</span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">` not found locally.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;repo_id must be provided to download files from Huggingface.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading from Huggingface...&quot;</span><span class="p">)</span>
+            <span class="n">hf_hub_download</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repo_id</span><span class="p">,</span> <span class="n">subfolder</span><span class="o">=</span><span class="s1">&#39;configs&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config_name</span><span class="p">,</span> <span class="n">local_dir</span><span class="o">=</span><span class="n">config_path</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">model_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dir</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span>
+        <span class="k">if</span> <span class="n">model_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weights file `</span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s2">` found locally.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weights file `</span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s2">` not found locally.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repo_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;repo_id must be provided to download files from Huggingface.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading from Huggingface...&quot;</span><span class="p">)</span>
+            <span class="n">hf_hub_download</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repo_id</span><span class="p">,</span> <span class="n">subfolder</span><span class="o">=</span><span class="s1">&#39;saved_models&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span> <span class="n">local_dir</span><span class="o">=</span><span class="n">model_path</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">get_trainer_by_name</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span> <span class="n">config_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config_dir</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="n">model_path</span><span class="p">,</span> <span class="n">load_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inference_device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The model corresponds to a `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">NAME</span><span class="si">}</span><span class="s1">` parameterization with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span><span class="si">}</span><span class="s1"> layers (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_dim</span><span class="si">}</span><span class="s1"> predicted parameters)&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parameter types and total ranges:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">range_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">range_</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Allowed widths of the prior bound intervals (max-min):&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">range_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">bound_width_ranges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">range_</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="p">,</span> <span class="n">ConstantQ</span><span class="p">):</span>
+            <span class="n">q_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">q_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">n_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The model was trained on curves discretized at </span><span class="si">{</span><span class="n">n_q</span><span class="si">}</span><span class="s1"> uniform points between between q_min=</span><span class="si">{</span><span class="n">q_min</span><span class="si">}</span><span class="s1"> and q_max=</span><span class="si">{</span><span class="n">q_max</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="p">,</span> <span class="n">VariableQ</span><span class="p">):</span>
+            <span class="n">q_min_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q_min_range</span>
+            <span class="n">q_max_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q_max_range</span>
+            <span class="n">n_q_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">n_q_range</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The model was trained on curves discretized at a number between </span><span class="si">{</span><span class="n">n_q_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">n_q_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> of uniform points between between q_min in [</span><span class="si">{</span><span class="n">q_min_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">q_min_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">] and q_max in [</span><span class="si">{</span><span class="n">q_max_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">q_max_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EasyInferenceModel.predict">
+<a class="viewcode-back" href="../../../api.html#reflectorch.EasyInferenceModel.predict">[docs]</a>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reflectivity_curve</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> 
+                <span class="n">q_values</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                <span class="n">prior_bounds</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                <span class="n">clip_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+                <span class="n">polish_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+                <span class="n">fit_growth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+                <span class="n">max_d_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span>
+                <span class="n">use_q_shift</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+                <span class="n">calc_pred_curve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="n">calc_pred_sld_profile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict the thin film parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).</span>
+<span class="sd">            q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of inverse angstroms).</span>
+<span class="sd">            prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.</span>
+<span class="sd">            clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.</span>
+<span class="sd">            polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.</span>
+<span class="sd">            fit_growth (bool, optional): If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.</span>
+<span class="sd">            max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. </span>
+<span class="sd">            use_q_shift: If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.</span>
+<span class="sd">            calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.</span>
+<span class="sd">            calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: dictionary containing the predictions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">scaled_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_curve</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="p">)</span>
+        <span class="n">prior_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prior_bounds</span><span class="p">)</span>
+        <span class="n">scaled_prior_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_prior_bounds</span><span class="p">(</span><span class="n">prior_bounds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">train_with_q_input</span><span class="p">:</span>
+            <span class="n">q_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">to_t</span><span class="p">(</span><span class="n">q_values</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">scaled_curve</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_q_shift</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">train_with_q_input</span><span class="p">:</span>
+            <span class="n">predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qshift_prediction</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">,</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">dq_coef</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">train_with_q_input</span><span class="p">:</span>
+                    <span class="n">scaled_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">scale_q</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                    <span class="n">scaled_predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">,</span> <span class="n">scaled_q</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">scaled_predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">)</span>
+                
+                <span class="n">predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">restore_params</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_predicted_params</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">clip_prediction</span><span class="p">:</span>
+            <span class="n">predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">clamp_params</span><span class="p">(</span><span class="n">predicted_params</span><span class="p">)</span>
+        
+        <span class="n">prediction_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;predicted_params_object&quot;</span><span class="p">:</span> <span class="n">predicted_params</span><span class="p">,</span>
+            <span class="s2">&quot;predicted_params_array&quot;</span><span class="p">:</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+            <span class="s2">&quot;param_names&quot;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">calc_pred_curve</span><span class="p">:</span>
+            <span class="n">predicted_curve</span> <span class="o">=</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">prediction_dict</span><span class="p">[</span> <span class="s2">&quot;predicted_curve&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_curve</span>
+        
+        <span class="k">if</span> <span class="n">calc_pred_sld_profile</span><span class="p">:</span> 
+            <span class="n">predicted_sld_xaxis</span><span class="p">,</span> <span class="n">predicted_sld_profile</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_density_profiles</span><span class="p">(</span>
+                <span class="n">predicted_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="p">,</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="p">,</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">slds</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> 
+            <span class="p">)</span> 
+            <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_sld_profile</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_sld_xaxis</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">predicted_sld_xaxis</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">polish_prediction</span><span class="p">:</span> <span class="c1">#only for standard box-model parameterization</span>
+            <span class="n">polished_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polish_prediction</span><span class="p">(</span><span class="n">q</span> <span class="o">=</span> <span class="n">q_values</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> 
+                                                    <span class="n">curve</span> <span class="o">=</span> <span class="n">reflectivity_curve</span><span class="p">,</span> 
+                                                    <span class="n">predicted_params</span> <span class="o">=</span> <span class="n">predicted_params</span><span class="p">,</span> 
+                                                    <span class="n">priors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prior_bounds</span><span class="p">),</span> 
+                                                    <span class="n">fit_growth</span> <span class="o">=</span> <span class="n">fit_growth</span><span class="p">,</span>
+                                                    <span class="n">max_d_change</span> <span class="o">=</span> <span class="n">max_d_change</span><span class="p">,</span> 
+                                                    <span class="n">calc_polished_curve</span> <span class="o">=</span> <span class="n">calc_pred_curve</span><span class="p">,</span>
+                                                    <span class="n">calc_polished_sld_profile</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                                    <span class="n">sld_x_axis</span> <span class="o">=</span> <span class="n">predicted_sld_xaxis</span><span class="p">,</span>
+                                                    <span class="p">)</span>
+            <span class="n">prediction_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">polished_dict</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">fit_growth</span> <span class="ow">and</span> <span class="s2">&quot;polished_params_array&quot;</span> <span class="ow">in</span> <span class="n">prediction_dict</span><span class="p">:</span>
+                <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;max_d_change&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">prediction_dict</span></div>
+
+
+<div class="viewcode-block" id="EasyInferenceModel.predict_using_widget">
+<a class="viewcode-back" href="../../../api.html#reflectorch.EasyInferenceModel.predict_using_widget">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">predict_using_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reflectivity_curve</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).</span>
+<span class="sd">        The other arguments are the same as for the ``predict`` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">NUM_INTERVALS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_dim</span>
+        <span class="n">param_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">()</span>
+        <span class="n">min_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">min_bounds</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_bounds</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">max_deltas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_delta</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter ranges: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Allowed widths of the prior bound intervals (max-min): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">bound_width_ranges</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Please fill in the values of the minimum and maximum prior bound for each parameter and press the button!&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">create_interval_widgets</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">intervals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">interval_label</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">initial_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">min_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_deltas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">slider</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatRangeSlider</span><span class="p">(</span>
+                    <span class="n">value</span><span class="o">=</span><span class="p">[</span><span class="n">min_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">initial_max</span><span class="p">],</span>
+                    <span class="nb">min</span><span class="o">=</span><span class="n">min_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="nb">max</span><span class="o">=</span><span class="n">max_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                    <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;400px&#39;</span><span class="p">),</span>
+                    <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;description_width&#39;</span><span class="p">:</span> <span class="s1">&#39;60px&#39;</span><span class="p">}</span>
+                <span class="p">)</span>
+                
+                <span class="k">def</span> <span class="nf">validate_range</span><span class="p">(</span><span class="n">change</span><span class="p">,</span> <span class="n">slider</span><span class="o">=</span><span class="n">slider</span><span class="p">,</span> <span class="n">max_width</span><span class="o">=</span><span class="n">max_deltas</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span> <span class="o">=</span> <span class="n">change</span><span class="p">[</span><span class="s1">&#39;new&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">max_val</span> <span class="o">-</span> <span class="n">min_val</span> <span class="o">&gt;</span> <span class="n">max_width</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">change</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">change</span><span class="p">[</span><span class="s1">&#39;old&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">min_val</span><span class="p">:</span>
+                                <span class="n">max_val</span> <span class="o">=</span> <span class="n">min_val</span> <span class="o">+</span> <span class="n">max_width</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">min_val</span> <span class="o">=</span> <span class="n">max_val</span> <span class="o">-</span> <span class="n">max_width</span>
+                        <span class="n">slider</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">]</span>
+                
+                <span class="n">slider</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">validate_range</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                
+                <span class="n">interval_row</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">interval_label</span><span class="p">,</span> <span class="n">slider</span><span class="p">])</span>
+                <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">slider</span><span class="p">,</span> <span class="n">interval_row</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">intervals</span>
+        
+        <span class="n">interval_widgets</span> <span class="o">=</span> <span class="n">create_interval_widgets</span><span class="p">(</span><span class="n">NUM_INTERVALS</span><span class="p">)</span>
+        <span class="n">interval_box</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">VBox</span><span class="p">([</span><span class="n">widget</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">widget</span> <span class="ow">in</span> <span class="n">interval_widgets</span><span class="p">])</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">interval_box</span><span class="p">)</span>
+
+        <span class="n">button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Make prediction&quot;</span><span class="p">)</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">button</span><span class="p">)</span>
+
+        <span class="n">prediction_result</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span> <span class="nf">store_values</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">future</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Debug: Button clicked&quot;</span><span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">slider</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">interval_widgets</span><span class="p">:</span>
+                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">slider</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">slider</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">array_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            
+            <span class="k">nonlocal</span> <span class="n">prediction_result</span>
+            <span class="n">prediction_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">reflectivity_curve</span><span class="p">,</span> <span class="n">prior_bounds</span><span class="o">=</span><span class="n">array_values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">prediction_result</span><span class="p">[</span><span class="s2">&quot;predicted_params_array&quot;</span><span class="p">])</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Prediction completed. Closing widget.&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">interval_box</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="n">prediction_result</span><span class="p">)</span>
+
+        <span class="n">button</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">store_values</span><span class="p">)</span>
+    
+
+        <span class="n">future</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">()</span>
+
+        <span class="n">button</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">store_values</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">future</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="k">await</span> <span class="n">future</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">_qshift_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dq_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BasicParams</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="p">,</span> <span class="n">ConstantQ</span><span class="p">),</span> <span class="s2">&quot;Prediction with q shifts available only for models with fixed discretization&quot;</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">dq_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dq_coef</span>
+        <span class="n">q_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">dq_max</span><span class="p">,</span> <span class="n">dq_max</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">to_t</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">scaled_bounds</span><span class="p">)</span>
+        <span class="n">shifted_curves</span> <span class="o">=</span> <span class="n">_qshift_interp</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">curve</span><span class="p">,</span> <span class="n">q_shifts</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">shifted_curves</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">scaled_curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">shifted_curves</span><span class="p">)</span>
+        <span class="n">scaled_prior_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">scaled_bounds</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">scaled_curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="n">scaled_predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">scaled_curves</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">)</span>
+            <span class="n">restored_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">restore_params</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_predicted_params</span><span class="p">,</span> <span class="n">scaled_prior_bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+            <span class="n">best_param</span> <span class="o">=</span> <span class="n">get_best_mse_param</span><span class="p">(</span>
+                <span class="n">restored_params</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_likelihood</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">best_param</span>
+        
+    <span class="k">def</span> <span class="nf">_polish_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">predicted_params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">,</span>
+                           <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">sld_x_axis</span><span class="p">,</span>
+                           <span class="n">fit_growth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                           <span class="n">max_d_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span>
+                           <span class="n">calc_polished_curve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                           <span class="n">calc_polished_sld_profile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                           <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">slds</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="n">polished_params_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fit_growth</span><span class="p">:</span>
+                <span class="n">polished_params_arr</span><span class="p">,</span> <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">get_fit_with_growth</span><span class="p">(</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">,</span> 
+                    <span class="n">curve</span> <span class="o">=</span> <span class="n">curve</span><span class="p">,</span> 
+                    <span class="n">init_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">,</span> 
+                    <span class="n">bounds</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                    <span class="n">max_d_change</span> <span class="o">=</span> <span class="n">max_d_change</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">polished_params</span> <span class="o">=</span> <span class="n">BasicParams</span><span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">polished_params_arr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="c1">#self.trainer.loader.prior_sampler.param_model</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">polished_params_arr</span><span class="p">,</span> <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">standard_refl_fit</span><span class="p">(</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">,</span> 
+                    <span class="n">curve</span> <span class="o">=</span> <span class="n">curve</span><span class="p">,</span> 
+                    <span class="n">init_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">,</span> 
+                    <span class="n">bounds</span><span class="o">=</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                <span class="n">polished_params</span> <span class="o">=</span> <span class="n">BasicParams</span><span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">polished_params_arr</span><span class="p">[</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="kc">None</span><span class="p">]),</span>
+                    <span class="c1">#self.trainer.loader.prior_sampler.param_model</span>
+                    <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">polished_params</span> <span class="o">=</span> <span class="n">predicted_params</span>
+            <span class="n">polished_params_arr</span> <span class="o">=</span> <span class="n">get_prediction_array</span><span class="p">(</span><span class="n">polished_params</span><span class="p">)</span>
+            <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;polished_params_array&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polished_params_arr</span>
+        <span class="k">if</span> <span class="n">calc_polished_curve</span><span class="p">:</span>
+            <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve_polished</span>
+
+        <span class="k">if</span> <span class="n">calc_polished_sld_profile</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">sld_profile_polished</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_density_profiles</span><span class="p">(</span>
+                <span class="n">polished_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="p">,</span> <span class="n">polished_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="p">,</span> <span class="n">polished_params</span><span class="o">.</span><span class="n">slds</span><span class="p">,</span> <span class="n">z_axis</span><span class="o">=</span><span class="n">sld_x_axis</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sld_profile_polished</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">polished_params_dict</span>
+    
+    <span class="k">def</span> <span class="nf">_scale_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">scaled_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_curve</span>
+    
+    <span class="k">def</span> <span class="nf">_scale_prior_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prior_bounds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]):</span>
+        <span class="n">prior_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">prior_bounds</span><span class="p">)</span>
+        <span class="n">prior_bounds</span> <span class="o">=</span> <span class="n">prior_bounds</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">prior_bounds</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="n">scaled_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">scale_bounds</span><span class="p">(</span><span class="n">min_bounds</span><span class="p">),</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">scale_bounds</span><span class="p">(</span><span class="n">max_bounds</span><span class="p">)</span>
+        <span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">scaled_bounds</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">_get_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">rel_err</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">abs_err</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">LogLikelihood</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="p">,</span> <span class="n">curve</span> <span class="o">*</span> <span class="n">rel_err</span> <span class="o">+</span> <span class="n">abs_err</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">InferenceModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">PointEstimatorTrainer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">preprocessing_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">num_sampling</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">13</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessing</span> <span class="o">=</span> <span class="n">StandardPreprocessing</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">preprocessing_parameters</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampling_num</span> <span class="o">=</span> <span class="n">num_sampling</span>
+
+        <span class="k">if</span> <span class="n">trainer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">trainer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_trainer</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">preprocessing_parameters</span><span class="p">)</span>
+
+    <span class="c1">### API methods ###</span>
+
+    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loading model </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">==</span> <span class="n">name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_trainer</span><span class="p">(</span><span class="n">get_trainer_by_name</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is loaded.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">train_from_config</span><span class="p">(</span><span class="n">load_config</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">set_preprocessing_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                   <span class="n">intensity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                   <span class="n">scattering_angle</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                   <span class="n">attenuation</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                   <span class="n">update_params</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">update_params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">preprocessed_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessing</span><span class="p">(</span><span class="n">intensity</span><span class="p">,</span> <span class="n">scattering_angle</span><span class="p">,</span> <span class="n">attenuation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">preprocessed_dict</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">intensity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">scattering_angle</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">attenuation</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">preprocessing_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">polish</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="n">use_sampler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="n">use_q_shift</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="n">max_d_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span>
+                <span class="n">fit_growth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+        <span class="k">with</span> <span class="n">print_time</span><span class="p">(</span><span class="s2">&quot;everything&quot;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">print_time</span><span class="p">(</span><span class="s2">&quot;preprocess&quot;</span><span class="p">):</span>
+                <span class="n">preprocessed_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span>
+                    <span class="n">intensity</span><span class="p">,</span> <span class="n">scattering_angle</span><span class="p">,</span> <span class="n">attenuation</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">preprocessing_parameters</span> <span class="ow">or</span> <span class="p">{})</span>
+                <span class="p">)</span>
+
+            <span class="n">preprocessed_curve</span> <span class="o">=</span> <span class="n">preprocessed_dict</span><span class="p">[</span><span class="s2">&quot;curve_interp&quot;</span><span class="p">]</span>
+            <span class="n">raw_curve</span><span class="p">,</span> <span class="n">raw_q</span> <span class="o">=</span> <span class="n">preprocessed_dict</span><span class="p">[</span><span class="s2">&quot;curve&quot;</span><span class="p">],</span> <span class="n">preprocessed_dict</span><span class="p">[</span><span class="s2">&quot;q_values&quot;</span><span class="p">]</span>
+            <span class="n">q_ratio</span> <span class="o">=</span> <span class="n">preprocessed_dict</span><span class="p">[</span><span class="s2">&quot;q_ratio&quot;</span><span class="p">]</span>
+
+            <span class="k">with</span> <span class="n">print_time</span><span class="p">(</span><span class="s2">&quot;predict_from_preprocessed_curve&quot;</span><span class="p">):</span>
+                <span class="n">preprocessed_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_from_preprocessed_curve</span><span class="p">(</span>
+                    <span class="n">preprocessed_curve</span><span class="p">,</span> <span class="n">priors</span><span class="p">,</span> <span class="n">raw_curve</span><span class="o">=</span><span class="n">raw_curve</span><span class="p">,</span> <span class="n">raw_q</span><span class="o">=</span><span class="n">raw_q</span><span class="p">,</span> <span class="n">polish</span><span class="o">=</span><span class="n">polish</span><span class="p">,</span> <span class="n">q_ratio</span><span class="o">=</span><span class="n">q_ratio</span><span class="p">,</span>
+                    <span class="n">use_sampler</span><span class="o">=</span><span class="n">use_sampler</span><span class="p">,</span> <span class="n">use_q_shift</span><span class="o">=</span><span class="n">use_q_shift</span><span class="p">,</span> <span class="n">max_d_change</span><span class="o">=</span><span class="n">max_d_change</span><span class="p">,</span>
+                    <span class="n">fit_growth</span><span class="o">=</span><span class="n">fit_growth</span><span class="p">,</span>
+                <span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">preprocessed_dict</span>
+
+    <span class="k">def</span> <span class="nf">predict_from_preprocessed_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                        <span class="n">curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                        <span class="n">polish</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">raw_curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                        <span class="n">raw_q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                        <span class="n">clip_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">q_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span>
+                                        <span class="n">use_sampler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">use_q_shift</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">max_d_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span>
+                                        <span class="n">fit_growth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+        <span class="n">scaled_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_curve</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
+        <span class="n">scaled_bounds</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_priors</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_q_shift</span><span class="p">:</span>
+            <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simple_prediction</span><span class="p">(</span><span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qshift_prediction</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_sampler</span><span class="p">:</span>
+            <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler_solution</span><span class="p">(</span>
+                <span class="n">curve</span><span class="p">,</span> <span class="n">predicted_params</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">clip_prediction</span><span class="p">:</span>
+            <span class="n">predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="o">.</span><span class="n">clamp_params</span><span class="p">(</span><span class="n">predicted_params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">raw_curve</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">raw_curve</span> <span class="o">=</span> <span class="n">curve</span>
+        <span class="k">if</span> <span class="n">raw_q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">raw_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">raw_q_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw_q_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">raw_q</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">q_ratio</span> <span class="o">!=</span> <span class="mf">1.</span><span class="p">:</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">scale_with_q</span><span class="p">(</span><span class="n">q_ratio</span><span class="p">)</span>
+            <span class="n">raw_q</span> <span class="o">=</span> <span class="n">raw_q</span> <span class="o">*</span> <span class="n">q_ratio</span>
+            <span class="n">raw_q_t</span> <span class="o">=</span> <span class="n">raw_q_t</span> <span class="o">*</span> <span class="n">q_ratio</span>
+
+        <span class="n">prediction_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">get_prediction_array</span><span class="p">(</span><span class="n">predicted_params</span><span class="p">),</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="n">get_param_labels</span><span class="p">(</span>
+                <span class="n">predicted_params</span><span class="o">.</span><span class="n">max_layer_num</span><span class="p">,</span>
+                <span class="n">thickness_name</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">,</span>
+                <span class="n">roughness_name</span><span class="o">=</span><span class="s1">&#39;sigma&#39;</span><span class="p">,</span>
+                <span class="n">sld_name</span><span class="o">=</span><span class="s1">&#39;rho&#39;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;curve_predicted&quot;</span><span class="p">:</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">raw_q_t</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">sld_x_axis</span><span class="p">,</span> <span class="n">sld_profile</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_density_profiles</span><span class="p">(</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="p">,</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="p">,</span> <span class="n">predicted_params</span><span class="o">.</span><span class="n">slds</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sld_profile</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_x_axis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sld_x_axis</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">polish</span><span class="p">:</span>
+            <span class="n">prediction_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_polish_prediction</span><span class="p">(</span>
+                <span class="n">raw_q</span><span class="p">,</span> <span class="n">raw_curve</span><span class="p">,</span> <span class="n">predicted_params</span><span class="p">,</span> <span class="n">priors</span><span class="p">,</span> <span class="n">sld_x_axis</span><span class="p">,</span>
+                <span class="n">max_d_change</span><span class="o">=</span><span class="n">max_d_change</span><span class="p">,</span> <span class="n">fit_growth</span><span class="o">=</span><span class="n">fit_growth</span><span class="p">,</span>
+            <span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">fit_growth</span> <span class="ow">and</span> <span class="s2">&quot;params_polished&quot;</span> <span class="ow">in</span> <span class="n">prediction_dict</span><span class="p">:</span>
+                <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;max_d_change&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">prediction_dict</span>
+
+    <span class="c1">### some shortcut methods for data processing ###</span>
+
+    <span class="k">def</span> <span class="nf">_simple_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UniformSubPriorParams</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_predicted_params</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">predicted_params</span>
+
+    <span class="nd">@print_time</span>
+    <span class="k">def</span> <span class="nf">_qshift_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dq_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UniformSubPriorParams</span><span class="p">:</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">to_t</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">dq_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dq_coef</span>
+        <span class="n">q_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">dq_max</span><span class="p">,</span> <span class="n">dq_max</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">shifted_curves</span> <span class="o">=</span> <span class="n">_qshift_interp</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">curve</span><span class="p">,</span> <span class="n">q_shifts</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">shifted_curves</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">scaled_curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">shifted_curves</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_curves</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">scaled_bounds</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">scaled_curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+            <span class="n">restored_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_predicted_params</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+            <span class="n">best_param</span> <span class="o">=</span> <span class="n">get_best_mse_param</span><span class="p">(</span>
+                <span class="n">restored_params</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_likelihood</span><span class="p">(</span><span class="n">curve</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">best_param</span>
+
+    <span class="nd">@print_time</span>
+    <span class="k">def</span> <span class="nf">_polish_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">predicted_params</span><span class="p">:</span> <span class="n">Params</span><span class="p">,</span>
+                           <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                           <span class="n">sld_x_axis</span><span class="p">,</span>
+                           <span class="n">fit_growth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                           <span class="n">max_d_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span>
+                           <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+            <span class="n">predicted_params</span><span class="o">.</span><span class="n">slds</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="n">polished_params_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fit_growth</span><span class="p">:</span>
+                <span class="n">polished_params_arr</span><span class="p">,</span> <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">get_fit_with_growth</span><span class="p">(</span>
+                    <span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                    <span class="n">max_d_change</span><span class="o">=</span><span class="n">max_d_change</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">polished_params</span> <span class="o">=</span> <span class="n">Params</span><span class="o">.</span><span class="n">from_tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">polished_params_arr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">polished_params_arr</span><span class="p">,</span> <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">standard_refl_fit</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">priors</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                <span class="n">polished_params</span> <span class="o">=</span> <span class="n">Params</span><span class="o">.</span><span class="n">from_tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">polished_params_arr</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+            <span class="n">polished_params</span> <span class="o">=</span> <span class="n">predicted_params</span>
+            <span class="n">polished_params_arr</span> <span class="o">=</span> <span class="n">get_prediction_array</span><span class="p">(</span><span class="n">polished_params</span><span class="p">)</span>
+            <span class="n">curve_polished</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;params_polished&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polished_params_arr</span>
+        <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;curve_polished&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve_polished</span>
+
+        <span class="n">sld_x_axis_polished</span><span class="p">,</span> <span class="n">sld_profile_polished</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_density_profiles</span><span class="p">(</span>
+            <span class="n">polished_params</span><span class="o">.</span><span class="n">thicknesses</span><span class="p">,</span> <span class="n">polished_params</span><span class="o">.</span><span class="n">roughnesses</span><span class="p">,</span> <span class="n">polished_params</span><span class="o">.</span><span class="n">slds</span><span class="p">,</span> <span class="n">z_axis</span><span class="o">=</span><span class="n">sld_x_axis</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">polished_params_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sld_profile_polished</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">polished_params_dict</span>
+
+    <span class="k">def</span> <span class="nf">_restore_predicted_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaled_params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UniformSubPriorParams</span><span class="p">:</span>
+        <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">restore_params</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">PARAM_CLS</span><span class="o">.</span><span class="n">restore_params_from_context</span><span class="p">(</span><span class="n">scaled_params</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">predicted_params</span>
+
+    <span class="k">def</span> <span class="nf">_input2context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">):</span>
+        <span class="n">scaled_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_curve</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
+        <span class="n">scaled_bounds</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_priors</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">)</span>
+        <span class="n">scaled_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scaled_curve</span><span class="p">,</span> <span class="n">scaled_bounds</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_input</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span>
+
+    <span class="k">def</span> <span class="nf">_scale_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">scaled_curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_curve</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_scale_priors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">priors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">q_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">priors</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">priors</span><span class="p">)</span>
+
+        <span class="n">priors</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+        <span class="n">priors</span> <span class="o">=</span> <span class="n">priors</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">priors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="o">.</span><span class="n">scale_bounds_with_q</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">q_ratio</span><span class="p">)</span>
+        <span class="n">priors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="o">.</span><span class="n">clamp_bounds</span><span class="p">(</span><span class="n">priors</span><span class="p">)</span>
+
+        <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">priors</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">prior_sampler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span>
+        <span class="n">scaled_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+            <span class="n">prior_sampler</span><span class="o">.</span><span class="n">scale_bounds</span><span class="p">(</span><span class="n">min_bounds</span><span class="p">),</span> <span class="n">prior_sampler</span><span class="o">.</span><span class="n">scale_bounds</span><span class="p">(</span><span class="n">max_bounds</span><span class="p">)</span>
+        <span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scaled_bounds</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_prior_sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExpUniformSubPriorSampler</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span>
+
+    <span class="k">def</span> <span class="nf">_set_trainer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">preprocessing_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_preprocessing</span><span class="p">(</span><span class="n">preprocessing_parameters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_preprocessing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">preprocessing_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;setting preprocessing_parameters </span><span class="si">{</span><span class="n">preprocessing_parameters</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocessing</span> <span class="o">=</span> <span class="n">StandardPreprocessing</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">preprocessing_parameters</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;preprocessing params are set: </span><span class="si">{</span><span class="n">preprocessing_parameters</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@print_time</span>
+    <span class="k">def</span> <span class="nf">_sampler_solution</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">curve</span><span class="p">:</span> <span class="n">Tensor</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+            <span class="n">predicted_params</span><span class="p">:</span> <span class="n">UniformSubPriorParams</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UniformSubPriorParams</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">curve</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="n">refined_params</span> <span class="o">=</span> <span class="n">simple_sampler_solution</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_likelihood</span><span class="p">(</span><span class="n">curve</span><span class="p">),</span>
+            <span class="n">predicted_params</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="o">.</span><span class="n">min_bounds</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="o">.</span><span class="n">max_bounds</span><span class="p">,</span>
+            <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampling_num</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">refined_params</span>
+
+    <span class="k">def</span> <span class="nf">_get_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">rel_err</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">abs_err</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">LogLikelihood</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prior_sampler</span><span class="p">,</span> <span class="n">curve</span> <span class="o">*</span> <span class="n">rel_err</span> <span class="o">+</span> <span class="n">abs_err</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_prediction_array</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">predict_arr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">thicknesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">roughnesses</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">slds</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+    <span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">predict_arr</span>
+
+
+<span class="k">def</span> <span class="nf">_qshift_interp</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q_shifts</span><span class="p">):</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">q_shifts</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">qs</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">ind</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">slopes</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">r</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">eps</span> <span class="o">+</span> <span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">q</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">+</span> <span class="n">slopes</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">qs</span> <span class="o">-</span> <span class="n">q</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
