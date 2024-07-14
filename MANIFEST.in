@@ -2,5 +2,3 @@ exclude saved_models/*.pt
 exclude notebooks/*
 exclude triton_models/*
 prune triton_models/*
-include configs/mc1.yaml
-include saved_models/model_mc1.pt
