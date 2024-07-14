@@ -51,11 +51,11 @@ Users with Nvidia **GPU**s need to additionally install **Pytorch with CUDA supp
 
 ![](https://img.shields.io/badge/Documentation%20Page-%23FFDD33.svg?style=flat&logo=read-the-docs&logoColor=black) The full documentation of the package, containing tutorials and the API reference, was built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and it is hosted at the address: [https://schreiber-lab.github.io/reflectorch/](https://schreiber-lab.github.io/reflectorch/).
 
-![](https://img.shields.io/badge/Interactive%20Notebook-%23F9AB00.svg?style=flat&logo=google-colab&logoColor=black) We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
+![](https://img.shields.io/badge/Interactive%20Notebook-%23F9AB00.svg?style=flat&logo=google-colab&logoColor=black) We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rf_M8S_5kYvUoK0-9-AYal_fO3oFl7ck?usp=sharing)<br>
 
 ![](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=flat&logo=huggingface&logoColor=black) Configuration files and the corresponding pretrained model weights are hosted on Huggingface: [https://huggingface.co/valentinsingularity/reflectivity](https://huggingface.co/valentinsingularity/reflectivity).
 
-![](https://img.shields.io/badge/Docker-2496ED.svg?style=flat&logo=docker&logoColor=white) Docker images for reflectorch *will* be hosted on Dockerhub: [https://hub.docker.com/](https://hub.docker.com/)
+![](https://img.shields.io/badge/Docker-2496ED.svg?style=flat&logo=docker&logoColor=white) Docker images for reflectorch *will* be hosted on Dockerhub.
 
 ## Citation
 If you find our work useful in your research, please cite:
