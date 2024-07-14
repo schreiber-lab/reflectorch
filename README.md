@@ -5,6 +5,7 @@
 [![SciPy](https://img.shields.io/badge/SciPy-%230C55A5.svg?style=for-the-badge&logo=scipy&logoColor=%white)](https://scipy.org/)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)](https://matplotlib.org/)
 [![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)](https://yaml.org/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/valentinsingularity/reflectivity)
 
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
@@ -18,7 +19,7 @@
 
 ## Installation
 
-**Reflectorch** can be installed either from [PyPi](https://pypi.org/project/reflectorch/) via *pip* or from [conda-forge](https://anaconda.org/conda-forge/reflectorch/) via *conda*:
+**Reflectorch** can be installed either from [PyPi](https://pypi.org/project/reflectorch/) via ``pip`` or from [conda-forge](https://anaconda.org/conda-forge/reflectorch/) via ``conda``:
 
 ```bash
 pip install reflectorch
@@ -30,16 +31,31 @@ or
 conda install -c conda-forge reflectorch
 ```
 
-Users with Nvidia GPUs need to additionally install Pytorch with CUDA support corresponding to their hardware and operating system according to the instructions from the [Pytorch website](https://pytorch.org/get-started/locally/)
+Additionally, one can clone the entire Github repository and install the package in editable mode:
+
+```bash
+git clone https://github.com/schreiber-lab/reflectorch.git
+pip install -e .
+```
+
+For development purposes, the package can be installed together with the optional dependencies for building the distribution, testing and documentation:
+
+```bash
+git clone https://github.com/schreiber-lab/reflectorch.git
+pip install -e .[tests,docs,build]
+```
+
+Users with Nvidia **GPU**s need to additionally install **Pytorch with CUDA support** corresponding to their hardware and operating system according to the instructions from the [Pytorch website](https://pytorch.org/get-started/locally/)
 
 ## Get started
 
-The full documentation of the package, containing tutorials and the API reference, was built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and it is hosted at the address: [https://schreiber-lab.github.io/reflectorch/](https://schreiber-lab.github.io/reflectorch/).
+![](https://img.shields.io/badge/Documentation%20page-%23FFDD33.svg?style=flat&logo=read-the-docs&logoColor=black) The full documentation of the package, containing tutorials and the API reference, was built with [Jupyter Book](https://jupyterbook.org/) and [Sphinx](https://www.sphinx-doc.org) and it is hosted at the address: [https://schreiber-lab.github.io/reflectorch/](https://schreiber-lab.github.io/reflectorch/).
 
-Configuration files and the corresponding pretrained model weights are hosted on Huggingface: [https://huggingface.co/valentinsingularity/reflectivity](https://huggingface.co/valentinsingularity/reflectivity).
+![](https://img.shields.io/badge/Interactive%20Notebook-%23F9AB00.svg?style=flat&logo=google-colab&logoColor=black) We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br>
 
-<!-- We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vmunteanu/reflectorch/blob/master/explore_reflectorch.ipynb)<br> -->
+![](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=flat&logo=huggingface&logoColor=black) Configuration files and the corresponding pretrained model weights are hosted on Huggingface: [https://huggingface.co/valentinsingularity/reflectivity](https://huggingface.co/valentinsingularity/reflectivity).
 
+![](https://img.shields.io/badge/Docker%20Images-2496ED.svg?style=flat&logo=docker&logoColor=white) Docker images for reflectorch *will* be hosted on Dockerhub: [https://hub.docker.com/](https://hub.docker.com/)
 
 ## Citation
 If you find our work useful in your research, please cite:
