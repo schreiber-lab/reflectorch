@@ -1,3 +1,4 @@
+include configs/*
 exclude saved_models/*.pt
 exclude notebooks/*
 exclude triton_models/*
