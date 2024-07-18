@@ -2,8 +2,6 @@ import pytest
 import numpy as np
 
 from reflectorch.paths import TEST_DATA_PATH
-from tests.helpers.generate_data import load_generated_data
-
 
 @pytest.fixture(
     params=["demo_scan.csv"],
@@ -27,19 +25,3 @@ def raw_data_with_preprocessing_params(request):
     )
 
     return raw_data, preprocessing_params
-
-
-@pytest.fixture(
-    params=['test_preprocessed_curve_2'],
-    scope="session",
-)
-def preprocessed_data(request):
-    return load_generated_data(request.param)
-
-
-@pytest.fixture(
-    params=['test_raw_data_input_1'],
-    scope="session",
-)
-def raw_data_input(request):
-    pass
