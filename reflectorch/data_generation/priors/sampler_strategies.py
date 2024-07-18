@@ -283,7 +283,7 @@ def constrained_roughness_and_isld_sampler(
     params[..., roughness_mask] = roughnesses
 
     max_isld = torch.minimum(
-        params[..., sld_mask] * coef_isld,
+        torch.abs(params[..., sld_mask]) * coef_isld,
         total_max_bounds[..., isld_mask]
     )
     min_isld = total_min_bounds[..., isld_mask]
