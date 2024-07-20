@@ -1,3 +1,5 @@
+include configs/*
+include exp_data/*
 exclude saved_models/*.pt
 exclude notebooks/*
 exclude triton_models/*

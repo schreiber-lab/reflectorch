@@ -11,6 +11,7 @@ authors = [
 ]
 maintainers = [
     {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"},
+    {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
     {name = "Alexander Hinderhofer", email="alexander.hinderhofer@uni-tuebingen.de"}
 ]
 description = "A Pytorch-based package for the analysis of reflectometry data"
