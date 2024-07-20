@@ -177,7 +177,7 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
     return trainer
 
 
-def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weights: bool = True, inference_device = None):
+def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weights: bool = True, inference_device: str = 'cuda'):
     """Initializes a trainer object based on a configuration file (i.e. the model name) and optionally loads \
         saved weights into the network
 
@@ -186,7 +186,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         config_dir (str): path of the configuration directory
         model_path (str, optional): path to the network weights.
         load_weights (bool, optional): if True the saved network weights are loaded into the network. Defaults to True.
-
+        inference_device (str, optional): overwrites the device in the configuration file for the purpose of inference on a different device then the training was performed on. Defaults to 'cuda'.
 
     Returns:
         Trainer: the trainer object
@@ -195,10 +195,9 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
     config['model']['network']['pretrained_name'] = None
     config['training']['logger']['use_neptune'] = False
 
-    if inference_device:
-        config['model']['network']['device'] = inference_device
-        config['dset']['prior_sampler']['kwargs']['device'] = inference_device
-        config['dset']['q_generator']['kwargs']['device'] = inference_device
+    config['model']['network']['device'] = inference_device
+    config['dset']['prior_sampler']['kwargs']['device'] = inference_device
+    config['dset']['q_generator']['kwargs']['device'] = inference_device
 
     trainer = get_trainer_from_config(config)
 
@@ -216,7 +215,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         model_path = SAVED_MODELS_DIR / model_name
 
     try:
-        state_dict = torch.load(model_path)
+        state_dict = torch.load(model_path, map_location=inference_device)
     except Exception as err:
         raise RuntimeError(f'Could not load model from {model_path}') from err
 
