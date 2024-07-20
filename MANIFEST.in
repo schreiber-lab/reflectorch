@@ -2,5 +2,8 @@ include configs/*
 include exp_data/*
 exclude saved_models/*.pt
 exclude notebooks/*
-exclude triton_models/*
-prune triton_models/*
+exclude paper/*
+exclude documentation/*
+exclude docs/*
+prune docs/*
+exclude .github/*
