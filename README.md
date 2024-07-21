@@ -7,12 +7,11 @@
 [![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)](https://yaml.org/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/valentinsingularity/reflectivity)
 
-[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
 ![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
 [![CodeFactor](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch/badge)](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch)
-[![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://schreiber-lab.github.io/reflectorch/)
+[![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://jupyterbook.org/)
 [![Documentation Page](https://img.shields.io/badge/Documentation%20Page-%23FFDD33.svg?style=flat&logo=read-the-docs&logoColor=black)](https://schreiber-lab.github.io/reflectorch/)
 <!-- [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) -->
 

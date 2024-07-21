@@ -72,5 +72,6 @@ API Reference
               ConstrainedRoughnessAndImgSldSamplerStrategy,
               ParametricModel,
               EasyInferenceModel,
+              HuggingfaceQueryMatcher,
     :show-inheritance:
     :member-order: bysource

@@ -37,7 +37,6 @@ dependencies = [
     "click",
     "matplotlib",
     "ipywidgets",
-    "torchinfo",
     "huggingface_hub",
 ]
 
