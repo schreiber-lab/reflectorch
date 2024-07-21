@@ -179,12 +179,10 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">1. Installation</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">6. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">4. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">5. API Reference</a></li>
 </ul>
 
     </div>
@@ -365,7 +363,7 @@ document.write(`
 <h1>Reflectorch<a class="headerlink" href="#reflectorch" title="Link to this heading">#</a></h1>
 <p><strong>Reflectorch</strong> is a Python package for the analysis of X-ray and neutron reflectivity data using Pytorch-based neural networks developed by the <a class="reference external" href="https://www.soft-matter.uni-tuebingen.de/">Schreiber Lab</a> located in Tübingen, Germany.</p>
 <p>Our training pipeline incorporates prior boundaries for the thin film parameters as an additional input to the neural network alongside the reflectivity curves. This allows the neural network to be trained simultaneously on the well-posed subintervals of a larger parameter space on which the inverse problem would otherwise be ill-posed / underdetermined (an issue primarily related to the phase problem). Consequently, our approach scales well for parameter spaces significantly larger that previously tackled by other ML-based reflectomety solutions. From the perspective of the user, a neural network trained using this methodology allows the input of prior knowledge about the investigated thin film at inference time.</p>
-<p><img alt="" src="_images/FigureReflectometryNetwork.png" /></p>
+<p><img alt="" src="_images/FigureReflectometryNetwork1.png" /></p>
 <section id="citation">
 <h2>Citation<a class="headerlink" href="#citation" title="Link to this heading">#</a></h2>
 <p>Please check out our article <a class="reference external" href="https://doi.org/10.1107/S1600576724002115">Neural network analysis of neutron and X-ray reflectivity data incorporating prior knowledge</a>, published in the Journal of Applied Crystallography, for in-depth information about the implementation of our method, the theory behind it and the performance evaluation. Additionally, the article <a class="reference external" href="https://journals.iucr.org/s/issues/2023/06/00/ju5054/index.html">Closing the loop: autonomous experiments enabled by machine-learning-based online data analysis in synchrotron beamline environments</a>, published in the Journal of Synchrotron Radiation, uses the <strong>reflectorch</strong> package for the <em>in-situ</em> analysis of reflectivity data during a synchrotron experiment.</p>
@@ -392,12 +390,10 @@ the consortium DAPHNE4NFDI in the context of the work of the NFDI e.V., funded b
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html#gpu-support">2. GPU support</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html#package-dependencies">3. Package dependencies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">6. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">4. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">5. API Reference</a></li>
 </ul>
 </div>
 </section>
