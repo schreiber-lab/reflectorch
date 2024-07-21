@@ -1,5 +1,4 @@
 include configs/*
-include exp_data/*
 exclude saved_models/*.pt
 exclude notebooks/*
 exclude paper/*
@@ -7,3 +6,8 @@ exclude documentation/*
 exclude docs/*
 prune docs/*
 exclude .github/*
+
+include exp_data/data_C60.pt
+include exp_data/data_PTCDI-C3.pt
+include exp_data/33a.dat
+include exp_data/DIP-nSi_34a.dat
