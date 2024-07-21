@@ -48,7 +48,6 @@ class HuggingfaceQueryMatcher:
             query (dict): Dictionary of key-value pairs to filter configurations, e.g. ``query = {'dset.prior_sampler.kwargs.max_num_layers': 3, 'dset.prior_sampler.kwargs.param_ranges.slds': [0., 100.]}``.
                           For keys containing the ``param_ranges`` subkey a configuration is selected if the value of the query (i.e. desired parameter range) 
                           is a subrange of the parameter range in the configuration, in all other cases the values must match exactly.
-}
         
         Returns:
             list: List of file names that match the query.
