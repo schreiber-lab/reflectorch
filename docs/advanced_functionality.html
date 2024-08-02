@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>6. Advanced functionality &#8212; Reflectorch Documentation</title>
+    <title>4. Advanced functionality &#8212; Reflectorch Documentation</title>
   
   
   
@@ -62,8 +62,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'advanced_functionality';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="7. API Reference" href="api.html" />
-    <link rel="prev" title="5. Training a reflectorch model" href="training_reflectorch.html" />
+    <link rel="next" title="5. API Reference" href="api.html" />
+    <link rel="prev" title="3. Training a reflectorch model" href="training_reflectorch.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -180,12 +180,10 @@
         </ul>
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">1. Installation</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">6. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">4. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">5. API Reference</a></li>
 </ul>
 
     </div>
@@ -380,18 +378,18 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-parameterizations-of-the-sld-profile">6.1. Using alternative parameterizations of the SLD profile</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-absorption">6.1.1. Model with absorption</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#periodically-repeating-monolayer">6.1.2. Periodically repeating monolayer</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">6.1.2.1. Trainer</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">6.1.2.2. Inference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-parameterizations-of-the-sld-profile">4.1. Using alternative parameterizations of the SLD profile</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-absorption">4.1.1. Model with absorption</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#periodically-repeating-monolayer">4.1.2. Periodically repeating monolayer</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">4.1.2.1. Trainer</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">4.1.2.2. Inference</a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-shifts">6.1.3. Model with shifts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-shifts">4.1.3. Model with shifts</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-embedding-networks">6.2. Using alternative embedding networks</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-trainers">6.3. Using alternative trainers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-embedding-networks">4.2. Using alternative embedding networks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-trainers">4.3. Using alternative trainers</a></li>
 </ul>
             </nav>
         </div>
@@ -404,7 +402,7 @@ document.write(`
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="advanced-functionality">
-<h1><span class="section-number">6. </span>Advanced functionality<a class="headerlink" href="#advanced-functionality" title="Link to this heading">#</a></h1>
+<h1><span class="section-number">4. </span>Advanced functionality<a class="headerlink" href="#advanced-functionality" title="Link to this heading">#</a></h1>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -421,10 +419,10 @@ document.write(`
 </div>
 </div>
 <section id="using-alternative-parameterizations-of-the-sld-profile">
-<h2><span class="section-number">6.1. </span>Using alternative parameterizations of the SLD profile<a class="headerlink" href="#using-alternative-parameterizations-of-the-sld-profile" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">4.1. </span>Using alternative parameterizations of the SLD profile<a class="headerlink" href="#using-alternative-parameterizations-of-the-sld-profile" title="Link to this heading">#</a></h2>
 <p>In this section we describe alternative parameterizations of the SLD profile implementated in <code class="docutils literal notranslate"><span class="pre">reflectorch</span></code> (i.e. other than the standard box model parameterization)</p>
 <section id="model-with-absorption">
-<h3><span class="section-number">6.1.1. </span>Model with absorption<a class="headerlink" href="#model-with-absorption" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">4.1.1. </span>Model with absorption<a class="headerlink" href="#model-with-absorption" title="Link to this heading">#</a></h3>
 <p>The default box model parameterization of the SLD profile presented in the previous sections takes into account only the real part of the SLD profile but neglects the imaginary part of the SLD which is related to the absorption of the scattering medium. While this is a reasonable approximation in many use cases, in <code class="docutils literal notranslate"><span class="pre">reflectorch</span></code> we are able to alter the parameterization of the SLD profile as to also incorporate the constant imaginary SLD value of each layer.</p>
 <p>We can initialize a reflectorch model with absorption by making the following changes to the YAML configuration file:</p>
 <ol class="arabic simple">
@@ -502,8 +500,8 @@ document.write(`
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(&#39;model_with_absorption&#39;,
- &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x2018722b400&gt;,
- &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x2018722b4c0&gt;)
+ &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x1b1e0fd2100&gt;,
+ &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x1b1e0fd21f0&gt;)
 </pre></div>
 </div>
 </div>
@@ -581,13 +579,13 @@ Img slds properly constrained with respect to real slds: True
 </div>
 </section>
 <section id="periodically-repeating-monolayer">
-<h3><span class="section-number">6.1.2. </span>Periodically repeating monolayer<a class="headerlink" href="#periodically-repeating-monolayer" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">4.1.2. </span>Periodically repeating monolayer<a class="headerlink" href="#periodically-repeating-monolayer" title="Link to this heading">#</a></h3>
 <p>This SLD parameterization addresses the following commonly encountered scenario for thin films. On top of a silicon/silicon oxide substrate we consider a thin film composed of repeating identical monolayers (grey curve in the figure), each monolayer consisting of two boxes with distinct SLDs. A sigmoid envelope modulating the SLD profile of the monolayers defines the film thickness and the roughness at the top interface (green curve in the figure). A second sigmoid envelope can be used to modulate the amplitude of the monolayer SLDs as a function of the displacement from the position
 of the first sigmoid (red curve in the figure). These two sigmoids allow one to model a thin film that is coherently ordered up to a certain coherent thickness and gets incoherently ordered or amorphous toward the top of the film. In addition, a layer between the substrate and the multilayer (i.e. ”phase layer”) is introduced to account for the interface structure, which does not necessarily have to be identical to the multilayer period.</p>
 <figure class="align-center" id="figure-multilayer">
 <a class="reference internal image-reference" href="_images/sketch_multilayer_0.png"><img alt="_images/sketch_multilayer_0.png" src="_images/sketch_multilayer_0.png" style="width: 763.0px; height: 503.0px;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 6.1 </span><span class="caption-text">SLD parameterization of a multilayer consisting of periodically repeating monolayers</span><a class="headerlink" href="#figure-multilayer" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 4.1 </span><span class="caption-text">SLD parameterization of a multilayer consisting of periodically repeating monolayers</span><a class="headerlink" href="#figure-multilayer" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>This parameterization is described by 17 film parameters, their physical description together with their corresponding alias in the YAML configuration file being shown in the following table:</p>
@@ -733,7 +731,7 @@ of the first sigmoid (red curve in the figure). These two sigmoids allow one to 
 :name: embedding_networks
 Embedding Networks
 ``` --><section id="trainer">
-<h4><span class="section-number">6.1.2.1. </span>Trainer<a class="headerlink" href="#trainer" title="Link to this heading">#</a></h4>
+<h4><span class="section-number">4.1.2.1. </span>Trainer<a class="headerlink" href="#trainer" title="Link to this heading">#</a></h4>
 <p>We initialize a model with absorption from a suitable configuration file. Here we use an extended q range, up to 0.5 Å<span class="math notranslate nohighlight">\(^{-1}\)</span>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -815,7 +813,7 @@ Embedding Networks
 </div>
 </section>
 <section id="inference">
-<h4><span class="section-number">6.1.2.2. </span>Inference<a class="headerlink" href="#inference" title="Link to this heading">#</a></h4>
+<h4><span class="section-number">4.1.2.2. </span>Inference<a class="headerlink" href="#inference" title="Link to this heading">#</a></h4>
 <div class="cell tag_scroll-output docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="s1">&#39;c_repeating_multilayer_trained1&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
@@ -994,7 +992,7 @@ r_si                 : 20.19
 </section>
 </section>
 <section id="model-with-shifts">
-<h3><span class="section-number">6.1.3. </span>Model with shifts<a class="headerlink" href="#model-with-shifts" title="Link to this heading">#</a></h3>
+<h3><span class="section-number">4.1.3. </span>Model with shifts<a class="headerlink" href="#model-with-shifts" title="Link to this heading">#</a></h3>
 <p>This is a version of the standard box model parameterization, but the horizontal and vertical shifts of the reflectivity curve are additional predicted parameters.</p>
 <ol class="arabic simple">
 <li><p>Firstly, we set the <code class="docutils literal notranslate"><span class="pre">model_name</span></code> argument of the prior sampler to <code class="docutils literal notranslate"><span class="pre">model_with_shifts</span></code> instead of <code class="docutils literal notranslate"><span class="pre">standard_model</span></code>. In addition, the parameter range and bound width range of the q shifts (<code class="docutils literal notranslate"><span class="pre">q_shift</span></code>) and (multiplicative) normalization shifts (<code class="docutils literal notranslate"><span class="pre">norm_shift</span></code>) must be specified.</p></li>
@@ -1060,7 +1058,7 @@ r_si                 : 20.19
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model c_model_with_shifts loaded. Number of parameters: 3.84 M
-&lt;reflectorch.data_generation.priors.parametric_models.ModelWithShifts object at 0x000002020B956A60&gt;
+&lt;reflectorch.data_generation.priors.parametric_models.ModelWithShifts object at 0x000001B1F06FABB0&gt;
 </pre></div>
 </div>
 </div>
@@ -1128,12 +1126,12 @@ r_si                 : 20.19
 </section>
 </section>
 <section id="using-alternative-embedding-networks">
-<h2><span class="section-number">6.2. </span>Using alternative embedding networks<a class="headerlink" href="#using-alternative-embedding-networks" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">4.2. </span>Using alternative embedding networks<a class="headerlink" href="#using-alternative-embedding-networks" title="Link to this heading">#</a></h2>
 <p>Embedding networks have the role of processing the reflectivity curves, producing a latent representation which is fed together with the prior bounds to the main fully-connected (MLP) network in order to obtain the predictions. The default embedding network is the 1D CNN which works on reflectivity curves with fixed discretization (fixed q range and number of points in the curves). The arguments of the 1D CNN embedding network have been already explained in the previous section.</p>
 <figure class="align-center" id="figure-embedding-networks">
 <a class="reference internal image-reference" href="_images/fig_reflectometry_embedding_networks.png"><img alt="_images/fig_reflectometry_embedding_networks.png" src="_images/fig_reflectometry_embedding_networks.png" style="width: 453.0px; height: 459.75px;" /></a>
 <figcaption>
-<p><span class="caption-text">Embedding networks: (a) CNN (b) FNO</span><a class="headerlink" href="#figure-embedding-networks" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 4.2 </span><span class="caption-text">Embedding networks: (a) CNN (b) FNO</span><a class="headerlink" href="#figure-embedding-networks" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>Alternatively, we can use an embedding network inspired by the Fourier Neural Operator (FNO) architecture. In this scenario the reflectivity curves together with their respective q-values are input to the embedding network. It allows us to train the model on reflectivity curves with variable discretizations (variable q ranges and numbers of points in the curves).</p>
@@ -1264,7 +1262,7 @@ r_si                 : 20.19
 </div>
 </section>
 <section id="using-alternative-trainers">
-<h2><span class="section-number">6.3. </span>Using alternative trainers<a class="headerlink" href="#using-alternative-trainers" title="Link to this heading">#</a></h2>
+<h2><span class="section-number">4.3. </span>Using alternative trainers<a class="headerlink" href="#using-alternative-trainers" title="Link to this heading">#</a></h2>
 <p>By default the class of the trainer object is <code class="docutils literal notranslate"><span class="pre">PointEstimatorTrainer</span></code>, whose purpose is to train the neural network as a regression problem for predicting the physical parameters based on the reflectivity curves and the prior bounds for the parameters. Other types of trainers can also be specified, for example a trainer used for encoding reflectivity curves to latent representation.</p>
 <p>In the configuration file, the <code class="docutils literal notranslate"><span class="pre">trainer_cls</span></code> subkey of the <code class="docutils literal notranslate"><span class="pre">training</span></code> key is set to <code class="docutils literal notranslate"><span class="pre">DenoisingAETrainer</span></code>:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">training</span><span class="p">:</span>
@@ -1297,7 +1295,7 @@ r_si                 : 20.19
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model c_ae loaded. Number of parameters: 1.22 M
-&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x000002020B916160&gt;
+&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x000001B1F0735F40&gt;
 </pre></div>
 </div>
 </div>
@@ -1416,7 +1414,7 @@ r_si                 : 20.19
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><span class="section-number">5. </span>Training a reflectorch model</p>
+        <p class="prev-next-title"><span class="section-number">3. </span>Training a reflectorch model</p>
       </div>
     </a>
     <a class="right-next"
@@ -1424,7 +1422,7 @@ r_si                 : 20.19
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><span class="section-number">7. </span>API Reference</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>API Reference</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1444,18 +1442,18 @@ r_si                 : 20.19
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-parameterizations-of-the-sld-profile">6.1. Using alternative parameterizations of the SLD profile</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-absorption">6.1.1. Model with absorption</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#periodically-repeating-monolayer">6.1.2. Periodically repeating monolayer</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">6.1.2.1. Trainer</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">6.1.2.2. Inference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-parameterizations-of-the-sld-profile">4.1. Using alternative parameterizations of the SLD profile</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-absorption">4.1.1. Model with absorption</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#periodically-repeating-monolayer">4.1.2. Periodically repeating monolayer</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">4.1.2.1. Trainer</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#inference">4.1.2.2. Inference</a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-shifts">6.1.3. Model with shifts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-with-shifts">4.1.3. Model with shifts</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-embedding-networks">6.2. Using alternative embedding networks</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-trainers">6.3. Using alternative trainers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-embedding-networks">4.2. Using alternative embedding networks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-alternative-trainers">4.3. Using alternative trainers</a></li>
 </ul>
   </nav></div>
 

@@ -10,6 +10,7 @@ logo: reflectorch_logo.png
 # See https://jupyterbook.org/content/execute.html
 execute:
   execute_notebooks: force
+  timeout: 120
   
 only_build_toc_files: true
 

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>7. API Reference &#8212; Reflectorch Documentation</title>
+    <title>5. API Reference &#8212; Reflectorch Documentation</title>
   
   
   
@@ -62,7 +62,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'api';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="6. Advanced functionality" href="advanced_functionality.html" />
+    <link rel="prev" title="4. Advanced functionality" href="advanced_functionality.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -179,12 +179,10 @@
         </ul>
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">1. Installation</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">6. Advanced functionality</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">4. Advanced functionality</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">5. API Reference</a></li>
 </ul>
 
     </div>
@@ -561,6 +559,10 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.EasyInferenceModel.predict_using_widget"><code class="docutils literal notranslate"><span class="pre">EasyInferenceModel.predict_using_widget()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.HuggingfaceQueryMatcher"><code class="docutils literal notranslate"><span class="pre">HuggingfaceQueryMatcher</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.HuggingfaceQueryMatcher.get_matching_configs"><code class="docutils literal notranslate"><span class="pre">HuggingfaceQueryMatcher.get_matching_configs()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.standard_preprocessing"><code class="docutils literal notranslate"><span class="pre">standard_preprocessing()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.ReflGradientFit"><code class="docutils literal notranslate"><span class="pre">ReflGradientFit</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.ReflGradientFit.run"><code class="docutils literal notranslate"><span class="pre">ReflGradientFit.run()</span></code></a></li>
@@ -581,7 +583,7 @@ document.write(`
                 <article class="bd-article">
                   
   <section id="module-reflectorch">
-<span id="api-reference"></span><h1><span class="section-number">7. </span>API Reference<a class="headerlink" href="#module-reflectorch" title="Link to this heading">#</a></h1>
+<span id="api-reference"></span><h1><span class="section-number">5. </span>API Reference<a class="headerlink" href="#module-reflectorch" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="reflectorch.Params">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thicknesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughnesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/data_generation/priors/params.html#Params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.Params" title="Link to this definition">#</a></dt>
@@ -2182,7 +2184,7 @@ Defaults to (0, 1e-3).</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NetworkWithPriorsConvEmb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256,</span> <span class="pre">512)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_embedding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_avpool</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_net_activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gelu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_batch_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_blocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats_per_block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlp_activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gelu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_selu_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_embedding_net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditioning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'concat'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/models/networks/mlp_networks.html#NetworkWithPriorsConvEmb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.NetworkWithPriorsConvEmb" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>MLP network with 1D CNN embedding network</p>
-<a class="reference internal image-reference" href="_images/FigureReflectometryNetwork1.png"><img alt="_images/FigureReflectometryNetwork1.png" class="align-center" src="_images/FigureReflectometryNetwork1.png" style="width: 800px;" /></a>
+<a class="reference internal image-reference" href="_images/FigureReflectometryNetwork.png"><img alt="_images/FigureReflectometryNetwork.png" class="align-center" src="_images/FigureReflectometryNetwork.png" style="width: 800px;" /></a>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -2414,7 +2416,7 @@ Defaults to (0, 1e-3).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="reflectorch.get_trainer_by_name">
-<span class="sig-name descname"><span class="pre">get_trainer_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/runs/utils.html#get_trainer_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.get_trainer_by_name" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_trainer_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/runs/utils.html#get_trainer_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.get_trainer_by_name" title="Link to this definition">#</a></dt>
 <dd><p>Initializes a trainer object based on a configuration file (i.e. the model name) and optionally loads         saved weights into the network</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2423,6 +2425,7 @@ Defaults to (0, 1e-3).</p></li>
 <li><p><strong>config_dir</strong> (<em>str</em>) – path of the configuration directory</p></li>
 <li><p><strong>model_path</strong> (<em>str</em><em>, </em><em>optional</em>) – path to the network weights.</p></li>
 <li><p><strong>load_weights</strong> (<em>bool</em><em>, </em><em>optional</em>) – if True the saved network weights are loaded into the network. Defaults to True.</p></li>
+<li><p><strong>inference_device</strong> (<em>str</em><em>, </em><em>optional</em>) – overwrites the device in the configuration file for the purpose of inference on a different device then the training was performed on. Defaults to ‘cuda’.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2519,6 +2522,40 @@ Defaults to (0, 1e-3).</p></li>
 <em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict_using_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reflectivity_curve</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/inference/inference_model.html#EasyInferenceModel.predict_using_widget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.EasyInferenceModel.predict_using_widget" title="Link to this definition">#</a></dt>
 <dd><p>Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
 The other arguments are the same as for the <code class="docutils literal notranslate"><span class="pre">predict</span></code> method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="reflectorch.HuggingfaceQueryMatcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HuggingfaceQueryMatcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'valentinsingularity/reflectivity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'configs'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/inference/query_matcher.html#HuggingfaceQueryMatcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.HuggingfaceQueryMatcher" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Downloads the available configurations files to a temporary directory and provides functionality for filtering those configuration files matching user specified queries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>repo_id</strong> (<em>str</em>) – The Hugging Face repository ID.</p></li>
+<li><p><strong>config_dir</strong> (<em>str</em>) – Directory within the repo where YAML files are stored.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="reflectorch.HuggingfaceQueryMatcher.get_matching_configs">
+<span class="sig-name descname"><span class="pre">get_matching_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reflectorch/inference/query_matcher.html#HuggingfaceQueryMatcher.get_matching_configs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reflectorch.HuggingfaceQueryMatcher.get_matching_configs" title="Link to this definition">#</a></dt>
+<dd><p>retrieves configuration files that match the user specified query.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>query</strong> (<em>dict</em>) – Dictionary of key-value pairs to filter configurations, e.g. <code class="docutils literal notranslate"><span class="pre">query</span> <span class="pre">=</span> <span class="pre">{'dset.prior_sampler.kwargs.max_num_layers':</span> <span class="pre">3,</span> <span class="pre">'dset.prior_sampler.kwargs.param_ranges.slds':</span> <span class="pre">[0.,</span> <span class="pre">100.]}</span></code>.
+For keys containing the <code class="docutils literal notranslate"><span class="pre">param_ranges</span></code> subkey a configuration is selected if the value of the query (i.e. desired parameter range)
+is a subrange of the parameter range in the configuration, in all other cases the values must match exactly.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of file names that match the query.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -2696,7 +2733,7 @@ The other arguments are the same as for the <code class="docutils literal notran
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><span class="section-number">6. </span>Advanced functionality</p>
+        <p class="prev-next-title"><span class="section-number">4. </span>Advanced functionality</p>
       </div>
     </a>
 </div>
@@ -2926,6 +2963,10 @@ The other arguments are the same as for the <code class="docutils literal notran
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.EasyInferenceModel.load_model"><code class="docutils literal notranslate"><span class="pre">EasyInferenceModel.load_model()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.EasyInferenceModel.predict"><code class="docutils literal notranslate"><span class="pre">EasyInferenceModel.predict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.EasyInferenceModel.predict_using_widget"><code class="docutils literal notranslate"><span class="pre">EasyInferenceModel.predict_using_widget()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.HuggingfaceQueryMatcher"><code class="docutils literal notranslate"><span class="pre">HuggingfaceQueryMatcher</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.HuggingfaceQueryMatcher.get_matching_configs"><code class="docutils literal notranslate"><span class="pre">HuggingfaceQueryMatcher.get_matching_configs()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reflectorch.standard_preprocessing"><code class="docutils literal notranslate"><span class="pre">standard_preprocessing()</span></code></a></li>

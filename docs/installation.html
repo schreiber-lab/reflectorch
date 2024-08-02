@@ -60,7 +60,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'installation';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="4. Using a trained reflectorch model" href="using_reflectorch.html" />
+    <link rel="next" title="2. Using a trained reflectorch model" href="using_reflectorch.html" />
     <link rel="prev" title="Reflectorch" href="intro.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -178,12 +178,10 @@
         </ul>
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">1. Installation</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">6. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_functionality.html">4. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">5. API Reference</a></li>
 </ul>
 
     </div>
@@ -378,11 +376,12 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">1. Installation</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">2. GPU support</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#package-dependencies">3. Package dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-instructions">1.1. Installation instructions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">1.1.1. GPU support</a></li>
 </ul>
-
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-dependencies">1.2. Package dependencies</a></li>
+</ul>
             </nav>
         </div>
     </div>
@@ -395,12 +394,10 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="installation">
 <h1><span class="section-number">1. </span>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
-<p><strong>Reflectorch</strong> can be installed directly from the Python Packaging Index (PyPI) via the Python package installer <strong>pip</strong> or from the <a class="reference external" href="https://anaconda.org/conda-forge/reflectorch">conda-forge</a> channel via the <strong>conda</strong> package installer.</p>
+<section id="installation-instructions">
+<h2><span class="section-number">1.1. </span>Installation instructions<a class="headerlink" href="#installation-instructions" title="Link to this heading">#</a></h2>
+<p><strong>Reflectorch</strong> can be installed directly from the Python Packaging Index (PyPI) via the Python package installer <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>reflectorch
-</pre></div>
-</div>
-<p>or</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>reflectorch
 </pre></div>
 </div>
 <p>Additionally, one can clone the entire <a class="reference external" href="https://github.com/schreiber-lab/reflectorch">Github</a> repository and install the package in editable mode:</p>
@@ -413,14 +410,14 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>tests,docs,build<span class="o">]</span>
 </pre></div>
 </div>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="gpu-support">
-<h1><span class="section-number">2. </span>GPU support<a class="headerlink" href="#gpu-support" title="Link to this heading">#</a></h1>
+<section id="gpu-support">
+<h3><span class="section-number">1.1.1. </span>GPU support<a class="headerlink" href="#gpu-support" title="Link to this heading">#</a></h3>
 <p>The CPU version of Pytorch is installed automatically with the package. Users with Nvidia GPUs need to additionally install Pytorch with CUDA support
 corresponding to their hardware and operating system according to the official installation guide from the <a class="reference external" href="https://pytorch.org/get-started/locally/">Pytorch website</a>.</p>
 </section>
-<section class="tex2jax_ignore mathjax_ignore" id="package-dependencies">
-<h1><span class="section-number">3. </span>Package dependencies<a class="headerlink" href="#package-dependencies" title="Link to this heading">#</a></h1>
+</section>
+<section id="package-dependencies">
+<h2><span class="section-number">1.2. </span>Package dependencies<a class="headerlink" href="#package-dependencies" title="Link to this heading">#</a></h2>
 <p>The package was tested for Python versions which are 3.7 or newer. The package has the following core dependencies, which are listed in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and installed automatically together with the package.</p>
 <ul class="simple">
 <li><p>numpy</p></li>
@@ -431,9 +428,9 @@ corresponding to their hardware and operating system according to the official i
 <li><p>click</p></li>
 <li><p>matplotlib</p></li>
 <li><p>ipywidgets</p></li>
-<li><p>torchinfo</p></li>
 <li><p>huggingface_hub</p></li>
 </ul>
+</section>
 </section>
 
     <script type="text/x-thebe-config">
@@ -480,7 +477,7 @@ corresponding to their hardware and operating system according to the official i
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><span class="section-number">4. </span>Using a trained reflectorch model</p>
+        <p class="prev-next-title"><span class="section-number">2. </span>Using a trained reflectorch model</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -500,11 +497,12 @@ corresponding to their hardware and operating system according to the official i
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">1. Installation</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">2. GPU support</a></li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#package-dependencies">3. Package dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-instructions">1.1. Installation instructions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">1.1.1. GPU support</a></li>
 </ul>
-
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-dependencies">1.2. Package dependencies</a></li>
+</ul>
   </nav></div>
 
 </div></div>

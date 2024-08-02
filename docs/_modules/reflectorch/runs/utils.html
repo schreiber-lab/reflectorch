@@ -177,12 +177,10 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">4. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">4. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">5. API Reference</a></li>
 </ul>
 
     </div>
@@ -494,7 +492,7 @@ document.write(`
 
 <div class="viewcode-block" id="get_trainer_by_name">
 <a class="viewcode-back" href="../../../api.html#reflectorch.get_trainer_by_name">[docs]</a>
-<span class="k">def</span> <span class="nf">get_trainer_by_name</span><span class="p">(</span><span class="n">config_name</span><span class="p">,</span> <span class="n">config_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">inference_device</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_trainer_by_name</span><span class="p">(</span><span class="n">config_name</span><span class="p">,</span> <span class="n">config_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">inference_device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes a trainer object based on a configuration file (i.e. the model name) and optionally loads \</span>
 <span class="sd">        saved weights into the network</span>
 
@@ -503,7 +501,7 @@ document.write(`
 <span class="sd">        config_dir (str): path of the configuration directory</span>
 <span class="sd">        model_path (str, optional): path to the network weights.</span>
 <span class="sd">        load_weights (bool, optional): if True the saved network weights are loaded into the network. Defaults to True.</span>
-
+<span class="sd">        inference_device (str, optional): overwrites the device in the configuration file for the purpose of inference on a different device then the training was performed on. Defaults to &#39;cuda&#39;.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Trainer: the trainer object</span>
@@ -512,10 +510,9 @@ document.write(`
     <span class="n">config</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">][</span><span class="s1">&#39;network&#39;</span><span class="p">][</span><span class="s1">&#39;pretrained_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">config</span><span class="p">[</span><span class="s1">&#39;training&#39;</span><span class="p">][</span><span class="s1">&#39;logger&#39;</span><span class="p">][</span><span class="s1">&#39;use_neptune&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">if</span> <span class="n">inference_device</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">][</span><span class="s1">&#39;network&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
-        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;dset&#39;</span><span class="p">][</span><span class="s1">&#39;prior_sampler&#39;</span><span class="p">][</span><span class="s1">&#39;kwargs&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
-        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;dset&#39;</span><span class="p">][</span><span class="s1">&#39;q_generator&#39;</span><span class="p">][</span><span class="s1">&#39;kwargs&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">][</span><span class="s1">&#39;network&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;dset&#39;</span><span class="p">][</span><span class="s1">&#39;prior_sampler&#39;</span><span class="p">][</span><span class="s1">&#39;kwargs&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;dset&#39;</span><span class="p">][</span><span class="s1">&#39;q_generator&#39;</span><span class="p">][</span><span class="s1">&#39;kwargs&#39;</span><span class="p">][</span><span class="s1">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_device</span>
 
     <span class="n">trainer</span> <span class="o">=</span> <span class="n">get_trainer_from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
@@ -533,7 +530,7 @@ document.write(`
         <span class="n">model_path</span> <span class="o">=</span> <span class="n">SAVED_MODELS_DIR</span> <span class="o">/</span> <span class="n">model_name</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">inference_device</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not load model from </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
 
