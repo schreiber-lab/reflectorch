@@ -12,6 +12,19 @@ def abeles_memory_eff(
         roughness: Tensor,
         sld: Tensor,
 ):
+    """Simulates reflectivity curves for SLD profiles with box model parameterization using a memory-efficient implementation the Abeles matrix method. 
+    It is computationally slower compared to the implementation in the 'abeles' function.
+
+    Args:
+        q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]
+        thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]
+        roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
+        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
+                    It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.
+
+    Returns:
+        Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]
+    """
     c_dtype = torch.complex128 if q.dtype is torch.float64 else torch.complex64
 
     batch_size, num_layers = thickness.shape
