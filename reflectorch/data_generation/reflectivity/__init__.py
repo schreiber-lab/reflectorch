@@ -24,21 +24,25 @@ def reflectivity(
         log: bool = False,
         abeles_func=None,
 ):
-    """Function which computes the reflectivity from thin film parameters using the Abeles matrix formalism
+    """Function which computes the reflectivity curves from thin film parameters. 
+    By default it uses the fast implementation of the Abeles matrix formalism.
 
     Args:
-        q (Tensor): the momentum transfer (q) values
-        thickness (Tensor): the layer thicknesses
-        roughness (Tensor): the interlayer roughnesses
-        sld (Tensor): the SLDs of the layers
-        dq (Tensor, optional): the resolution for curve smearing. Defaults to None.
+        q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]
+        thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]
+        roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
+        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
+                    It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.
+        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1].
+                            Either dq if ``constant_dq`` is ``True`` or dq/q if ``constant_dq`` is ``False``. Defaults to None.
         gauss_num (int, optional): the number of gaussians for curve smearing. Defaults to 51.
-        constant_dq (bool, optional): whether the smearing is constant. Defaults to True.
+        constant_dq (bool, optional): if ``True`` the smearing is constant (constant dq at each point in the curve) 
+                                    otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to True.
         log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to False.
-        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default implementation. Defaults to None.
+        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation. Defaults to None.
 
     Returns:
-        Tensor: the computed reflectivity curves
+        Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]
     """
     abeles_func = abeles_func or abeles
     q = torch.atleast_2d(q)
