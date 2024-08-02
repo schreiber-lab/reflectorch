@@ -68,8 +68,8 @@ def _get_q_axes_for_linear_dq(q: Tensor, resolutions: Tensor, gaussnum: int = 51
     lowq = torch.clamp_min_(q.min(1).values, 1e-6)
     highq = q.max(1).values
 
-    start = torch.log10(lowq) - 6 * resolutions / _FWHM
-    end = torch.log10(highq * (1 + 6 * resolutions / _FWHM))
+    start = torch.log10(lowq)[:, None] - 6 * resolutions / _FWHM
+    end = torch.log10(highq[:, None] * (1 + 6 * resolutions / _FWHM))
 
     interpnums = torch.abs(
         (torch.abs(end - start)) / (1.7 * resolutions / _FWHM / gaussgpoint)
