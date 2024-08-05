@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Tuple
 
 import torch
+import safetensors.torch
+import os
 
 from reflectorch import *
 from reflectorch.runs.config import load_config
@@ -13,6 +15,7 @@ __all__ = [
     "get_callbacks_from_config",
     "get_trainer_by_name",
     "get_callbacks_by_name",
+    "convert_pt_to_safetensors",
 ]
 
 
@@ -214,15 +217,25 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         model_name = f'model_{config_name}.pt'
         model_path = SAVED_MODELS_DIR / model_name
 
-    try:
-        state_dict = torch.load(model_path, map_location=inference_device)
-    except Exception as err:
-        raise RuntimeError(f'Could not load model from {model_path}') from err
+    if str(model_path).endswith('.pt'):
+        try:
+            state_dict = torch.load(model_path, map_location=inference_device)
+        except Exception as err:
+            raise RuntimeError(f'Could not load model from {model_path}') from err
 
-    if 'model' in state_dict:
-        trainer.model.load_state_dict(state_dict['model'])
+        if 'model' in state_dict:
+            trainer.model.load_state_dict(state_dict['model'])
+        else:
+            trainer.model.load_state_dict(state_dict)
+
+    elif str(model_path).endswith('.safetensors'):
+        try:
+            load_state_dict_safetensors(model=trainer.model, filename=model_path, device=inference_device)
+        except Exception as err:
+            raise RuntimeError(f'Could not load model from {model_path}') from err
+        
     else:
-        trainer.model.load_state_dict(state_dict)
+        raise RuntimeError('Weigths file with unknown extension')
 
     return trainer
 
@@ -297,3 +310,59 @@ def init_dset(config: dict):
     )
 
     return dset
+
+def split_complex_tensors(state_dict):
+    new_state_dict = {}
+    for key, tensor in state_dict.items():
+        if tensor.is_complex():
+            new_state_dict[f"{key}_real"] = tensor.real.clone()
+            new_state_dict[f"{key}_imag"] = tensor.imag.clone()
+        else:
+            new_state_dict[key] = tensor
+    return new_state_dict
+
+def recombine_complex_tensors(state_dict):
+    new_state_dict = {}
+    keys = list(state_dict.keys())
+    visited = set()
+
+    for key in keys:
+        if key.endswith('_real') or key.endswith('_imag'):
+            base_key = key[:-5]
+            new_state_dict[base_key] = torch.complex(state_dict[base_key + '_real'], state_dict[base_key + '_imag'])
+            visited.add(base_key + '_real')
+            visited.add(base_key + '_imag')
+        elif key not in visited:
+            new_state_dict[key] = state_dict[key]
+
+    return new_state_dict
+
+def convert_pt_to_safetensors(input_dir):
+    """Creates '.safetensors' files for all the model state dictionaries inside '.pt' files in the specified directory.
+
+    Args:
+        input_dir (str): directory containing model weights 
+    """
+    if not os.path.isdir(input_dir):
+        raise ValueError(f"Input directory {input_dir} does not exist")
+
+    for file_name in os.listdir(input_dir):
+        if file_name.endswith('.pt'):
+            pt_file_path = os.path.join(input_dir, file_name)
+            safetensors_file_path = os.path.join(input_dir, file_name[:-3] + '.safetensors')
+
+            if os.path.exists(safetensors_file_path):
+                print(f"Skipping {pt_file_path}, corresponding .safetensors file already exists.")
+                continue
+
+            print(f"Converting {pt_file_path} to .safetensors format.")
+            data_pt = torch.load(pt_file_path)
+            model_state_dict = data_pt["model"]
+            model_state_dict = split_complex_tensors(model_state_dict) #handle tensors with complex dtype which are not natively supported by safetensors
+
+            safetensors.torch.save_file(tensors=model_state_dict, filename=safetensors_file_path)
+
+def load_state_dict_safetensors(model, filename, device):
+    state_dict = safetensors.torch.load_file(filename=filename, device=device)
+    state_dict = recombine_complex_tensors(state_dict)
+    model.load_state_dict(state_dict)

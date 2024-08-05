@@ -35,15 +35,17 @@ class EasyInferenceModel(object):
         config_name (str, optional): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension). Defaults to None.
         model_name (str, optional): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`. Defaults to None 
         root_dir (str, optional): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR). Defaults to None.
+        weights_format (str, optional): format (extension) of the weights file, either 'pt' or 'safetensors'. Defaults to 'safetensors'.
         repo_id (str, optional): the id of the Huggingface repository from which the configuration files and model weights should be downloaded automatically if not found locally (in the 'configs' and 'saved_models' subdirectories of the root directory). Defaults to 'valentinsingularity/reflectivity'.
         trainer (PointEstimatorTrainer, optional): if provided, this trainer instance is used directly instead of being initialized from the configuration file. Defaults to None.
         device (str, optional): the Pytorch device ('cuda' or 'cpu'). Defaults to 'cuda'.
     """
-    def __init__(self, config_name: str = None, model_name: str = None, root_dir:str = None, repo_id: str = 'valentinsingularity/reflectivity', 
-                 trainer: PointEstimatorTrainer = None, device='cuda'):
+    def __init__(self, config_name: str = None, model_name: str = None, root_dir:str = None, weights_format: str = 'safetensors',
+                 repo_id: str = 'valentinsingularity/reflectivity', trainer: PointEstimatorTrainer = None, device='cuda'):
         self.config_name = config_name
         self.model_name = model_name
         self.root_dir = root_dir
+        self.weights_format = weights_format
         self.repo_id = repo_id
         self.trainer = trainer
         self.device = device
@@ -58,7 +60,7 @@ class EasyInferenceModel(object):
 
         Args:
             config_name (str): the name of the configuration file used to initialize the model (either with or without the '.yaml' extension).
-            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' extension), only required if different than: `'model_' + config_name + '.pt'`.
+            model_name (str): the name of the file containing the weights of the model (either with or without the '.pt' or '.safetensors'  extension), only required if different than: `'model_' + config_name + extension`.
             root_dir (str): path to root directory containing the 'configs' and 'saved_models' subdirectories, if different from the package root directory (ROOT_DIR).
         """
         if self.config_name == config_name and self.trainer is not None:
@@ -72,9 +74,10 @@ class EasyInferenceModel(object):
             self.config_name = config_name
         
         self.config_dir = Path(root_dir) / 'configs' if root_dir else CONFIG_DIR
-        self.model_name = model_name or 'model_' + config_name_no_extension + '.pt'
-        if not self.model_name.endswith('.pt'):
-            self.model_name += '.pt'
+        weights_extension = '.' + self.weights_format
+        self.model_name = model_name or 'model_' + config_name_no_extension + weights_extension
+        if not self.model_name.endswith(weights_extension):
+            self.model_name += weights_extension
         self.model_dir = Path(root_dir) / 'saved_models' if root_dir else SAVED_MODELS_DIR
 
         config_path = Path(self.config_dir) / self.config_name
