@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#
-# This source code is licensed under the GPL license found in the
-# LICENSE file in the root directory of this source tree.
-
 import numpy as np
 import torch
 import torch.nn.functional as F
