@@ -6,7 +6,6 @@ __all__ = [
     "ConvDecoder",
     "ConvAutoencoder",
     "ConvVAE",
-    "TransformerEncoder",
     "FnoEncoder",
     "SpectralConv1d",
     "ConvResidualNet1D",
