@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflectorch"
-version = "1.1.0"
+version = "1.2.0"
 authors = [
     {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
     {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"}
@@ -38,6 +38,7 @@ dependencies = [
     "matplotlib",
     "ipywidgets",
     "huggingface_hub",
+    "safetensors",
 ]
 
 [project.optional-dependencies]
