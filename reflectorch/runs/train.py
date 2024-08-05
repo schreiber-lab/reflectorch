@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#
-# This source code is licensed under the GPL license found in the
-# LICENSE file in the root directory of this source tree.
-
 import click
 
 from reflectorch.runs.slurm_utils import save_sbatch_and_run

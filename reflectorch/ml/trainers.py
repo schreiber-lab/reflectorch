@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#
-# This source code is licensed under the GPL license found in the
-# LICENSE file in the root directory of this source tree.
-
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -16,7 +10,6 @@ from reflectorch.ml.dataloaders import ReflectivityDataLoader
 __all__ = [
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
-    'VAETrainer',
     'PointEstimatorTrainer',
 ]
 
@@ -98,29 +91,3 @@ class DenoisingAETrainer(RealTimeSimTrainer):
         loss = self.criterion(scaled_curves, restored_curves)
         return {'loss': loss}
     
-
-class VAETrainer(DenoisingAETrainer):
-    """Trainer which can be used for training a denoising autoencoder model. Overrides _get_batch and get_loss_dict methods """
-    def init(self):
-        self.loader.calc_denoised_curves = True
-        self.freebits = 0.05
-    
-    def calc_kl(self, z_mu, z_logvar):
-        return 0.5*(z_mu**2 + torch.exp(z_logvar) - 1 - z_logvar)
-    
-    def gaussian_log_prob(self, z, mu, logvar):
-        return -0.5*(np.log(2*np.pi) + logvar + (z-mu)**2/torch.exp(logvar))
-
-    def get_loss_dict(self, batch_data):
-        """returns the reconstruction loss of the autoencoder"""
-        scaled_noisy_curves, scaled_curves = batch_data
-        _, (z_mu, z_logvar, restored_curves_mu, restored_curves_logvar) = self.model(scaled_noisy_curves)
-
-        l_rec = -torch.mean(self.gaussian_log_prob(scaled_curves, restored_curves_mu, restored_curves_logvar), dim=-1)  
-        l_kl = torch.mean(F.relu(self.calc_kl(z_mu, z_logvar) - self.freebits*np.log(2)) + self.freebits*np.log(2), dim=-1)
-        loss = torch.mean(l_rec + l_kl)/np.log(2)
-
-        l_rec = torch.mean(l_rec)
-        l_kl = torch.mean(l_kl)
-
-        return {'loss': loss}

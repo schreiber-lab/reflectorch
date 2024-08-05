@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#
-# This source code is licensed under the GPL license found in the
-# LICENSE file in the root directory of this source tree.
-
 from typing import Optional, Tuple, Iterable, Any, Union, Type
 from collections import defaultdict
 

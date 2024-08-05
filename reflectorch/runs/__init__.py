@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-#
-# This source code is licensed under the GPL license found in the
-# LICENSE file in the root directory of this source tree.
-
 from reflectorch.runs.train import (
     run_train,
     run_train_on_cluster,
@@ -17,6 +11,7 @@ from reflectorch.runs.utils import (
     get_callbacks_from_config,
     get_trainer_by_name,
     get_callbacks_by_name,
+    convert_pt_to_safetensors,
 )
 
 from reflectorch.runs.config import load_config
@@ -31,5 +26,6 @@ __all__ = [
     'get_callbacks_from_config',
     'get_trainer_by_name',
     'get_callbacks_by_name',
+    'convert_pt_to_safetensors',
     'load_config',
 ]
