@@ -73,5 +73,6 @@ API Reference
               ParametricModel,
               EasyInferenceModel,
               HuggingfaceQueryMatcher,
+              convert_pt_to_safetensors,
     :show-inheritance:
     :member-order: bysource

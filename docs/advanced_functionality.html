@@ -500,8 +500,8 @@ document.write(`
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(&#39;model_with_absorption&#39;,
- &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x1b1e0fd2100&gt;,
- &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x1b1e0fd21f0&gt;)
+ &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x2151ec00e80&gt;,
+ &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x21544989fa0&gt;)
 </pre></div>
 </div>
 </div>
@@ -822,7 +822,7 @@ Embedding Networks
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\c_repeating_multilayer_trained1.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_c_repeating_multilayer_trained1.pt` found locally.
+Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_c_repeating_multilayer_trained1.safetensors` found locally.
 Model c_repeating_multilayer_trained1 loaded. Number of parameters: 3.85 M
 The model corresponds to a `repeating_multilayer_v3` parameterization with 30 layers (17 predicted parameters)
 Parameter types and total ranges:
@@ -876,17 +876,9 @@ The model was trained on curves discretized at 256 uniform points between betwee
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">multilayer_data_path</span> <span class="o">=</span> <span class="s1">&#39;.././exp_data/DIP-nSi_34a.dat&#39;</span>
 
-<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">multilayer_data_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-
-<span class="n">q_vals</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">intensity_vals</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-    <span class="n">q_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">intensity_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-    
-<span class="n">q_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">q_vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-<span class="n">intensity_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intensity_vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">multilayer_data_path</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skip_header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">q_vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">intensity_vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
 
 <span class="n">interp_range</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
 <span class="n">interp_points</span> <span class="o">=</span> <span class="mi">256</span>
@@ -1058,7 +1050,7 @@ r_si                 : 20.19
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model c_model_with_shifts loaded. Number of parameters: 3.84 M
-&lt;reflectorch.data_generation.priors.parametric_models.ModelWithShifts object at 0x000001B1F06FABB0&gt;
+&lt;reflectorch.data_generation.priors.parametric_models.ModelWithShifts object at 0x000002151EC00610&gt;
 </pre></div>
 </div>
 </div>
@@ -1295,7 +1287,7 @@ r_si                 : 20.19
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model c_ae loaded. Number of parameters: 1.22 M
-&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x000001B1F0735F40&gt;
+&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x0000021519AE61F0&gt;
 </pre></div>
 </div>
 </div>

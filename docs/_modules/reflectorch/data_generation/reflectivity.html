@@ -327,21 +327,25 @@ document.write(`
         <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">abeles_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function which computes the reflectivity from thin film parameters using the Abeles matrix formalism</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function which computes the reflectivity curves from thin film parameters. </span>
+<span class="sd">    By default it uses the fast implementation of the Abeles matrix formalism.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        q (Tensor): the momentum transfer (q) values</span>
-<span class="sd">        thickness (Tensor): the layer thicknesses</span>
-<span class="sd">        roughness (Tensor): the interlayer roughnesses</span>
-<span class="sd">        sld (Tensor): the SLDs of the layers</span>
-<span class="sd">        dq (Tensor, optional): the resolution for curve smearing. Defaults to None.</span>
+<span class="sd">        q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]</span>
+<span class="sd">        thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]</span>
+<span class="sd">        roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]</span>
+<span class="sd">        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. </span>
+<span class="sd">                    It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.</span>
+<span class="sd">        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1].</span>
+<span class="sd">                            Either dq if ``constant_dq`` is ``True`` or dq/q if ``constant_dq`` is ``False``. Defaults to None.</span>
 <span class="sd">        gauss_num (int, optional): the number of gaussians for curve smearing. Defaults to 51.</span>
-<span class="sd">        constant_dq (bool, optional): whether the smearing is constant. Defaults to True.</span>
+<span class="sd">        constant_dq (bool, optional): if ``True`` the smearing is constant (constant dq at each point in the curve) </span>
+<span class="sd">                                    otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to True.</span>
 <span class="sd">        log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to False.</span>
-<span class="sd">        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default implementation. Defaults to None.</span>
+<span class="sd">        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Tensor: the computed reflectivity curves</span>
+<span class="sd">        Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">abeles_func</span> <span class="o">=</span> <span class="n">abeles_func</span> <span class="ow">or</span> <span class="n">abeles</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
