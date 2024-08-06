@@ -9,5 +9,7 @@ exclude .github/*
 
 include exp_data/data_C60.pt
 include exp_data/data_PTCDI-C3.pt
+include exp_data/data_C60.txt
+include exp_data/data_PTCDI-C3.txt
 include exp_data/33a.dat
 include exp_data/DIP-nSi_34a.dat
