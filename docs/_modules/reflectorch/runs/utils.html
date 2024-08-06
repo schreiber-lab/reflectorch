@@ -303,6 +303,8 @@ document.write(`
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">safetensors.torch</span>
+<span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">from</span> <span class="nn">reflectorch</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">reflectorch.runs.config</span> <span class="kn">import</span> <span class="n">load_config</span>
@@ -314,6 +316,7 @@ document.write(`
     <span class="s2">&quot;get_callbacks_from_config&quot;</span><span class="p">,</span>
     <span class="s2">&quot;get_trainer_by_name&quot;</span><span class="p">,</span>
     <span class="s2">&quot;get_callbacks_by_name&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;convert_pt_to_safetensors&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -529,15 +532,25 @@ document.write(`
         <span class="n">model_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;model_</span><span class="si">{</span><span class="n">config_name</span><span class="si">}</span><span class="s1">.pt&#39;</span>
         <span class="n">model_path</span> <span class="o">=</span> <span class="n">SAVED_MODELS_DIR</span> <span class="o">/</span> <span class="n">model_name</span>
 
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">inference_device</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not load model from </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pt&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">inference_device</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not load model from </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
 
-    <span class="k">if</span> <span class="s1">&#39;model&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
-        <span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;model&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.safetensors&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">load_state_dict_safetensors</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">inference_device</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not load model from </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
+        
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Weigths file with unknown extension&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">trainer</span></div>
 
@@ -613,6 +626,65 @@ document.write(`
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">dset</span>
+
+<span class="k">def</span> <span class="nf">split_complex_tensors</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
+    <span class="n">new_state_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
+            <span class="n">new_state_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_real&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">new_state_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_imag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor</span>
+    <span class="k">return</span> <span class="n">new_state_dict</span>
+
+<span class="k">def</span> <span class="nf">recombine_complex_tensors</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
+    <span class="n">new_state_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_real&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_imag&#39;</span><span class="p">):</span>
+            <span class="n">base_key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+            <span class="n">new_state_dict</span><span class="p">[</span><span class="n">base_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="n">base_key</span> <span class="o">+</span> <span class="s1">&#39;_real&#39;</span><span class="p">],</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">base_key</span> <span class="o">+</span> <span class="s1">&#39;_imag&#39;</span><span class="p">])</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">base_key</span> <span class="o">+</span> <span class="s1">&#39;_real&#39;</span><span class="p">)</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">base_key</span> <span class="o">+</span> <span class="s1">&#39;_imag&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+            <span class="n">new_state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">new_state_dict</span>
+
+<div class="viewcode-block" id="convert_pt_to_safetensors">
+<a class="viewcode-back" href="../../../api.html#reflectorch.convert_pt_to_safetensors">[docs]</a>
+<span class="k">def</span> <span class="nf">convert_pt_to_safetensors</span><span class="p">(</span><span class="n">input_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates &#39;.safetensors&#39; files for all the model state dictionaries inside &#39;.pt&#39; files in the specified directory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_dir (str): directory containing model weights </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">input_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input directory </span><span class="si">{</span><span class="n">input_dir</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">input_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pt&#39;</span><span class="p">):</span>
+            <span class="n">pt_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+            <span class="n">safetensors_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.safetensors&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">safetensors_file_path</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping </span><span class="si">{</span><span class="n">pt_file_path</span><span class="si">}</span><span class="s2">, corresponding .safetensors file already exists.&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converting </span><span class="si">{</span><span class="n">pt_file_path</span><span class="si">}</span><span class="s2"> to .safetensors format.&quot;</span><span class="p">)</span>
+            <span class="n">data_pt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pt_file_path</span><span class="p">)</span>
+            <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">data_pt</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+            <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">split_complex_tensors</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">)</span> <span class="c1">#handle tensors with complex dtype which are not natively supported by safetensors</span>
+
+            <span class="n">safetensors</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">save_file</span><span class="p">(</span><span class="n">tensors</span><span class="o">=</span><span class="n">model_state_dict</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">safetensors_file_path</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">load_state_dict_safetensors</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+    <span class="n">state_dict</span> <span class="o">=</span> <span class="n">safetensors</span><span class="o">.</span><span class="n">torch</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">state_dict</span> <span class="o">=</span> <span class="n">recombine_complex_tensors</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
 </pre></div>
 
                 </article>

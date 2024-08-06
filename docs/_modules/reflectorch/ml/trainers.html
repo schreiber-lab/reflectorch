@@ -299,13 +299,7 @@ document.write(`
                 <article class="bd-article">
                   
   <h1>Source code for reflectorch.ml.trainers</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1"># This source code is licensed under the GPL license found in the</span>
-<span class="c1"># LICENSE file in the root directory of this source tree.</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
@@ -317,7 +311,6 @@ document.write(`
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;RealTimeSimTrainer&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DenoisingAETrainer&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;VAETrainer&#39;</span><span class="p">,</span>
     <span class="s1">&#39;PointEstimatorTrainer&#39;</span><span class="p">,</span>
 <span class="p">]</span>
 
@@ -414,32 +407,6 @@ document.write(`
         <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scaled_curves</span><span class="p">,</span> <span class="n">restored_curves</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span>
     
-
-<span class="k">class</span> <span class="nc">VAETrainer</span><span class="p">(</span><span class="n">DenoisingAETrainer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trainer which can be used for training a denoising autoencoder model. Overrides _get_batch and get_loss_dict methods &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">calc_denoised_curves</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">freebits</span> <span class="o">=</span> <span class="mf">0.05</span>
-    
-    <span class="k">def</span> <span class="nf">calc_kl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_mu</span><span class="p">,</span> <span class="n">z_logvar</span><span class="p">):</span>
-        <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">z_mu</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">z_logvar</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">z_logvar</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">gaussian_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">):</span>
-        <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">+</span> <span class="n">logvar</span> <span class="o">+</span> <span class="p">(</span><span class="n">z</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logvar</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">get_loss_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;returns the reconstruction loss of the autoencoder&quot;&quot;&quot;</span>
-        <span class="n">scaled_noisy_curves</span><span class="p">,</span> <span class="n">scaled_curves</span> <span class="o">=</span> <span class="n">batch_data</span>
-        <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">z_mu</span><span class="p">,</span> <span class="n">z_logvar</span><span class="p">,</span> <span class="n">restored_curves_mu</span><span class="p">,</span> <span class="n">restored_curves_logvar</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">scaled_noisy_curves</span><span class="p">)</span>
-
-        <span class="n">l_rec</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gaussian_log_prob</span><span class="p">(</span><span class="n">scaled_curves</span><span class="p">,</span> <span class="n">restored_curves_mu</span><span class="p">,</span> <span class="n">restored_curves_logvar</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  
-        <span class="n">l_kl</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_kl</span><span class="p">(</span><span class="n">z_mu</span><span class="p">,</span> <span class="n">z_logvar</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">freebits</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">freebits</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">l_rec</span> <span class="o">+</span> <span class="n">l_kl</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="n">l_rec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">l_rec</span><span class="p">)</span>
-        <span class="n">l_kl</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">l_kl</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span>
 </pre></div>
 
                 </article>

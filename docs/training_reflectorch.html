@@ -613,6 +613,7 @@ Parameter Group 0
 </pre></div>
 </div>
 </div>
+<p>The model state dictionaries of all the saved ‘.pt’ files in a directory can be further converted to the ‘.safetensors’ format for exporting to Huggingface using the <code class="docutils literal notranslate"><span class="pre">convert_pt_to_safetensors</span></code> method.</p>
 </section>
 <section id="training-from-the-terminal">
 <h3><span class="section-number">3.1.4. </span>Training from the terminal<a class="headerlink" href="#training-from-the-terminal" title="Link to this heading">#</a></h3>
@@ -864,7 +865,8 @@ Sample YAML configuration<div class="sd-summary-down docutils">
 <li><p><code class="docutils literal notranslate"><span class="pre">smearing</span></code> (<em>optional</em>) - responsible for adding resolution smearing to the curves (which can occur in neutron experiments due to uncertainties in incident angle  or wavelength). The intensity at a q point will be the average of the intensities of neighbouring q points, weighted by a gaussian profile. The arguments of the <code class="docutils literal notranslate"><span class="pre">Smearing</span></code> class are:</p></li>
 </ol>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">sigma_range</span></code> - the range for sampling the standard deviation of the gaussians</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sigma_range</span></code> - the range for sampling the resolutions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">constant_dq</span></code> - if <code class="docutils literal notranslate"><span class="pre">True</span></code> the smearing is constant (the resolution is given by the constant dq at each point in the curve), otherwise the smearing is linear (the resolution is given by the constant dq/q at each point in the curve)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">gauss_num</span></code> - the number of interpolating gaussian profiles</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">share_smeared</span></code> - the share of curves in the batch for which the resolution smearing is applied</p></li>
 </ul>
@@ -873,6 +875,7 @@ Sample YAML configuration<div class="sd-summary-down docutils">
 <span class="w">    </span><span class="nt">cls</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Smearing</span>
 <span class="w">    </span><span class="nt">kwargs</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">sigma_range</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">8.0e-4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5.0e-3</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">constant_dq</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">      </span><span class="nt">gauss_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">31</span>
 <span class="w">      </span><span class="nt">share_smeared</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
 </pre></div>
