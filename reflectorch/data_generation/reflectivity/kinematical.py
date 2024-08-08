@@ -19,7 +19,7 @@ def kinematical_approximation(
         q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]
         thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]
         roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
-        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
+        sld (Tensor): tensor containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
                     It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.
         apply_fresnel (bool, optional): whether to use the Fresnel coefficient in the computation. Defaults to ``True``.
         log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to ``False``.

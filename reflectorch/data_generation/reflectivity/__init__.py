@@ -31,15 +31,15 @@ def reflectivity(
         q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]
         thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]
         roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
-        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
-                    It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.
+        sld (Tensor): tensor containing the layer SLDs (real or complex; ordered from top to bottom) with shape 
+            [batch_size, n_layers + 1] (excluding ambient SLD which is assumed to be 0)  or [batch_size, n_layers + 2] (including ambient SLD; only for the default ``abeles_func='abeles'``) 
         dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1].
                             Either dq if ``constant_dq`` is ``True`` or dq/q if ``constant_dq`` is ``False``. Defaults to None.
         gauss_num (int, optional): the number of gaussians for curve smearing. Defaults to 51.
         constant_dq (bool, optional): if ``True`` the smearing is constant (constant dq at each point in the curve) 
                                     otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to True.
         log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to False.
-        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation. Defaults to None.
+        abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation ('abeles'). Defaults to None.
 
     Returns:
         Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]

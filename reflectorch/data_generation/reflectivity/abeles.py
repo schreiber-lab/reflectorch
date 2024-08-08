@@ -18,8 +18,9 @@ def abeles(
         q (Tensor): tensor of momentum transfer (q) values with shape [batch_size, n_points] or [n_points]
         thickness (Tensor): tensor containing the layer thicknesses (ordered from top to bottom) with shape [batch_size, n_layers]
         roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
-        sld (Tensor): tensors containing the layer SLDs (real or complex; ordered from top to bottom) with shape [batch_size, n_layers + 1]. 
-                    It includes the substrate but excludes the ambient medium which is assumed to have an SLD of 0.
+        sld (Tensor): tensor containing the layer SLDs (real or complex; ordered from top to bottom). The tensor shape should be one of the following:
+            - [batch_size, n_layers + 1]: in this case, the ambient SLD is not included but assumed to be 0
+            - [batch_size, n_layers + 2]: this shape includes the ambient SLD as the first element in the tensor
 
     Returns:
         Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]
@@ -76,7 +77,6 @@ def abeles(
         -1,
     )
 
-    # maybe faster to swap axes and provide a single tensor to reduce
     c_matrices = [c.squeeze(-3) for c in c_matrices.split(1, -3)]
 
     m = reduce(torch.matmul, c_matrices)
