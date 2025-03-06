@@ -1,7 +1,8 @@
 from typing import Optional, Tuple, Iterable, Any, Union, Type
 from collections import defaultdict
 
-from tqdm.notebook import trange
+from tqdm import tqdm as standard_tqdm
+from tqdm.notebook import tqdm as notebook_tqdm
 import numpy as np
 
 import torch
@@ -31,7 +32,6 @@ class Trainer(object):
         logger (Union[Logger, Tuple[Logger, ...], Loggers], optional): logger. Defaults to None.
         optim_cls (Type[torch.optim.Optimizer], optional): Pytorch optimizer. Defaults to torch.optim.Adam.
         optim_kwargs (dict, optional): optimizer arguments. Defaults to None.
-        train_with_q_input (bool, optional): if ``True`` the q values are also used as input. Defaults to False.
     """
 
     TOTAL_LOSS_KEY: str = 'total_loss'
@@ -42,7 +42,6 @@ class Trainer(object):
                  lr: float,
                  batch_size: int,
                  clip_grad_norm_max: Optional[int] = None,
-                 train_with_q_input: bool = False,
                  logger: Union[Logger, Tuple[Logger, ...], Loggers] = None,
                  optim_cls: Type[torch.optim.Optimizer] = torch.optim.Adam,
                  optim_kwargs: dict = None,
@@ -53,7 +52,6 @@ class Trainer(object):
         self.loader = loader
         self.batch_size = batch_size
         self.clip_grad_norm_max = clip_grad_norm_max
-        self.train_with_q_input = train_with_q_input
 
         self.optim = self.configure_optimizer(optim_cls, lr=lr, **(optim_kwargs or {}))
         self.lrs = []
@@ -78,7 +76,8 @@ class Trainer(object):
                     num_batches: int,
                     callbacks: Union[Tuple['TrainerCallback', ...], 'TrainerCallback'] = (),
                     disable_tqdm: bool = False,
-                    update_tqdm_freq: int = 10,
+                    use_notebook_tqdm: bool = False,
+                    update_tqdm_freq: int = 1,
                     grad_accumulation_steps: int = 1,
                     ):
         """starts the training process
@@ -87,6 +86,7 @@ class Trainer(object):
             num_batches (int): total number of training iterations
             callbacks (Union[Tuple['TrainerCallback'], 'TrainerCallback']): the trainer callbacks. Defaults to ().
             disable_tqdm (bool, optional): if ``True``, the progress bar is disabled. Defaults to False.
+            use_notebook_tqdm (bool, optional): should be set to ``True`` when used in a Jupyter Notebook. Defaults to False.
             update_tqdm_freq (int, optional): frequency for updating the progress bar. Defaults to 10.
             grad_accumulation_steps (int, optional): number of gradient accumulation steps. Defaults to 1.
         """
@@ -96,7 +96,8 @@ class Trainer(object):
 
         callbacks = _StackedTrainerCallbacks(list(callbacks) + [self.loader])
 
-        pbar = trange(num_batches, disable=disable_tqdm)
+        tqdm_class = notebook_tqdm if use_notebook_tqdm else standard_tqdm
+        pbar = tqdm_class(range(num_batches), disable=disable_tqdm)
 
         callbacks.start_training(self)
 
@@ -121,6 +122,7 @@ class Trainer(object):
 
             if self.clip_grad_norm_max is not None:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.clip_grad_norm_max)
+
             self.optim.step()
 
             avr_loss_dict = {k: np.mean(v) for k, v in avr_loss_dict.items()}
@@ -140,6 +142,16 @@ class Trainer(object):
         if is_divisor(batch_num, update_tqdm_freq):
             last_loss = np.mean(self.losses[self.TOTAL_LOSS_KEY][-10:])
             pbar.set_description(f'Loss = {last_loss:.2e}')
+
+            postfix = {}
+            for key in self.losses.keys():
+                if key != self.TOTAL_LOSS_KEY:
+                    last_value = self.losses[key][-1]
+                    postfix[key] = f'{last_value:.4f}'
+
+            postfix['lr'] = f'{self.lr():.2e}'
+
+            pbar.set_postfix(postfix)
 
     def get_batch_by_idx(self, batch_num: int) -> Any:
         raise NotImplementedError
