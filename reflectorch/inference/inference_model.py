@@ -354,7 +354,8 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[:-1][None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
-                    #self.trainer.loader.prior_sampler.param_model
+                    self.trainer.loader.prior_sampler.max_num_layers,
+                    self.trainer.loader.prior_sampler.param_model
                     )
             else:
                 polished_params_arr, curve_polished = standard_refl_fit(
@@ -366,7 +367,8 @@ class EasyInferenceModel(object):
                     torch.from_numpy(polished_params_arr[None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
-                    #self.trainer.loader.prior_sampler.param_model
+                    self.trainer.loader.prior_sampler.max_num_layers,
+                    self.trainer.loader.prior_sampler.param_model
                     )
         except Exception as err:
             polished_params = predicted_params
