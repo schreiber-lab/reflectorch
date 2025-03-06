@@ -136,7 +136,7 @@ def get_callbacks_from_config(config: dict, folder_paths: dict = None) -> Tuple[
         if callback:
             callbacks.append(callback)
 
-    if train_conf['logger']['use_neptune']:
+    if 'logger' in train_conf.keys():
         callbacks.append(LogLosses())
 
     return tuple(callbacks)
@@ -162,9 +162,9 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
     optim_cls = getattr(torch.optim, train_conf['optimizer'])
 
-    logger = None
+    logger_conf = train_conf.get('logger', None)
+    logger = init_from_conf(logger_conf) if logger_conf and logger_conf.get('cls') else None 
 
-    train_with_q_input = train_conf.get('train_with_q_input', False)
     clip_grad_norm_max = train_conf.get('clip_grad_norm_max', None)
 
     trainer_cls = globals().get(train_conf['trainer_cls']) if 'trainer_cls' in train_conf else PointEstimatorTrainer
@@ -173,7 +173,7 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
 
     trainer = trainer_cls(
         model, dset, train_conf['lr'], train_conf['batch_size'], clip_grad_norm_max=clip_grad_norm_max,
-        logger=logger, optim_cls=optim_cls, train_with_q_input=train_with_q_input, 
+        logger=logger, optim_cls=optim_cls, 
         **trainer_kwargs
     )
 
@@ -187,7 +187,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
     Args:
         config_name (str): name of the configuration file
         config_dir (str): path of the configuration directory
-        model_path (str, optional): path to the network weights.
+        model_path (str, optional): path to the network weights. The default path is 'saved_models' located in the package directory
         load_weights (bool, optional): if True the saved network weights are loaded into the network. Defaults to True.
         inference_device (str, optional): overwrites the device in the configuration file for the purpose of inference on a different device then the training was performed on. Defaults to 'cuda'.
 
@@ -195,8 +195,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         Trainer: the trainer object
     """
     config = load_config(config_name, config_dir)
-    config['model']['network']['pretrained_name'] = None
-    config['training']['logger']['use_neptune'] = False
+    #config['model']['network']['pretrained_name'] = None
 
     config['model']['network']['device'] = inference_device
     config['dset']['prior_sampler']['kwargs']['device'] = inference_device
@@ -238,7 +237,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
         raise RuntimeError('Weigths file with unknown extension')
 
     return trainer
-
+ 
 def get_callbacks_by_name(config_name, config_dir=None):
     """Initializes the trainer callbacks based on a configuration file
 
