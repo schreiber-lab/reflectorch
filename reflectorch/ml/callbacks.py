@@ -74,7 +74,8 @@ class LogLosses(TrainerCallback):
             trainer (Trainer): the trainer object
             batch_num (int): the index of the current iteration / batch
         """
-        try:
-            trainer.log('train/total_loss', trainer.losses[trainer.TOTAL_LOSS_KEY][-1])
-        except IndexError:
-            pass
+        for loss_name, loss_values in trainer.losses.items():
+            try:
+                trainer.log(f'train/{loss_name}', loss_values[-1])
+            except IndexError:
+                continue
