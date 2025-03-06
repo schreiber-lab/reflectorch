@@ -18,15 +18,21 @@ class ResidualMLP(nn.Module):
             repeats_per_block: int = 2,
             activation: str = 'relu',
             use_batch_norm: bool = True,
+            use_layer_norm: bool = False,
             dropout_rate: float = 0.0,
             residual: bool = True,
             adaptive_activation: bool = False,
             conditioning: str = 'glu',
+            concat_condition_first_layer: bool = True,
+            film_with_tanh: bool = False,
     ):
         super().__init__()
 
-        dim_first_layer = dim_in + dim_condition
+        self.concat_condition_first_layer = concat_condition_first_layer
+
+        dim_first_layer = dim_in + dim_condition if concat_condition_first_layer else dim_in
         self.first_layer = nn.Linear(dim_first_layer, layer_width)
+
         self.blocks = nn.ModuleList(
             [
                 ResidualBlock(
@@ -35,24 +41,28 @@ class ResidualMLP(nn.Module):
                     repeats_per_block=repeats_per_block,
                     activation=activation,
                     use_batch_norm=use_batch_norm,
+                    use_layer_norm=use_layer_norm,
                     dropout_rate=dropout_rate,
                     residual=residual,
                     adaptive_activation=adaptive_activation,
                     conditioning = conditioning,
+                    film_with_tanh = film_with_tanh,
                 )
                 for _ in range(num_blocks)
             ]
         )
+
         self.last_layer = nn.Linear(layer_width, dim_out)
 
     def forward(self, x, condition=None):
-        if condition is None:
-            x = self.first_layer(x)
-        else:
+        if self.concat_condition_first_layer and condition is not None:
             x = self.first_layer(torch.cat([x, condition], dim=-1))
+        else:
+            x = self.first_layer(x)
 
         for block in self.blocks:
             x = block(x, condition=condition)
+
         x = self.last_layer(x)
 
         return x
@@ -68,19 +78,23 @@ class ResidualBlock(nn.Module):
             repeats_per_block: int = 2,
             activation: str = 'relu',
             use_batch_norm: bool = False,
+            use_layer_norm: bool = False,
             dropout_rate: float = 0.0,
             residual: bool = True,
             adaptive_activation: bool = False,
             conditioning: str = 'glu',
+            film_with_tanh: bool = False,
     ):
         super().__init__()
          
         self.residual = residual
         self.repeats_per_block = repeats_per_block
         self.use_batch_norm = use_batch_norm
+        self.use_layer_norm = use_layer_norm
         self.dropout_rate = dropout_rate
         self.adaptive_activation = adaptive_activation
         self.conditioning = conditioning
+        self.film_with_tanh = film_with_tanh
 
         if not adaptive_activation:
             self.activation = activation_by_name(activation)()
@@ -92,7 +106,11 @@ class ResidualBlock(nn.Module):
         if use_batch_norm:
             self.batch_norm_layers = nn.ModuleList(
                 [nn.BatchNorm1d(layer_width, eps=1e-3) for _ in range(repeats_per_block)]
-            )
+             )
+        elif use_layer_norm:
+            self.layer_norm_layers = nn.ModuleList(
+                [nn.LayerNorm(layer_width) for _ in range(repeats_per_block)]
+             )
 
         if dim_condition:
             if conditioning == 'glu':
@@ -113,12 +131,17 @@ class ResidualBlock(nn.Module):
         for i in range(self.repeats_per_block):
             if self.use_batch_norm:
                 x = self.batch_norm_layers[i](x)
+            elif self.use_layer_norm:
+                x = self.layer_norm_layers[i](x)
+
             if not self.adaptive_activation:
                 x = self.activation(x)
             else:
                 x = self.activation_layers[i](x)
+
             if self.dropout_rate > 0 and i == self.repeats_per_block - 1:
                 x = self.dropout(x)
+
             x = self.linear_layers[i](x)
         
         if condition is not None:
@@ -126,6 +149,9 @@ class ResidualBlock(nn.Module):
                 x = F.glu(torch.cat((x, self.condition_layer(condition)), dim=-1), dim=-1)
             elif self.conditioning == 'film':
                 gamma, beta = torch.chunk(self.condition_layer(condition), chunks=2, dim=-1)
+                if self.film_with_tanh:
+                    tanh = nn.Tanh()
+                    gamma, beta = tanh(gamma), tanh(beta)
                 x = x * gamma + beta
 
         return x0 + x if self.residual else x
