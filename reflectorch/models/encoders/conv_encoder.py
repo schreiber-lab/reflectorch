@@ -11,7 +11,6 @@ __all__ = [
     "ConvEncoder",
     "ConvDecoder",
     "ConvAutoencoder",
-    "ConvVAE",
 ]
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class ConvEncoder(nn.Module):
     Args:
         in_channels (int, optional): the number of input channels. Defaults to 1.
         hidden_channels (tuple, optional): the number of intermediate channels of each convolutional layer. Defaults to (32, 64, 128, 256, 512).
-        dim_latent (int, optional): the dimension of the output latent embedding. Defaults to 64.
+        dim_embedding (int, optional): the dimension of the output latent embedding. Defaults to 64.
         dim_avpool (int, optional): the output size of the adaptive average pooling layer. Defaults to 1.
         use_batch_norm (bool, optional): whether to use batch normalization. Defaults to True.
         activation (str, optional): the type of activation function. Defaults to 'relu'.
@@ -31,9 +30,11 @@ class ConvEncoder(nn.Module):
     def __init__(self,
                  in_channels: int = 1,
                  hidden_channels: tuple = (32, 64, 128, 256, 512),
-                 dim_latent: int = 64,
+                 kernel_size: int = 3,
+                 dim_embedding: int = 64,
                  dim_avpool: int = 1,
                  use_batch_norm: bool = True,
+                 use_se: bool = False,
                  activation: str = 'relu',
                  ):
         super().__init__()
@@ -44,22 +45,24 @@ class ConvEncoder(nn.Module):
 
         for h in hidden_channels:
             layers = [
-                nn.Conv1d(in_channels, out_channels=h, kernel_size=3, stride=2, padding=1),
+                nn.Conv1d(in_channels, out_channels=h, kernel_size=kernel_size, stride=2, padding=kernel_size // 2),
                 activation(),
             ]
 
             if use_batch_norm:
                 layers.insert(1, nn.BatchNorm1d(h))
 
+            if use_se:
+                layers.insert(2, SEBlock(h))
+
             modules.append(nn.Sequential(*layers))
             in_channels = h
 
         self.core = nn.Sequential(*modules)
         self.avpool = nn.AdaptiveAvgPool1d(dim_avpool)
-        self.fc = nn.Linear(hidden_channels[-1] * dim_avpool, dim_latent)
+        self.fc = nn.Linear(hidden_channels[-1] * dim_avpool, dim_embedding)
 
     def forward(self, x):
-        """"""
         if len(x.shape) < 3:
             x = x.unsqueeze(1)
         x = self.core(x)
@@ -100,6 +103,7 @@ class ConvDecoder(nn.Module):
                  hidden_channels: tuple = (512, 256, 128, 64, 32), 
                  dim_latent: int = 64, 
                  in_size: int = 8,
+                 kernel_size: int = 3,
                  use_batch_norm: bool = True,
                  activation: str = 'relu',
                  ):
@@ -119,9 +123,9 @@ class ConvDecoder(nn.Module):
                     nn.ConvTranspose1d(
                         hidden_channels[i],
                         hidden_channels[i + 1],
-                        kernel_size=3,
+                        kernel_size=kernel_size, #3
                         stride=2,
-                        padding=1,
+                        padding=kernel_size // 2, #1
                         output_padding=1,
                     ),
                     nn.BatchNorm1d(hidden_channels[i + 1]) if use_batch_norm else nn.Identity(),
@@ -134,9 +138,9 @@ class ConvDecoder(nn.Module):
         self.final_layer = nn.Sequential(
             nn.ConvTranspose1d(hidden_channels[-1],
                                hidden_channels[-1],
-                               kernel_size=3,
+                               kernel_size=kernel_size, #3
                                stride=2,
-                               padding=1,
+                               padding=kernel_size // 2, #1
                                output_padding=1),
             nn.BatchNorm1d(hidden_channels[-1]) if use_batch_norm else nn.Identity(),
             activation(),
@@ -160,46 +164,56 @@ class ConvAutoencoder(nn.Module):
                  decoder_hidden_channels: tuple = (512, 256, 128, 64, 32),
                  dim_latent: int = 64,
                  dim_avpool: int = 1,
+                 kernel_size: int = 3,
                  use_batch_norm: bool = True,
                  activation: str = 'relu',
                  decoder_in_size: int = 8,
                  **kwargs
                  ):
         super().__init__()
-        self.encoder = ConvEncoder(in_channels, encoder_hidden_channels, dim_latent, dim_avpool, use_batch_norm, activation, **kwargs)
-        self.decoder = ConvDecoder(decoder_hidden_channels, dim_latent, decoder_in_size, use_batch_norm, activation, **kwargs)
+        self.encoder = ConvEncoder(
+            in_channels=in_channels, 
+            hidden_channels=encoder_hidden_channels,
+            kernel_size=kernel_size,
+            dim_embedding=dim_latent, 
+            dim_avpool=dim_avpool, 
+            use_batch_norm=use_batch_norm, 
+            activation=activation,
+            **kwargs)
+
+        self.decoder = ConvDecoder(
+            hidden_channels=decoder_hidden_channels, 
+            dim_latent=dim_latent, 
+            in_size=decoder_in_size, 
+            kernel_size=kernel_size,
+            use_batch_norm=use_batch_norm, 
+            activation=activation, 
+            **kwargs)
 
     def forward(self, x):
         return self.decoder(self.encoder(x))
     
-class ConvVAE(nn.Module):
-    """A 1D convolutional variational autoencoder"""
-    def __init__(self,
-                 in_channels: int = 1,
-                 encoder_hidden_channels: tuple = (32, 64, 128, 256, 512),
-                 decoder_hidden_channels: tuple = (512, 256, 128, 64, 32),
-                 dim_latent: int = 64,
-                 dim_avpool: int = 1,
-                 use_batch_norm: bool = True,
-                 activation: str = 'relu',
-                 decoder_in_size: int = 8,
-                 **kwargs
-                 ):
+class SEBlock(nn.Module):
+    """Squeeze-and-excitation block (https://arxiv.org/abs/1709.01507) """
+    def __init__(self, in_channels, reduction=16):
         super().__init__()
-        self.encoder = ConvEncoder(in_channels, encoder_hidden_channels, 2*dim_latent, dim_avpool, use_batch_norm, activation, **kwargs)
-        self.decoder = ConvDecoder(decoder_hidden_channels, dim_latent, decoder_in_size, use_batch_norm, activation, **kwargs)
+        self.fc1 = nn.Linear(in_channels, in_channels // reduction, bias=False)
+        self.fc2 = nn.Linear(in_channels // reduction, in_channels, bias=False)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        self.global_avg_pool = nn.AdaptiveAvgPool1d(1)
 
     def forward(self, x):
-        z_mu, z_logvar = self.encoder(x).chunk(2, dim=-1)
-        z = self.reparameterize(z_mu, z_logvar)
-
-        x_r_mu, x_r_logvar = self.decoder(z).chunk(2, dim=-1)
-        x = self.reparameterize(x_r_mu, x_r_logvar)
-
-        return x, (z_mu, z_logvar, x_r_mu, x_r_logvar)
-    
-    @staticmethod
-    def reparameterize(mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std).to(std)
-        return mu + eps * std
+        batch_size, channels, _ = x.size()
+        
+        #Squeeze
+        se = self.global_avg_pool(x).view(batch_size, channels)
+        
+        #Excitation
+        se = self.fc1(se)
+        se = self.relu(se)
+        se = self.fc2(se)
+        se = self.sigmoid(se).view(batch_size, channels, 1)
+        
+        #Scale the input feature maps (channel-wise attention)
+        return x * se
