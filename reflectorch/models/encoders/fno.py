@@ -46,28 +46,30 @@ class FnoEncoder(nn.Module):
         :align: center
 
     Args:
-        ch_in (int): number of input channels
+        in_channels (int): number of input channels
         dim_embedding (int): dimension of the output embedding
         modes (int): number of Fourier modes
         width_fno (int): number of channels of the intermediate representations
         n_fno_blocks (int): number of FNO blocks
         activation (str): the activation function
-        fusion_self_attention (bool): if ``True`` a fusion layer is used after the FNO blocks to produce the final embedding
+        fusion_self_attention (bool): whether to use fusion self attention for merging the tokens (instead of mean)
+        fsa_activation (str): the activation function of the fusion self attention block
     """
     def __init__(
             self, 
-            ch_in: int = 2, 
+            in_channels: int = 2, 
             dim_embedding: int = 128, 
             modes: int = 32, 
             width_fno: int = 64, 
             n_fno_blocks: int = 6, 
             activation: str = 'gelu',
             fusion_self_attention: bool = False,
+            fsa_activation: str = 'tanh',
             ):
         super().__init__()
 
 
-        self.ch_in = ch_in
+        self.in_channels = in_channels
         self.dim_embedding = dim_embedding
         
         self.modes = modes
@@ -77,13 +79,17 @@ class FnoEncoder(nn.Module):
         self.fusion_self_attention = fusion_self_attention
         
 
-        self.fc0 = nn.Linear(ch_in, width_fno) #(r(q), q)
-        self.spectral_convs = nn.ModuleList([SpectralConv1d(in_channels=width_fno, out_channels=width_fno, modes=modes) for _ in range(n_fno_blocks)])
-        self.w_convs = nn.ModuleList([nn.Conv1d(in_channels=width_fno, out_channels=width_fno, kernel_size=1) for _ in range(n_fno_blocks)])
+        self.fc0 = nn.Linear(in_channels, width_fno) #(r(q), q)
+        self.spectral_convs = nn.ModuleList([
+            SpectralConv1d(in_channels=width_fno, out_channels=width_fno, modes=modes) for _ in range(n_fno_blocks)
+            ])
+        self.w_convs = nn.ModuleList([
+            nn.Conv1d(in_channels=width_fno, out_channels=width_fno, kernel_size=1) for _ in range(n_fno_blocks)
+            ])
         self.fc_out = nn.Linear(width_fno, dim_embedding)
 
         if fusion_self_attention:
-            self.fusion = FusionSelfAttention(width_fno, 2*width_fno)
+            self.fusion = FusionSelfAttention(embed_dim=width_fno, hidden_dim=2*width_fno, activation=fsa_activation)
         
     def forward(self, x):
         """"""
@@ -109,19 +115,20 @@ class FnoEncoder(nn.Module):
         
         return x
     
+
 class FusionSelfAttention(nn.Module):
-    def __init__(self, 
-                 embed_dim: int = 64, 
-                 hidden_dim: int = 64,
-                 activation=nn.Tanh,
-                 ):
+    def __init__(self, embed_dim: int = 64, hidden_dim: int = 64, activation: str = 'gelu'):
         super().__init__()
+        activation = activation_by_name(activation)()
         self.fuser = nn.Sequential(nn.Linear(embed_dim, hidden_dim), 
-                                   activation(),
+                                   activation,
                                    nn.Linear(hidden_dim, 1, bias=False))
         
-    def forward(self, c):  # (batch_size x seq_len x embed_dim)
+    def forward(self, 
+                c: torch.Tensor,  # (batch_size x seq_len x embed_dim)
+                mask: torch.Tensor = None, # (batch_size x seq_len)
+                ):  
         a = self.fuser(c)
-        alpha = torch.exp(a)
+        alpha = torch.exp(a)*mask.unsqueeze(-1) if mask is not None else torch.exp(a)
         alpha = alpha/alpha.sum(dim=1, keepdim=True)
         return (alpha*c).sum(dim=1)  # (batch_size x embed_dim)
