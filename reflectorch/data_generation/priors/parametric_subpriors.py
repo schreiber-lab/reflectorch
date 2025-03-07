@@ -54,9 +54,9 @@ class BasicParams(AbstractParams):
         self.min_bounds = min_bounds
         self.max_bounds = max_bounds
 
-    def get_param_labels(self) -> List[str]:
+    def get_param_labels(self, **kwargs) -> List[str]:
         """gets the parameter labels"""
-        return self.param_model.get_param_labels()
+        return self.param_model.get_param_labels(**kwargs)
 
     def reflectivity(self, q: Tensor, log: bool = False, **kwargs):
         r"""computes the reflectivity curves directly from the parameters
