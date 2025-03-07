@@ -13,7 +13,7 @@ def test_cnn(input_dim, in_channels, hidden_channels, dim_embedding, dim_avpool,
     embedding_net = ConvEncoder(
         in_channels=in_channels, 
         hidden_channels=hidden_channels,
-        dim_latent=dim_embedding,
+        dim_embedding=dim_embedding,
         dim_avpool=dim_avpool,
         use_batch_norm=use_batch_norm,
         activation=activation,
@@ -31,7 +31,7 @@ def test_cnn(input_dim, in_channels, hidden_channels, dim_embedding, dim_avpool,
 @pytest.mark.parametrize("fusion_self_attention", [False, True])
 def test_fno(input_dim, in_channels, dim_embedding, modes, fusion_self_attention):
     embedding_net = FnoEncoder(
-        ch_in = in_channels,
+        in_channels = in_channels,
         dim_embedding = dim_embedding,
         modes = modes,
         width_fno = 128,
