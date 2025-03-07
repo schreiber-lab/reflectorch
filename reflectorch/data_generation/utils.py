@@ -126,23 +126,22 @@ def get_param_labels(
         thickness_name: str = 'Thickness',
         roughness_name: str = 'Roughness',
         sld_name: str = 'SLD',
-        substrate_name: str = 'sub',
-) -> List[str]:
-    thickness_labels = [f'{thickness_name} L{num_layers - i}' for i in range(num_layers)]
-    roughness_labels = [f'{roughness_name} L{num_layers - i}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
-    sld_labels = [f'{sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{sld_name} {substrate_name}']
-    return thickness_labels + roughness_labels + sld_labels
-
-def get_param_labels_absorption_model(
-        num_layers: int, *,
-        thickness_name: str = 'Thickness',
-        roughness_name: str = 'Roughness',
-        real_sld_name: str = 'SLD real',
         imag_sld_name: str = 'SLD imag',
         substrate_name: str = 'sub',
+        parameterization_type: str = 'standard',
+        number_top_to_bottom: bool = False,
 ) -> List[str]:
-    thickness_labels = [f'{thickness_name} L{num_layers - i}' for i in range(num_layers)]
-    roughness_labels = [f'{roughness_name} L{num_layers - i}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
-    real_sld_labels = [f'{real_sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{real_sld_name} {substrate_name}']
-    imag_sld_labels = [f'{imag_sld_name} L{num_layers - i}' for i in range(num_layers)] + [f'{imag_sld_name} {substrate_name}']
-    return thickness_labels + roughness_labels + real_sld_labels + imag_sld_labels
+    def pos(i):
+        return i + 1 if number_top_to_bottom else num_layers - i
+        
+    thickness_labels = [f'{thickness_name} L{pos(i)}' for i in range(num_layers)]
+    roughness_labels = [f'{roughness_name} L{pos(i)}' for i in range(num_layers)] + [f'{roughness_name} {substrate_name}']
+    sld_labels = [f'{sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{sld_name} {substrate_name}']
+
+    all_labels = thickness_labels + roughness_labels + sld_labels
+
+    if parameterization_type == 'absorption':
+        imag_sld_labels = [f'{imag_sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{imag_sld_name} {substrate_name}']
+        all_labels = all_labels + imag_sld_labels
+        
+    return all_labels
