@@ -23,7 +23,7 @@ from reflectorch.ml.trainers import PointEstimatorTrainer
 from reflectorch.data_generation.likelihoods import LogLikelihood
 
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
-from reflectorch.inference.scipy_fitter import standard_refl_fit, get_fit_with_growth
+from reflectorch.inference.scipy_fitter import standard_refl_fit, refl_fit, get_fit_with_growth
 from reflectorch.inference.sampler_solution import simple_sampler_solution, get_best_mse_param
 from reflectorch.inference.record_time import print_time
 from reflectorch.utils import to_t
@@ -122,16 +122,20 @@ class EasyInferenceModel(object):
             n_q_range = self.trainer.loader.q_generator.n_q_range
             print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
 
-    def predict(self, reflectivity_curve: Union[np.ndarray, Tensor], 
+    def predict(self, 
+                reflectivity_curve: Union[np.ndarray, Tensor], 
                 q_values: Union[np.ndarray, Tensor] = None, 
                 prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
+                q_resolution: float = None,
                 clip_prediction: bool = False, 
                 polish_prediction: bool = False, 
+                polishing_kwargs_reflectivity: dict = None,
                 fit_growth: bool = False, 
                 max_d_change: float = 5.,
                 use_q_shift: bool = False, 
                 calc_pred_curve: bool = True,
                 calc_pred_sld_profile: bool = False,
+                calc_polished_sld_profile: bool = False,
                 ):
         """Predict the thin film parameters
 
@@ -139,13 +143,16 @@ class EasyInferenceModel(object):
             reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
             q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of inverse angstroms).
             prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.
+            q_resolution (float, optional): only for models where the q resolution is an additional input to the network.
             clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
             polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.
+            polishing_kwargs_reflectivity (): extra arguments for the reflectivity function used during polishing. {'dq': ...} must be provided to account for smearing during polishing.
             fit_growth (bool, optional): If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
             max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
             use_q_shift: If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
             calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
+            calc_polished_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the polished parameters. Defaults to False.
 
         Returns:
             dict: dictionary containing the predictions
@@ -166,14 +173,26 @@ class EasyInferenceModel(object):
         else:
             with torch.no_grad():
                 self.trainer.model.eval()
-                if self.trainer.train_with_q_input:
-                    scaled_q = self.trainer.loader.q_generator.scale_q(q_values).float()
-                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds, scaled_q)
+
+                scaled_q_values = self.trainer.loader.q_generator.scale_q(q_values).to(torch.float32) if self.trainer.train_with_q_input else None
+                
+                if self.trainer.condition_on_q_resolutions:
+                    assert q_resolution is not None, 'The network was trained with the q_resolution (dq/q) as an additional input, it must be provided as an argument.' 
+                    q_resolution_tensor = torch.atleast_2d(torch.tensor([q_resolution])).to(scaled_curve)
+                    scaled_q_resolutions = self.loader.smearing.scale_resolutions(q_resolution_tensor) if self.condition_on_q_resolutions else None
+                    scaled_conditioning_params = scaled_q_resolutions
                 else:
-                    scaled_predicted_params = self.trainer.model(scaled_curve, scaled_prior_bounds)
+                    scaled_conditioning_params = None
+
+                scaled_predicted_params = self.trainer.model(
+                    curves=scaled_curve, 
+                    bounds=scaled_prior_bounds, 
+                    q_values=scaled_q_values,
+                    conditioning_params = scaled_conditioning_params,
+                    )
                 
                 predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
-
+        
         if clip_prediction:
             predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
         
@@ -196,7 +215,7 @@ class EasyInferenceModel(object):
         else:
             predicted_sld_xaxis = None
 
-        if polish_prediction: #only for standard box-model parameterization
+        if polish_prediction:
             polished_dict = self._polish_prediction(q = q_values.squeeze().cpu().numpy(), 
                                                     curve = reflectivity_curve, 
                                                     predicted_params = predicted_params, 
@@ -204,8 +223,9 @@ class EasyInferenceModel(object):
                                                     fit_growth = fit_growth,
                                                     max_d_change = max_d_change, 
                                                     calc_polished_curve = calc_pred_curve,
-                                                    calc_polished_sld_profile = False,
+                                                    calc_polished_sld_profile = calc_polished_sld_profile,
                                                     sld_x_axis = predicted_sld_xaxis,
+                                                    polishing_kwargs_reflectivity=polishing_kwargs_reflectivity,
                                                     )
             prediction_dict.update(polished_dict)
 
@@ -332,14 +352,12 @@ class EasyInferenceModel(object):
                            max_d_change: float = 5.,
                            calc_polished_curve: bool = True,
                            calc_polished_sld_profile: bool = False,
+                           polishing_kwargs_reflectivity: dict = None,
                            ) -> dict:
-        params = torch.cat([
-            predicted_params.thicknesses.squeeze(),
-            predicted_params.roughnesses.squeeze(),
-            predicted_params.slds.squeeze()
-        ]).cpu().numpy()
+        params = predicted_params.parameters.squeeze().cpu().numpy()
 
         polished_params_dict = {}
+        polishing_kwargs_reflectivity = polishing_kwargs_reflectivity or {}
 
         try:
             if fit_growth:
@@ -358,18 +376,21 @@ class EasyInferenceModel(object):
                     self.trainer.loader.prior_sampler.param_model
                     )
             else:
-                polished_params_arr, curve_polished = standard_refl_fit(
+                polished_params_arr, curve_polished = refl_fit(
                     q = q, 
                     curve = curve, 
                     init_params = params, 
-                    bounds=priors.T)
+                    bounds=priors.T,
+                    prior_sampler=self.trainer.loader.prior_sampler,
+                    reflectivity_kwargs=polishing_kwargs_reflectivity,
+                )
                 polished_params = BasicParams(
                     torch.from_numpy(polished_params_arr[None]),
                     torch.from_numpy(priors.T[0][None]),
                     torch.from_numpy(priors.T[1][None]),
                     self.trainer.loader.prior_sampler.max_num_layers,
                     self.trainer.loader.prior_sampler.param_model
-                    )
+                )
         except Exception as err:
             polished_params = predicted_params
             polished_params_arr = get_prediction_array(polished_params)
@@ -381,9 +402,9 @@ class EasyInferenceModel(object):
 
         if calc_polished_sld_profile:
             _, sld_profile_polished, _ = get_density_profiles(
-                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis.cpu(),
             )
-            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
+            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().numpy()
 
         return polished_params_dict
     
