@@ -385,7 +385,7 @@ class GaussianExpIntensityNoise(IntensityNoiseGenerator):
         ) if apply_shift else None
 
         self.background_noise = BackgroundNoise(
-            background_range=background_range, same_across_channels=same_background_across_channels,  add_to_context=add_to_context
+            background_range=background_range, add_to_context=add_to_context
         ) if apply_background else None
 
     def apply(self, curves: Tensor, context: dict = None):
