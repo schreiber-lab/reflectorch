@@ -10,6 +10,7 @@ from reflectorch.data_generation.reflectivity.numpy_implementations import (
     abeles_np,
 )
 from reflectorch.data_generation.reflectivity.smearing import abeles_constant_smearing
+from reflectorch.data_generation.reflectivity.smearing_pointwise import abeles_pointwise_smearing
 from reflectorch.data_generation.reflectivity.kinematical import kinematical_approximation
 
 
@@ -19,10 +20,11 @@ def reflectivity(
         roughness: Tensor,
         sld: Tensor,
         dq: Tensor = None,
-        gauss_num: int = 51,
-        constant_dq: bool = True,
+        gauss_num: int = 17,
+        constant_dq: bool = False,
         log: bool = False,
         abeles_func=None,
+        **abeles_kwargs
 ):
     """Function which computes the reflectivity curves from thin film parameters. 
     By default it uses the fast implementation of the Abeles matrix formalism.
@@ -33,27 +35,35 @@ def reflectivity(
         roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
         sld (Tensor): tensor containing the layer SLDs (real or complex; ordered from top to bottom) with shape 
             [batch_size, n_layers + 1] (excluding ambient SLD which is assumed to be 0)  or [batch_size, n_layers + 2] (including ambient SLD; only for the default ``abeles_func='abeles'``) 
-        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1].
+        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1] (curve-wise smearing) or [batch_size, n_points] (point-wise smearing).
                             Either dq if ``constant_dq`` is ``True`` or dq/q if ``constant_dq`` is ``False``. Defaults to None.
         gauss_num (int, optional): the number of gaussians for curve smearing. Defaults to 51.
         constant_dq (bool, optional): if ``True`` the smearing is constant (constant dq at each point in the curve) 
                                     otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to True.
         log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to False.
         abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation ('abeles'). Defaults to None.
-
+        abeles_kwargs: Additional arguments specific to the chosen `abeles_func`.
     Returns:
-        Tensor: tensor containing the simulated reflectivity curves with shape [batch_size, n_points]
+        Tensor: the computed reflectivity curves
     """
     abeles_func = abeles_func or abeles
     q = torch.atleast_2d(q)
 
     if dq is None:
-        reflectivity_curves = abeles_func(q, thickness, roughness, sld)
+        reflectivity_curves = abeles_func(q, thickness, roughness, sld, **abeles_kwargs)
     else:
-        reflectivity_curves = abeles_constant_smearing(
-            q, thickness, roughness, sld,
-            dq=dq, gauss_num=gauss_num, constant_dq=constant_dq, abeles_func=abeles_func
-        )
+        if dq.shape[-1] > 1:
+            reflectivity_curves = abeles_pointwise_smearing(
+                    q=q, dq=dq, thickness=thickness, roughness=roughness, sld=sld, 
+                    abeles_func=abeles_func, gauss_num=gauss_num,
+                    **abeles_kwargs,
+            )
+        else:
+            reflectivity_curves = abeles_constant_smearing(
+                q, thickness, roughness, sld,
+                dq=dq, gauss_num=gauss_num, constant_dq=constant_dq, abeles_func=abeles_func,
+                **abeles_kwargs,
+            )
 
     if log:
         reflectivity_curves = torch.log10(reflectivity_curves)
