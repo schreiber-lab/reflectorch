@@ -10,7 +10,6 @@ from reflectorch.data_generation.reflectivity import (
 )
 from reflectorch.data_generation.utils import (
     get_param_labels,
-    get_param_labels_absorption_model,
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
@@ -44,7 +43,7 @@ class ParametricModel(object):
     @property
     def param_dim(self) -> int:
         """get the number of parameters
-        
+
         Returns:
             int:
         """
@@ -106,7 +105,7 @@ class ParametricModel(object):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
+    def get_param_labels(self, **kwargs) -> List[str]:
         """get the list with the name of the parameters
 
         Returns:
@@ -204,8 +203,8 @@ class StandardModel(ParametricModel):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels(self.max_num_layers)
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, **kwargs)
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -305,9 +304,9 @@ class ModelWithAbsorption(StandardModel):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels_absorption_model(self.max_num_layers)
-
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, parameterization_type='absorption', **kwargs)
+    
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
         num_params = parametrized_model.shape[-1]
@@ -355,8 +354,9 @@ class ModelWithShifts(StandardModel):
 
         return params
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels(self.max_num_layers) + [r"$\Delta q$ (Å$^{{-1}}$)", r"$\Delta I$"]
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, **kwargs) + [r"$\Delta q$ (Å$^{{-1}}$)", r"$\Delta I$"]
+
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -384,7 +384,7 @@ class ModelWithShifts(StandardModel):
 
 def reflectivity_with_shifts(q, thickness, roughness, sld, q_shift, norm_shift, **kwargs):
     q = torch.atleast_2d(q) + q_shift
-    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift
+    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift   
 
 class NoFresnelModel(StandardModel):
     NAME = 'no_fresnel_model'
