@@ -51,7 +51,7 @@ def kinematical_approximation(
 
         substrate_sld = sld[:, -1:]
 
-        rf = _get_resnel_reflectivity(q, substrate_sld[:, None])
+        rf = _get_fresnel_reflectivity(q, substrate_sld[:, None])
 
         r = torch.clamp_max_(r * rf / substrate_sld.real ** 2, 1.)
 
@@ -61,12 +61,11 @@ def kinematical_approximation(
     return r
 
 
-def _get_resnel_reflectivity(q, substrate_slds):
-    _RE_CONST = 0.28174103675406496
+def _get_fresnel_reflectivity(q, substrate_slds):
+    _RE_CONST = 0.28174103675406496 # 2/sqrt(16*pi)
 
     q_c = torch.sqrt(substrate_slds + 0j) / _RE_CONST * 2
     q_prime = torch.sqrt(q ** 2 - q_c ** 2 + 0j)
     r_f = ((q - q_prime) / (q + q_prime)).abs().float() ** 2
 
     return r_f.squeeze(-1)
-
