@@ -14,26 +14,32 @@ def abeles_constant_smearing(
         roughness: Tensor,
         sld: Tensor,
         dq: Tensor = None,
-        gauss_num: int = 51,
-        constant_dq: bool = True,
+        gauss_num: int = 31,
+        constant_dq: bool = False,
         abeles_func=None,
+        **abeles_kwargs
 ):
     abeles_func = abeles_func or abeles
+
     q_lin = _get_q_axes(q, dq, gauss_num, constant_dq=constant_dq)
     kernels = _get_t_gauss_kernels(dq, gauss_num)
-
-    curves = abeles_func(q_lin, thickness, roughness, sld)
+    
+    curves = abeles_func(q_lin, thickness, roughness, sld, **abeles_kwargs)
 
     padding = (kernels.shape[-1] - 1) // 2
+    padded_curves = pad(curves, (padding, padding), 'reflect')
+
     smeared_curves = conv1d(
-        pad(curves[None], (padding, padding), 'reflect'), kernels[:, None], groups=kernels.shape[0],
-    )[0]
+        padded_curves, kernels[:, None], groups=kernels.shape[0],
+    )
 
     if q.shape[0] != smeared_curves.shape[0]:
-        q = q.expand(smeared_curves.shape[0], *q.shape[1:])
-
+        repeat_factor = smeared_curves.shape[0] // q.shape[0]
+        q = q.repeat(repeat_factor, 1)
+        q_lin = q_lin.repeat(repeat_factor, 1)
+    
     smeared_curves = _batch_linear_interp1d(q_lin, smeared_curves, q)
-
+        
     return smeared_curves
 
 
@@ -55,7 +61,7 @@ def _get_t_gauss_kernels(resolutions: Tensor, gaussnum: int = 51):
     return gauss_y
 
 
-def _get_q_axes(q: Tensor, resolutions: Tensor, gaussnum: int = 51, constant_dq: bool = True):
+def _get_q_axes(q: Tensor, resolutions: Tensor, gaussnum: int = 51, constant_dq: bool = False):
     if constant_dq:
         return _get_q_axes_for_constant_dq(q, resolutions, gaussnum)
     else:
