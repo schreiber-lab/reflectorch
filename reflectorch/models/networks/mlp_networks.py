@@ -167,7 +167,7 @@ class NetworkWithPriorsFnoEmb(NetworkWithPriors):
     """Wrapper for back-compatibility with previous versions of the package"""
     def __init__(self, **kwargs):
         embedding_net_kwargs = {
-            'in_channels': kwargs.pop('ch_in', 2),
+            'in_channels': kwargs.pop('in_channels', 2),
             'dim_embedding': kwargs.pop('dim_embedding', 128),
             'modes': kwargs.pop('modes', 16),
             'width_fno': kwargs.pop('width_fno', 64),
