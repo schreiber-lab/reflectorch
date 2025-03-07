@@ -1,5 +1,5 @@
 general:
-  name: a_base_point_xray_conv_standard
+  name: a_base_point_neutron_conv_standard
   root_dir: null
   
 dset:
@@ -10,7 +10,7 @@ dset:
       param_ranges:
         thicknesses: [1., 500.]
         roughnesses: [0., 60.]
-        slds: [0., 50.]
+        slds: [-8., 16.]
       bound_width_ranges:
         thicknesses: [1.0e-2, 500.]
         roughnesses: [1.0e-2, 60.]
@@ -43,10 +43,20 @@ dset:
     kwargs:
       relative_errors: [0.01, 0.3]
       consistent_rel_err: false
-      apply_shift: true
+      apply_shift: false
       shift_range: [-0.3, 0.3]
+      apply_background: true
+      background_range: [1.0e-10, 1.0e-4]
       add_to_context: true
- 
+
+  smearing:
+    cls: Smearing
+    kwargs:
+      sigma_range: [0.01, 0.10]
+      constant_dq: False
+      gauss_num: 17
+      share_smeared: 1.0
+      
   curves_scaler:
     cls: LogAffineCurvesScaler
     kwargs:
@@ -74,7 +84,7 @@ model:
       dim_out: 8
       dim_conditioning_params: 0
       layer_width: 512
-      num_blocks: 8
+      num_blocks: 6
       repeats_per_block: 2
       residual: true
       use_batch_norm: true
@@ -82,7 +92,7 @@ model:
       mlp_activation: 'gelu'
       dropout_rate: 0.0 
       tanh_output: false
-      conditioning: 'film' # 'concat', 'glu', 'film'
+      conditioning: 'concat' # 'concat', 'glu', 'film'
       concat_condition_first_layer: false
        
 training:
