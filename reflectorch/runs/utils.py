@@ -177,6 +177,9 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
         **trainer_kwargs
     )
 
+    if train_conf.get('train_with_q_input', False) and getattr(trainer, 'train_with_q_input', None) is not None: #only for back-compatibility with configs in older versions
+        trainer.train_with_q_input = True
+
     return trainer
 
 
