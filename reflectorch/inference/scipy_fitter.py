@@ -61,13 +61,23 @@ def refl_fit(
         init_params: np.ndarray,
         prior_sampler: PriorSampler,
         bounds: np.ndarray = None,
+        error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
         reflectivity_kwargs: dict = None,
         **kwargs
 ):
     if bounds is not None:
-        kwargs['bounds'] = bounds
-        init_params = np.clip(init_params, *bounds)
+        # introduce a small perturbation for fixed bounds
+        epsilon = 1e-6
+        adjusted_bounds = bounds.copy()
+
+        for i in range(bounds.shape[1]): 
+            if bounds[0, i] == bounds[1, i]:
+                adjusted_bounds[0, i] -= epsilon
+                adjusted_bounds[1, i] += epsilon
+
+        init_params = np.clip(init_params, *adjusted_bounds)
+        kwargs['bounds'] = adjusted_bounds
 
     reflectivity_kwargs = reflectivity_kwargs or {}
     for key, value in reflectivity_kwargs.items():
@@ -84,7 +94,9 @@ def refl_fit(
         ),
         xdata=q, 
         ydata=scale_curve_func(curve),
-        p0=init_params, 
+        p0=init_params,
+        sigma=error_bars if error_bars is not None else None,
+        absolute_sigma=True,
         **kwargs
     )
 
