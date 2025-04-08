@@ -94,7 +94,6 @@ class BasicDataset(object):
 
         if self.intensity_noise:
             noisy_curves = self.intensity_noise(noisy_curves, batch_data)
-            noisy_curves = torch.clamp(noisy_curves, min=1.0e-16)
 
         scaled_noisy_curves = self.curves_scaler.scale(noisy_curves)
         batch_data['scaled_noisy_curves'] = scaled_noisy_curves
