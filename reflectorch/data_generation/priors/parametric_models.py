@@ -765,3 +765,71 @@ def multilayer_model3(parametrized_model: Tensor, d_full_rel_max: int = 30):
         sld=slds
     )
     return params
+
+
+class NuisanceParamsWrapper(ParametricModel):
+    """
+    Wraps a base model (e.g. StandardModel) to add nuisance parameters, allowing independent enabling/disabling.
+
+    Args:
+        base_model (ParametricModel): The base parametric model.
+        nuisance_params_config (Dict[str, bool]): Dictionary where keys are parameter names
+                                                  and values are `True` (enable) or `False` (disable).
+    """
+
+    def __init__(self, base_model: ParametricModel, nuisance_params_config: Dict[str, bool] = None, **kwargs):
+        super().__init__(base_model.max_num_layers, **kwargs)
+        self.base_model = base_model
+        self.nuisance_params_config = nuisance_params_config or {}
+
+        self.enabled_nuisance_params = [name for name, is_enabled in self.nuisance_params_config.items() if is_enabled]
+
+        self.PARAMETER_NAMES = self.base_model.PARAMETER_NAMES + tuple(self.enabled_nuisance_params)
+        self._param_dim = self.base_model.param_dim + len(self.enabled_nuisance_params)
+
+    @property
+    def param_dim(self) -> int:
+        return self._param_dim
+
+    def to_standard_params(self, parametrized_model: Tensor) -> dict:
+        """Extracts base model parameters only."""
+        base_dim = self.base_model.param_dim
+        base_part = parametrized_model[..., :base_dim]
+        return self.base_model.to_standard_params(base_part)
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        """Computes reflectivity with optional nuisance parameter shifts."""
+        base_dim = self.base_model.param_dim
+        base_params = parametrized_model[..., :base_dim]
+        nuisance_part = parametrized_model[..., base_dim:]
+
+        nuisance_dict = {param: nuisance_part[..., i].unsqueeze(-1) for i, param in enumerate(self.enabled_nuisance_params)}
+        if "log10_background" in nuisance_dict:
+            nuisance_dict["background"] = 10 ** nuisance_dict.pop("log10_background")
+
+        return self.base_model.reflectivity(q, base_params, **nuisance_dict, **kwargs)
+
+    def init_bounds(self, param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]], device=None, dtype=None):
+        """Initialize bounds for enabled nuisance parameters."""
+        min_bounds_base, max_bounds_base, min_deltas_base, max_deltas_base = self.base_model.init_bounds(
+            param_ranges, bound_width_ranges, device, dtype)
+
+        ordered_bounds_nuisance = [param_ranges[k] for k in self.enabled_nuisance_params]
+        delta_bounds_nuisance = [bound_width_ranges[k] for k in self.enabled_nuisance_params]
+
+        if ordered_bounds_nuisance:
+            min_bounds_nuisance, max_bounds_nuisance = torch.tensor(ordered_bounds_nuisance, device=device, dtype=dtype).T[:, None]
+            min_deltas_nuisance, max_deltas_nuisance = torch.tensor(delta_bounds_nuisance, device=device, dtype=dtype).T[:, None]
+
+            min_bounds = torch.cat([min_bounds_base, min_bounds_nuisance], dim=-1)
+            max_bounds = torch.cat([max_bounds_base, max_bounds_nuisance], dim=-1)
+            min_deltas = torch.cat([min_deltas_base, min_deltas_nuisance], dim=-1)
+            max_deltas = torch.cat([max_deltas_base, max_deltas_nuisance], dim=-1)
+        else:
+            min_bounds, max_bounds, min_deltas, max_deltas = min_bounds_base, max_bounds_base, min_deltas_base, max_deltas_base
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+    
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return self.base_model.get_param_labels(**kwargs) + self.enabled_nuisance_params
