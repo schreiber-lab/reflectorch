@@ -94,15 +94,16 @@ class VariableQ(QGenerator):
                  q_min_range: Tuple[float, float] = (0.01, 0.03),
                  q_max_range: Tuple[float, float] = (0.1, 0.5),
                  n_q_range: Tuple[int, int] = (64, 256),
+                 mode: str = 'equidistant',
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
         self.q_min_range = q_min_range
         self.q_max_range = q_max_range
         self.n_q_range = n_q_range
+        self.mode = mode
         self.device = device
         self.dtype = dtype
-        self.q = None
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
         """generate a batch of q values (the number of points varies between batches but is constant within a batch)
@@ -117,12 +118,14 @@ class VariableQ(QGenerator):
         q_min = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_min_range[1] - self.q_min_range[0]) + self.q_min_range[0]
         q_max = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_max_range[1] - self.q_max_range[0]) + self.q_max_range[0]
 
-        n_q = torch.randint(self.n_q_range[0], self.n_q_range[1] + 1, (1,), device="cpu").item()
+        n_q = torch.randint(self.n_q_range[0], self.n_q_range[1] + 1, (1,), device=self.device).item()
 
-        q = torch.linspace(0, 1, n_q, device=self.device, dtype=self.dtype)
+        if self.mode == 'equidistant':
+            q = torch.linspace(0, 1, n_q, device=self.device, dtype=self.dtype)
+        elif self.mode == 'random':
+            q = torch.rand(n_q, device=self.device, dtype=self.dtype).sort().values
+
         q = q_min[:, None] + q * (q_max - q_min)[:, None]
-
-        self.q = q
         
         return q
     
