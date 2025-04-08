@@ -21,6 +21,15 @@ def abeles_constant_smearing(
 ):
     abeles_func = abeles_func or abeles
 
+    if dq.dtype != thickness.dtype:
+        q = q.to(thickness)
+    
+    if dq.dtype != thickness.dtype:
+        dq = dq.to(thickness)
+
+    if q.shape[0] == 1:
+        q = q.repeat(thickness.shape[0], 1)
+
     q_lin = _get_q_axes(q, dq, gauss_num, constant_dq=constant_dq)
     kernels = _get_t_gauss_kernels(dq, gauss_num)
     

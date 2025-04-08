@@ -64,6 +64,9 @@ def abeles_pointwise_smearing(
     """
     abeles_func = abeles_func or abeles
 
+    if q.shape[0] == 1:
+        q = q.repeat(thickness.shape[0], 1)
+
     _FWHM = 2 * np.sqrt(2 * np.log(2.0))
     _INTLIMIT = 3.5
 
