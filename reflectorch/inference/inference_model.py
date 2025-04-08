@@ -14,6 +14,7 @@ from huggingface_hub import hf_hub_download
 from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
 from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
@@ -115,12 +116,35 @@ class EasyInferenceModel(object):
             q_min = self.trainer.loader.q_generator.q[0].item()
             q_max = self.trainer.loader.q_generator.q[-1].item()
             n_q = self.trainer.loader.q_generator.q.shape[0]
-            print(f'The model was trained on curves discretized at {n_q} uniform points between between q_min={q_min} and q_max={q_max}')
+            print(f'The model was trained on curves discretized at {n_q} uniform points between q_min={q_min} and q_max={q_max}')
         elif isinstance(self.trainer.loader.q_generator, VariableQ):
             q_min_range = self.trainer.loader.q_generator.q_min_range
             q_max_range = self.trainer.loader.q_generator.q_max_range
             n_q_range = self.trainer.loader.q_generator.n_q_range
-            print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} of uniform points between between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
+            if n_q_range[0] == n_q_range[1]:
+                n_q_fixed = n_q_range[0]
+                print(f'The model was trained on curves discretized at exactly {n_q_fixed} uniform points, '
+                    f'between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
+            else:
+                print(f'The model was trained on curves discretized at a number between {n_q_range[0]} and {n_q_range[1]} '
+                    f'of uniform points between q_min in [{q_min_range[0]}, {q_min_range[1]}] and q_max in [{q_max_range[0]}, {q_max_range[1]}]')
+        
+        if self.trainer.loader.smearing is not None:
+            q_res_min = self.trainer.loader.smearing.sigma_min
+            q_res_max = self.trainer.loader.smearing.sigma_max
+            if self.trainer.loader.smearing.constant_dq == False:
+                print(f"The model was trained with linear resolution smearing (dq/q) in the range [{q_res_min}, {q_res_max}]")
+            elif self.trainer.loader.smearing.constant_dq == True:
+                print(f"The model was trained with constant resolution smearing in the range [{q_res_min}, {q_res_max}]")
+
+        additional_inputs = ["prior bounds"]
+        if self.trainer.train_with_q_input:
+            additional_inputs.append("q values")
+        if self.trainer.condition_on_q_resolutions:
+            additional_inputs.append("the resolution dq/q")
+        if additional_inputs:
+            inputs_str = ", ".join(additional_inputs)
+            print(f"The following quantities are additional inputs to the network: {inputs_str}.")
 
     def predict(self, 
                 reflectivity_curve: Union[np.ndarray, Tensor], 
