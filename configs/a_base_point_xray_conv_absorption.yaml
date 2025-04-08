@@ -1,0 +1,117 @@
+general:
+  name: a_base_point_xray_conv_absorption
+  root_dir: null
+  
+dset:
+  cls: ReflectivityDataLoader
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+        thicknesses: [1., 500.]
+        roughnesses: [0., 60.]
+        slds: [0., 150.]
+        islds: [0., 30.]
+      bound_width_ranges:
+        thicknesses: [1.0e-2, 500.]
+        roughnesses: [1.0e-2, 60.]
+        slds: [ 1.0e-2, 5.]
+        islds: [1.0e-2, 5.]
+      model_name: model_with_absorption
+      max_num_layers: 2
+      constrained_roughness: true
+      constrained_isld: true
+      max_thickness_share: 0.5
+      max_sld_share: 0.2
+      logdist: false
+      scale_params_by_ranges: false
+      scaled_range: [-1., 1.]
+      device: 'cuda'
+      
+  q_generator:
+    cls: ConstantQ
+    kwargs:
+      q: [0.02, 0.15, 128]
+      device: 'cuda'
+
+  intensity_noise:
+    cls: GaussianExpIntensityNoise
+    kwargs:
+      relative_errors: [0.01, 0.3]
+      consistent_rel_err: false
+      apply_shift: false #true
+      shift_range: [-0.3, 0.3]
+      add_to_context: true
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2
+      bias: 1.0
+      eps: 1.0e-10
+
+model:
+  network:
+    cls: NetworkWithPriors
+    pretrained_name: null
+    device: 'cuda'
+    kwargs:
+      embedding_net_type: 'conv'
+      embedding_net_kwargs:
+        in_channels: 1
+        hidden_channels: [32, 64, 128, 256, 512]
+        kernel_size: 3
+        dim_embedding: 128
+        dim_avpool: 1
+        use_batch_norm: true
+        use_se: false
+        activation: 'gelu'
+      pretrained_embedding_net: null
+      dim_out: 11
+      dim_conditioning_params: 0
+      layer_width: 512
+      num_blocks: 6
+      repeats_per_block: 2
+      residual: true
+      use_batch_norm: true
+      use_layer_norm: false
+      mlp_activation: 'gelu'
+      dropout_rate: 0.0 
+      tanh_output: false
+      conditioning: 'concat' # 'concat', 'glu', 'film'
+      concat_condition_first_layer: false
+       
+training:
+  trainer_cls: PointEstimatorTrainer
+  num_iterations: 10000
+  batch_size: 4096
+  lr: 1.0e-3
+  grad_accumulation_steps: 1
+  clip_grad_norm_max: null
+  update_tqdm_freq: 1
+  optimizer: AdamW
+  trainer_kwargs:
+    train_with_q_input: false
+    train_with_sigmas: false
+    condition_on_q_resolutions: false
+    use_curve_reconstruction_loss: false
+    rescale_loss_interval_width: true #false
+    use_l1_loss: true #false
+    optim_kwargs:
+      betas: [0.9, 0.999]
+      weight_decay: 0.0005
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+    lr_scheduler:
+      cls: CosineAnnealingWithWarmup
+      kwargs:
+        min_lr: 1.0e-6
+        warmup_iters: 100
+        total_iters: 10000
+
+  # logger:
+  #   cls: TensorBoardLogger
+  #   kwargs:
+  #     log_dir: "tensorboard_runs/test_1"
