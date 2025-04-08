@@ -150,7 +150,8 @@ class EasyInferenceModel(object):
                 reflectivity_curve: Union[np.ndarray, Tensor], 
                 q_values: Union[np.ndarray, Tensor] = None, 
                 prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
-                q_resolution: float = None,
+                q_resolution: Union[float, np.ndarray] = None,
+                ambient_sld: float = None,
                 clip_prediction: bool = False, 
                 polish_prediction: bool = False, 
                 polishing_kwargs_reflectivity: dict = None,
@@ -167,10 +168,11 @@ class EasyInferenceModel(object):
             reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
             q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of inverse angstroms).
             prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.
-            q_resolution (float, optional): only for models where the q resolution is an additional input to the network.
+            q_resolution (Union[float, np.ndarray], optional): the instrumental resolution. Either as a float with meaning dq/q for linear smearing or as a numpy array with meaning dq for pointwise smearing. 
+            ambient_sld (float, optional): the SLD of the ambient medium (fronting), if different from air.
             clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
             polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.
-            polishing_kwargs_reflectivity (): extra arguments for the reflectivity function used during polishing. {'dq': ...} must be provided to account for smearing during polishing.
+            polishing_kwargs_reflectivity (dict): extra arguments for the reflectivity function used during polishing.
             fit_growth (bool, optional): If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
             max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
             use_q_shift: If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
@@ -184,6 +186,17 @@ class EasyInferenceModel(object):
 
         scaled_curve = self._scale_curve(reflectivity_curve)
         prior_bounds = np.array(prior_bounds)
+
+        if ambient_sld:
+            n_layers = self.trainer.loader.prior_sampler.max_num_layers
+            sld_indices = slice(2*n_layers+1, 3*n_layers+2)
+            prior_bounds[sld_indices, ...] -= ambient_sld
+            training_min_bounds = self.trainer.loader.prior_sampler.min_bounds.squeeze().cpu().numpy()
+            training_max_bounds = self.trainer.loader.prior_sampler.max_bounds.squeeze().cpu().numpy()
+            lower_bound_check = (prior_bounds[sld_indices, 0] >= training_min_bounds[sld_indices]).all()
+            upper_bound_check = (prior_bounds[sld_indices, 1] <= training_max_bounds[sld_indices]).all()
+            assert lower_bound_check and upper_bound_check, "Shifting the layer SLDs by the ambient SLD exceeded the training ranges."
+
         scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
 
         if not self.trainer.train_with_q_input:
@@ -200,12 +213,18 @@ class EasyInferenceModel(object):
 
                 scaled_q_values = self.trainer.loader.q_generator.scale_q(q_values).to(torch.float32) if self.trainer.train_with_q_input else None
                 
-                if self.trainer.condition_on_q_resolutions:
-                    assert q_resolution is not None, 'The network was trained with the q_resolution (dq/q) as an additional input, it must be provided as an argument.' 
-                    q_resolution_tensor = torch.atleast_2d(torch.tensor([q_resolution])).to(scaled_curve)
-                    scaled_q_resolutions = self.loader.smearing.scale_resolutions(q_resolution_tensor) if self.condition_on_q_resolutions else None
+                if q_resolution is not None:
+                    q_resolution_tensor = torch.atleast_2d(torch.as_tensor(q_resolution)).to(scaled_curve)
+                    if isinstance(q_resolution, float):
+                        unscaled_q_resolutions = q_resolution_tensor
+                    else:
+                        unscaled_q_resolutions = (q_resolution_tensor / q_values).mean(dim=-1, keepdim=True)
+                    scaled_q_resolutions = self.trainer.loader.smearing.scale_resolutions(unscaled_q_resolutions) if self.trainer.condition_on_q_resolutions else None
                     scaled_conditioning_params = scaled_q_resolutions
+                    if polishing_kwargs_reflectivity is None:
+                        polishing_kwargs_reflectivity = {'dq': q_resolution}
                 else:
+                    q_resolution_tensor = None
                     scaled_conditioning_params = None
 
                 scaled_predicted_params = self.trainer.model(
@@ -216,7 +235,7 @@ class EasyInferenceModel(object):
                     )
                 
                 predicted_params = self.trainer.loader.prior_sampler.restore_params(torch.cat([scaled_predicted_params, scaled_prior_bounds], dim=-1))
-        
+
         if clip_prediction:
             predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
         
@@ -227,12 +246,13 @@ class EasyInferenceModel(object):
         }
 
         if calc_pred_curve:
-            predicted_curve = predicted_params.reflectivity(q_values).squeeze().cpu().numpy()
+            predicted_curve = predicted_params.reflectivity(q=q_values, dq=q_resolution_tensor).squeeze().cpu().numpy()
             prediction_dict[ "predicted_curve"] = predicted_curve
         
+        ambient_sld_tensor = torch.atleast_2d(torch.as_tensor(ambient_sld)).to(predicted_params.thicknesses.device) if ambient_sld is not None else None
         if calc_pred_sld_profile: 
             predicted_sld_xaxis, predicted_sld_profile, _ = get_density_profiles(
-                predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024, 
+                predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, ambient_sld_tensor, num=1024, 
             ) 
             prediction_dict['predicted_sld_profile'] = predicted_sld_profile.squeeze().cpu().numpy()
             prediction_dict['predicted_sld_xaxis'] = predicted_sld_xaxis.squeeze().cpu().numpy()
@@ -240,6 +260,8 @@ class EasyInferenceModel(object):
             predicted_sld_xaxis = None
 
         if polish_prediction:
+            if ambient_sld_tensor:
+                ambient_sld_tensor = ambient_sld_tensor.cpu()
             polished_dict = self._polish_prediction(q = q_values.squeeze().cpu().numpy(), 
                                                     curve = reflectivity_curve, 
                                                     predicted_params = predicted_params, 
@@ -248,6 +270,7 @@ class EasyInferenceModel(object):
                                                     max_d_change = max_d_change, 
                                                     calc_polished_curve = calc_pred_curve,
                                                     calc_polished_sld_profile = calc_polished_sld_profile,
+                                                    ambient_sld_tensor=ambient_sld_tensor,
                                                     sld_x_axis = predicted_sld_xaxis,
                                                     polishing_kwargs_reflectivity=polishing_kwargs_reflectivity,
                                                     )
@@ -255,6 +278,11 @@ class EasyInferenceModel(object):
 
             if fit_growth and "polished_params_array" in prediction_dict:
                 prediction_dict["param_names"].append("max_d_change")
+
+        if ambient_sld: #Note: the SLD shift will only be reflected in predicted_params_array but not in predicted_params_object
+            prediction_dict["predicted_params_array"][sld_indices] += ambient_sld
+            if "polished_params_array" in prediction_dict:
+                prediction_dict["polished_params_array"][sld_indices] += ambient_sld
 
         return prediction_dict
 
@@ -372,6 +400,7 @@ class EasyInferenceModel(object):
                            predicted_params: BasicParams,
                            priors: np.ndarray,
                            sld_x_axis,
+                           ambient_sld_tensor: Tensor = None,
                            fit_growth: bool = False,
                            max_d_change: float = 5.,
                            calc_polished_curve: bool = True,
@@ -426,7 +455,7 @@ class EasyInferenceModel(object):
 
         if calc_polished_sld_profile:
             _, sld_profile_polished, _ = get_density_profiles(
-                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis.cpu(),
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, ambient_sld_tensor, z_axis=sld_x_axis.cpu(),
             )
             polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().numpy()
 
@@ -450,6 +479,23 @@ class EasyInferenceModel(object):
         ], -1)
 
         return scaled_bounds.float()
+    
+    def interpolate_data_to_model_q(self, q_exp, curve_exp):
+        if isinstance(self.trainer.loader.q_generator, ConstantQ):
+            q_model = self.trainer.loader.q_generator.q.cpu().numpy()
+        elif isinstance(self.trainer.loader.q_generator, VariableQ):
+            if self.trainer.loader.q_generator.n_q_range[0] == self.trainer.loader.q_generator.n_q_range[1]:
+                n_q_model = self.trainer.loader.q_generator.n_q_range[0]
+                q_model_min = max(q_exp.min(), self.trainer.loader.q_generator.q_min_range[0])
+                q_model_max = min(q_exp.max(), self.trainer.loader.q_generator.q_max_range[1])
+                q_model = np.linspace(q_model_min, q_model_max, n_q_model)
+            else:
+                q_model = q_exp
+                exp_curve_interp = curve_exp
+
+        exp_curve_interp = interp_reflectivity(q_model, q_exp, curve_exp)
+
+        return q_model, exp_curve_interp
     
     def _get_likelihood(self, q, curve, rel_err: float = 0.1, abs_err: float = 1e-12):
         return LogLikelihood(
