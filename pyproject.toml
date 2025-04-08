@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflectorch"
-version = "1.2.1"
-authors = [
-    {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
-    {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"}
+version = "2.0.0"
+authors = [{name = "Vladimir Starostin", email = "vladimir.starostin@uni-tuebingen.de"},
+           {name = "Valentin Munteanu", email = "valentin.munteanu@uni-tuebingen.de"}
 ]
+
 maintainers = [
     {name = "Valentin Munteanu", email="valentin.munteanu@uni-tuebingen.de"},
     {name = "Vladimir Starostin", email="vladimir.starostin@uni-tuebingen.de"},
