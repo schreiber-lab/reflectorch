@@ -20,10 +20,13 @@ def reflectivity(
         roughness: Tensor,
         sld: Tensor,
         dq: Tensor = None,
-        gauss_num: int = 17,
+        gauss_num: int = 51,
         constant_dq: bool = False,
         log: bool = False,
-        abeles_func=None,
+        q_shift: Tensor = 0.0,
+        r_scale: Tensor = 1.0,
+        background: Tensor = 0.0,
+        abeles_func = None,
         **abeles_kwargs
 ):
     """Function which computes the reflectivity curves from thin film parameters. 
@@ -35,19 +38,23 @@ def reflectivity(
         roughness (Tensor): tensor containing the interlayer roughnesses (ordered from top to bottom) with shape [batch_size, n_layers + 1]
         sld (Tensor): tensor containing the layer SLDs (real or complex; ordered from top to bottom) with shape 
             [batch_size, n_layers + 1] (excluding ambient SLD which is assumed to be 0)  or [batch_size, n_layers + 2] (including ambient SLD; only for the default ``abeles_func='abeles'``) 
-        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1] (curve-wise smearing) or [batch_size, n_points] (point-wise smearing).
+        dq (Tensor, optional): tensor of resolutions used for curve smearing with shape [batch_size, 1].
                             Either dq if ``constant_dq`` is ``True`` or dq/q if ``constant_dq`` is ``False``. Defaults to None.
         gauss_num (int, optional): the number of gaussians for curve smearing. Defaults to 51.
         constant_dq (bool, optional): if ``True`` the smearing is constant (constant dq at each point in the curve) 
-                                    otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to True.
+                                    otherwise the smearing is linear (constant dq/q at each point in the curve). Defaults to False.
         log (bool, optional): if True the base 10 logarithm of the reflectivity curves is returned. Defaults to False.
+        q_shift (float or Tensor, optional): misalignment in q.
+        r_scale (float or Tensor, optional): normalization factor (scales reflectivity).
+        background (float or Tensor, optional): background intensity.
         abeles_func (Callable, optional): a function implementing the simulation of the reflectivity curves, if different than the default Abeles matrix implementation ('abeles'). Defaults to None.
         abeles_kwargs: Additional arguments specific to the chosen `abeles_func`.
     Returns:
         Tensor: the computed reflectivity curves
     """
     abeles_func = abeles_func or abeles
-    q = torch.atleast_2d(q)
+    q = torch.atleast_2d(q) + q_shift
+    q = torch.clamp(q, min=0.0)
 
     if dq is None:
         reflectivity_curves = abeles_func(q, thickness, roughness, sld, **abeles_kwargs)
@@ -65,6 +72,14 @@ def reflectivity(
                 **abeles_kwargs,
             )
 
+    if isinstance(r_scale, Tensor):
+        r_scale = r_scale.view(-1, *[1] * (reflectivity_curves.dim() - 1))
+    if isinstance(background, Tensor):
+        background = background.view(-1, *[1] * (reflectivity_curves.dim() - 1))
+
+    reflectivity_curves = reflectivity_curves * r_scale + background
+
     if log:
         reflectivity_curves = torch.log10(reflectivity_curves)
+
     return reflectivity_curves
