@@ -197,7 +197,7 @@ class GaussianNoiseGenerator(IntensityNoiseGenerator):
                 relative_errors = torch.stack([uniform_sampler(*item, curves.shape[0], curves.shape[-1], device=curves.device, dtype=curves.dtype) for item in relative_errors], dim=1)
 
         sigmas = relative_errors * curves
-        noise = torch.normal(mean=0., std=sigmas)
+        noise = torch.normal(mean=0., std=sigmas).clamp_min_(0.0)
 
         if self.add_to_context and context is not None:
             context['relative_errors'] = relative_errors
@@ -323,6 +323,7 @@ class BackgroundNoise(IntensityNoiseGenerator):
 
     Args:
         background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
+        add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.
     """
     def __init__(self,
                  background_range: tuple = (1.0e-10, 1.0e-8),
@@ -390,13 +391,13 @@ class GaussianExpIntensityNoise(IntensityNoiseGenerator):
 
     def apply(self, curves: Tensor, context: dict = None):
         """applies the specified types of noise to the input curves"""
+        if self.shift_noise:
+            curves = self.shift_noise(curves, context)
+        
         if self.background_noise:
             curves = self.background_noise.apply(curves, context)
 
         curves = self.gaussian_noise(curves, context)
-
-        if self.shift_noise:
-            curves = self.shift_noise(curves, context)
         
         return curves
 
