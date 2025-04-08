@@ -221,7 +221,7 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
 
     if str(model_path).endswith('.pt'):
         try:
-            state_dict = torch.load(model_path, map_location=inference_device)
+            state_dict = torch.load(model_path, map_location=inference_device, weights_only=False)
         except Exception as err:
             raise RuntimeError(f'Could not load model from {model_path}') from err
 
