@@ -12,8 +12,10 @@ from IPython.display import display
 from huggingface_hub import hf_hub_download
 
 from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
+from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ
 from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.inference.plotting import plot_prediction_results
 from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
 from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
@@ -104,7 +106,9 @@ class EasyInferenceModel(object):
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=self.config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
         
-        print(f'The model corresponds to a `{self.trainer.loader.prior_sampler.param_model.NAME}` parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
+        param_model = self.trainer.loader.prior_sampler.param_model
+        param_model_name = param_model.base_model.NAME if isinstance(param_model, NuisanceParamsWrapper) else param_model.NAME
+        print(f'The model corresponds to a `{param_model_name}` parameterization with {self.trainer.loader.prior_sampler.max_num_layers} layers ({self.trainer.loader.prior_sampler.param_dim} predicted parameters)')
         print("Parameter types and total ranges:")
         for param, range_ in self.trainer.loader.prior_sampler.param_ranges.items():
             print(f"- {param}: {range_}")
@@ -286,9 +290,8 @@ class EasyInferenceModel(object):
 
         return prediction_dict
 
-    async def predict_using_widget(self, reflectivity_curve: Union[np.ndarray, torch.Tensor], **kwargs):
-        """Use an interactive Python widget for specifying the prior bounds before the prediction (works only in a Jupyter notebook).
-        The other arguments are the same as for the ``predict`` method.
+    def predict_using_widget(self, reflectivity_curve, **kwargs):
+        """
         """
 
         NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
@@ -297,76 +300,74 @@ class EasyInferenceModel(object):
         max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
         max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
 
-        print(f'Parameter ranges: {self.trainer.loader.prior_sampler.param_ranges}')
-        print(f'Allowed widths of the prior bound intervals (max-min): {self.trainer.loader.prior_sampler.bound_width_ranges}')
-        print(f'Please fill in the values of the minimum and maximum prior bound for each parameter and press the button!')
+        print(f'Adjust the sliders for each parameter and press "Predict". Repeat as desired. Press "Close Widget" to finish.')
 
-        def create_interval_widgets(n):
-            intervals = []
-            for i in range(n):
-                interval_label = widgets.Label(value=f'{param_labels[i]}')
-                initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
-                slider = widgets.FloatRangeSlider(
-                    value=[min_bounds[i], initial_max],
-                    min=min_bounds[i],
-                    max=max_bounds[i],
-                    step=0.01,
-                    layout=widgets.Layout(width='400px'),
-                    style={'description_width': '60px'}
-                )
-                
-                def validate_range(change, slider=slider, max_width=max_deltas[i]):
-                    min_val, max_val = change['new']
-                    if max_val - min_val > max_width:
-                        if change['name'] == 'value':
-                            if change['old'][0] != min_val:
-                                max_val = min_val + max_width
-                            else:
-                                min_val = max_val - max_width
-                        slider.value = [min_val, max_val]
-                
-                slider.observe(validate_range, names='value')
-                
-                interval_row = widgets.HBox([interval_label, slider])
-                intervals.append((slider, interval_row))
-            return intervals
-        
-        interval_widgets = create_interval_widgets(NUM_INTERVALS)
-        interval_box = widgets.VBox([widget[1] for widget in interval_widgets])
-        display(interval_box)
+        interval_widgets = []
+        for i in range(NUM_INTERVALS):
+            label = widgets.Label(value=f'{param_labels[i]}')
+            initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
+            slider = widgets.FloatRangeSlider(
+                value=[min_bounds[i], initial_max],
+                min=min_bounds[i],
+                max=max_bounds[i],
+                step=0.01,
+                layout=widgets.Layout(width='400px'),
+                style={'description_width': '60px'}
+            )
 
-        button = widgets.Button(description="Make prediction")
-        display(button)
+            def validate_range(change, slider=slider, max_width=max_deltas[i]):
+                min_val, max_val = change['new']
+                if max_val - min_val > max_width:
+                    old_min_val, old_max_val = change['old']
+                    if abs(old_min_val - min_val) > abs(old_max_val - max_val):
+                        max_val = min_val + max_width
+                    else:
+                        min_val = max_val - max_width
+                    slider.value = [min_val, max_val]
 
-        prediction_result = None
+            slider.observe(validate_range, names='value')
+            interval_widgets.append((slider, widgets.HBox([label, slider])))
 
-        def store_values(b, future):
-            print("Debug: Button clicked")
-            values = []
-            for slider, _ in interval_widgets:
-                values.append((slider.value[0], slider.value[1]))
-            array_values = np.array(values)
-            
-            nonlocal prediction_result
-            prediction_result = self.predict(reflectivity_curve=reflectivity_curve, prior_bounds=array_values, **kwargs)
-            print(prediction_result["predicted_params_array"])
+        sliders_box = widgets.VBox([iw[1] for iw in interval_widgets])
 
-            print("Prediction completed. Closing widget.")
+        output = widgets.Output()
+        predict_button = widgets.Button(description="Predict")
+        close_button = widgets.Button(description="Close Widget")
 
-            for child in interval_box.children:
-                child.close()
-            button.close()
+        container = widgets.VBox([sliders_box, widgets.HBox([predict_button, close_button]), output])
+        display(container)
 
-            future.set_result(prediction_result)
+        @output.capture(clear_output=True)
+        def on_predict_click(_):
+            if 'prior_bounds' in kwargs:
+                array_values = kwargs.pop('prior_bounds')
+                for i, (s, _) in enumerate(interval_widgets):
+                    s.value = tuple(array_values[i])
+            else:
+                values = [(s.value[0], s.value[1]) for s, _ in interval_widgets]
+                array_values = np.array(values)
 
-        button.on_click(store_values)
-    
+            prediction_result = self.predict(reflectivity_curve=reflectivity_curve,
+                                            prior_bounds=array_values,
+                                            **kwargs)
+            param_names = self.trainer.loader.prior_sampler.param_model.get_param_labels()
+            for param_name, pred_param_val in zip(param_names, prediction_result["predicted_params_array"]):
+                print(f'{param_name.ljust(14)} : {pred_param_val:.2f}')
 
-        future = asyncio.Future()
+            plot_prediction_results(
+                prediction_result,
+                q_exp=kwargs['q_values'],
+                curve_exp=reflectivity_curve,
+                q_model=kwargs['q_values'],
+            )
+            self.prediction_result = prediction_result
 
-        button.on_click(lambda b: store_values(b, future))
+        def on_close_click(_):
+            container.close()
+            print("Widget closed.")
 
-        return await future
+        predict_button.on_click(on_predict_click)
+        close_button.on_click(on_close_click)
 
 
     def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> BasicParams:
