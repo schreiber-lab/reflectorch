@@ -132,6 +132,7 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
                  logdist: bool = False,
                  max_thickness_share: float = 0.5,
                  max_sld_share: float = 0.2,
+                 max_total_thickness: float = None,
                  ):
         super().__init__(logdist=logdist)
         self.thickness_mask = thickness_mask
@@ -140,6 +141,7 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
         self.isld_mask = isld_mask
         self.max_thickness_share = max_thickness_share
         self.max_sld_share = max_sld_share
+        self.max_total_thickness = max_total_thickness
 
     def sample(self, batch_size: int,
                total_min_bounds: Tensor,
@@ -172,6 +174,7 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
             widths_sampler_func=self.widths_sampler_func,
             coef_roughness=self.max_thickness_share,
             coef_isld=self.max_sld_share,
+            max_total_thickness=self.max_total_thickness,
         )
 
 def basic_sampler(
@@ -288,11 +291,40 @@ def constrained_roughness_and_isld_sampler(
         widths_sampler_func,
         coef_roughness: float = 0.5,
         coef_isld: float = 0.2,
+        max_total_thickness: float = None,
 ):
     params, min_bounds, max_bounds = basic_sampler(
         batch_size, total_min_bounds, total_max_bounds, total_min_delta, total_max_delta,
         widths_sampler_func=widths_sampler_func,
     )
+
+    if max_total_thickness is not None:
+        total_thickness = max_bounds[:, thickness_mask].sum(-1)
+        indices = total_thickness > max_total_thickness
+
+        if indices.any():
+            eps = 0.01
+            rand_scale = torch.rand_like(total_thickness) * eps + 1 - eps
+            scale_coef = max_total_thickness / total_thickness * rand_scale
+            scale_coef[~indices] = 1.0
+            min_bounds[:, thickness_mask] *= scale_coef[:, None]
+            max_bounds[:, thickness_mask] *= scale_coef[:, None]
+            params[:, thickness_mask] *= scale_coef[:, None]
+
+            min_bounds[:, thickness_mask] = torch.clamp_min(
+                min_bounds[:, thickness_mask],
+                total_min_bounds[:, thickness_mask],
+            )
+
+            max_bounds[:, thickness_mask] = torch.clamp_min(
+                max_bounds[:, thickness_mask],
+                total_min_bounds[:, thickness_mask],
+            )
+
+            params[:, thickness_mask] = torch.clamp_min(
+                params[:, thickness_mask],
+                total_min_bounds[:, thickness_mask],
+            )
 
     max_roughness = torch.minimum(
         get_max_allowed_roughness(thicknesses=params[..., thickness_mask], coef=coef_roughness),
