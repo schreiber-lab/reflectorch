@@ -221,7 +221,8 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         if any(self.shift_param_config.values()):
             self.param_model = NuisanceParamsWrapper(
                 base_model=base_model,
-                nuisance_params_config=self.shift_param_config
+                nuisance_params_config=self.shift_param_config,
+                **kwargs,
             )
         else:
             self.param_model = base_model

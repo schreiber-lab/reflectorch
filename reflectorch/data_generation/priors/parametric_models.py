@@ -157,9 +157,10 @@ class StandardModel(ParametricModel):
     def _init_sampler_strategy(self,
                                constrained_roughness: bool = True,
                                max_thickness_share: float = 0.5,
+                               nuisance_params_dim: int = 0,
                                **kwargs):
         if constrained_roughness:
-            num_params = self.param_dim
+            num_params = self.param_dim + nuisance_params_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)
             thickness_mask[:self.max_num_layers] = True
@@ -249,9 +250,10 @@ class ModelWithAbsorption(StandardModel):
                                constrained_isld: bool = True,
                                max_thickness_share: float = 0.5,
                                max_sld_share: float = 0.2,
+                               nuisance_params_dim: int = 0,
                                **kwargs):
         if constrained_roughness:
-            num_params = self.param_dim
+            num_params = self.param_dim + nuisance_params_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)
             thickness_mask[:self.max_num_layers] = True
@@ -261,10 +263,11 @@ class ModelWithAbsorption(StandardModel):
                 sld_mask = torch.zeros(num_params, dtype=torch.bool)
                 isld_mask = torch.zeros(num_params, dtype=torch.bool)
                 sld_mask[2 * self.max_num_layers + 1:3 * self.max_num_layers + 2] = True
-                isld_mask[3 * self.max_num_layers + 2:] = True
+                isld_mask[3 * self.max_num_layers + 2:4 * self.max_num_layers + 3] = True
                 return ConstrainedRoughnessAndImgSldSamplerStrategy(
                     thickness_mask, roughness_mask, sld_mask, isld_mask,
-                    max_thickness_share=max_thickness_share, max_sld_share=max_sld_share
+                    max_thickness_share=max_thickness_share, max_sld_share=max_sld_share,
+                    **kwargs
                 )
             else:
                 return ConstrainedRoughnessSamplerStrategy(
@@ -778,7 +781,6 @@ class NuisanceParamsWrapper(ParametricModel):
     """
 
     def __init__(self, base_model: ParametricModel, nuisance_params_config: Dict[str, bool] = None, **kwargs):
-        super().__init__(base_model.max_num_layers, **kwargs)
         self.base_model = base_model
         self.nuisance_params_config = nuisance_params_config or {}
 
@@ -786,6 +788,11 @@ class NuisanceParamsWrapper(ParametricModel):
 
         self.PARAMETER_NAMES = self.base_model.PARAMETER_NAMES + tuple(self.enabled_nuisance_params)
         self._param_dim = self.base_model.param_dim + len(self.enabled_nuisance_params)
+        
+        super().__init__(base_model.max_num_layers, **kwargs)
+
+    def _init_sampler_strategy(self, **kwargs):
+        return self.base_model._init_sampler_strategy(nuisance_params_dim=len(self.enabled_nuisance_params), **kwargs)
 
     @property
     def param_dim(self) -> int:
