@@ -364,6 +364,38 @@ def convert_pt_to_safetensors(input_dir):
 
             safetensors.torch.save_file(tensors=model_state_dict, filename=safetensors_file_path)
 
+def convert_files_to_safetensors(files):
+    """
+    Converts specified .pt files to .safetensors format.
+
+    Args:
+        files (str or list of str): Path(s) to .pt files containing model state dictionaries.
+    """
+    if isinstance(files, str):
+        files = [files]
+
+    for pt_file_path in files:
+        if not pt_file_path.endswith('.pt'):
+            print(f"Skipping {pt_file_path}: not a .pt file.")
+            continue
+
+        if not os.path.exists(pt_file_path):
+            print(f"File {pt_file_path} does not exist.")
+            continue
+
+        safetensors_file_path = pt_file_path[:-3] + '.safetensors'
+
+        if os.path.exists(safetensors_file_path):
+            print(f"Skipping {pt_file_path}: .safetensors version already exists.")
+            continue
+
+        print(f"Converting {pt_file_path} to .safetensors format.")
+        data_pt = torch.load(pt_file_path, weights_only=False)
+        model_state_dict = data_pt["model"]
+        model_state_dict = split_complex_tensors(model_state_dict)
+
+        safetensors.torch.save_file(tensors=model_state_dict, filename=safetensors_file_path)
+
 def load_state_dict_safetensors(model, filename, device):
     state_dict = safetensors.torch.load_file(filename=filename, device=device)
     state_dict = recombine_complex_tensors(state_dict)
