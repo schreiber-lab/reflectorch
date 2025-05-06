@@ -1,0 +1,119 @@
+general:
+  name: e_mc_point_neutron_conv_standard_L1_InputQDq_n128_size1024
+  root_dir: null
+  
+dset:
+  cls: ReflectivityDataLoader
+  prior_sampler:
+    cls: SubpriorParametricSampler
+    kwargs:
+      param_ranges:
+        thicknesses: [1., 1500.]
+        roughnesses: [0., 60.]
+        slds: [-8., 16.]
+        r_scale: [0.9, 1.1]
+        log10_background: [-10.0, -4.0]
+      bound_width_ranges:
+        thicknesses: [1.0e-2, 1500.]
+        roughnesses: [1.0e-2, 60.]
+        slds: [1.0e-2, 5.]
+        r_scale: [1.0e-2, 0.2]
+        log10_background: [1.0e-2, 6.0]
+      shift_param_config:
+        r_scale: true
+        log10_background: true
+      model_name: standard_model
+      max_num_layers: 1
+      constrained_roughness: true
+      max_thickness_share: 0.5
+      logdist: false
+      scale_params_by_ranges: false
+      scaled_range: [-1., 1.]
+      device: 'cuda'
+
+  q_generator:
+    cls: VariableQ
+    kwargs:
+      q_min_range: [0.001, 0.02]
+      q_max_range: [0.05, 0.4]
+      n_q_range: [128, 128]
+      device: 'cuda'
+
+  intensity_noise:
+    cls: GaussianExpIntensityNoise
+    kwargs:
+      relative_errors: [0.01, 0.3]
+      add_to_context: true
+
+  smearing:
+    cls: Smearing
+    kwargs:
+      sigma_range: [0.01, 0.12]
+      gauss_num: 17
+      share_smeared: 1.0
+      
+  curves_scaler:
+    cls: LogAffineCurvesScaler
+    kwargs:
+      weight: 0.2
+      bias: 1.0
+      eps: 1.0e-10
+
+model:
+  network:
+    cls: NetworkWithPriors
+    pretrained_name: null
+    device: 'cuda'
+    kwargs:
+      embedding_net_type: 'conv'
+      embedding_net_kwargs:
+        in_channels: 2
+        hidden_channels: [32, 64, 128, 256, 512]
+        kernel_size: 3
+        dim_embedding: 512
+        dim_avpool: 4
+        use_batch_norm: true
+        use_se: false
+        activation: 'gelu'
+      pretrained_embedding_net: null
+      dim_out: 7
+      dim_conditioning_params: 1
+      layer_width: 1024
+      num_blocks: 8
+      repeats_per_block: 2
+      residual: true
+      use_batch_norm: true
+      use_layer_norm: false
+      mlp_activation: 'gelu'
+      dropout_rate: 0.0 
+      tanh_output: false
+      conditioning: 'film'
+      concat_condition_first_layer: false
+       
+training:
+  trainer_cls: PointEstimatorTrainer
+  num_iterations: 300000
+  batch_size: 4096
+  lr: 1.0e-3
+  grad_accumulation_steps: 1
+  clip_grad_norm_max: null
+  update_tqdm_freq: 1
+  optimizer: AdamW
+  trainer_kwargs:
+    train_with_q_input: true
+    condition_on_q_resolutions: true
+    rescale_loss_interval_width: true
+    use_l1_loss: true
+    optim_kwargs:
+      betas: [0.9, 0.999]
+      weight_decay: 0.0005
+  callbacks:
+    save_best_model:
+      enable: true
+      freq: 500
+    lr_scheduler:
+      cls: CosineAnnealingWithWarmup
+      kwargs:
+        min_lr: 1.0e-6
+        warmup_iters: 500
+        total_iters: 300000
