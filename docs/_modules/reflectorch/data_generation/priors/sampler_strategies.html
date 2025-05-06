@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -385,11 +387,13 @@ document.write(`
                  <span class="n">roughness_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                  <span class="n">logdist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">max_total_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">thickness_mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">roughness_mask</span> <span class="o">=</span> <span class="n">roughness_mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_thickness_share</span> <span class="o">=</span> <span class="n">max_thickness_share</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_total_thickness</span> <span class="o">=</span> <span class="n">max_total_thickness</span>
 
 <div class="viewcode-block" id="ConstrainedRoughnessSamplerStrategy.sample">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.ConstrainedRoughnessSamplerStrategy.sample">[docs]</a>
@@ -420,7 +424,8 @@ document.write(`
             <span class="n">thickness_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">thickness_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
             <span class="n">roughness_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roughness_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
             <span class="n">widths_sampler_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">widths_sampler_func</span><span class="p">,</span>
-            <span class="n">coef</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_thickness_share</span><span class="p">,</span>
+            <span class="n">coef_roughness</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_thickness_share</span><span class="p">,</span>
+            <span class="n">max_total_thickness</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_total_thickness</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 
@@ -447,6 +452,7 @@ document.write(`
                  <span class="n">logdist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
                  <span class="n">max_sld_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+                 <span class="n">max_total_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">thickness_mask</span>
@@ -455,6 +461,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">isld_mask</span> <span class="o">=</span> <span class="n">isld_mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_thickness_share</span> <span class="o">=</span> <span class="n">max_thickness_share</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_sld_share</span> <span class="o">=</span> <span class="n">max_sld_share</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_total_thickness</span> <span class="o">=</span> <span class="n">max_total_thickness</span>
 
 <div class="viewcode-block" id="ConstrainedRoughnessAndImgSldSamplerStrategy.sample">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.ConstrainedRoughnessAndImgSldSamplerStrategy.sample">[docs]</a>
@@ -489,6 +496,7 @@ document.write(`
             <span class="n">widths_sampler_func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">widths_sampler_func</span><span class="p">,</span>
             <span class="n">coef_roughness</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_thickness_share</span><span class="p">,</span>
             <span class="n">coef_isld</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_sld_share</span><span class="p">,</span>
+            <span class="n">max_total_thickness</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_total_thickness</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 
@@ -536,15 +544,44 @@ document.write(`
         <span class="n">thickness_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">roughness_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">widths_sampler_func</span><span class="p">,</span>
-        <span class="n">coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">coef_roughness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">max_total_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">params</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">basic_sampler</span><span class="p">(</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">total_min_bounds</span><span class="p">,</span> <span class="n">total_max_bounds</span><span class="p">,</span> <span class="n">total_min_delta</span><span class="p">,</span> <span class="n">total_max_delta</span><span class="p">,</span>
         <span class="n">widths_sampler_func</span><span class="o">=</span><span class="n">widths_sampler_func</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">max_total_thickness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">total_thickness</span> <span class="o">=</span> <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">total_thickness</span> <span class="o">&gt;</span> <span class="n">max_total_thickness</span>
+
+        <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.01</span>
+            <span class="n">rand_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">total_thickness</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span>
+            <span class="n">scale_coef</span> <span class="o">=</span> <span class="n">max_total_thickness</span> <span class="o">/</span> <span class="n">total_thickness</span> <span class="o">*</span> <span class="n">rand_scale</span>
+            <span class="n">scale_coef</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+            <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
+
+            <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
+
+            <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
+
     <span class="n">max_roughness</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
-        <span class="n">get_max_allowed_roughness</span><span class="p">(</span><span class="n">thicknesses</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">thickness_mask</span><span class="p">],</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef</span><span class="p">),</span>
+        <span class="n">get_max_allowed_roughness</span><span class="p">(</span><span class="n">thicknesses</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">thickness_mask</span><span class="p">],</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef_roughness</span><span class="p">),</span>
         <span class="n">total_max_bounds</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="n">min_roughness</span> <span class="o">=</span> <span class="n">total_min_bounds</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">]</span>
@@ -578,11 +615,40 @@ document.write(`
         <span class="n">widths_sampler_func</span><span class="p">,</span>
         <span class="n">coef_roughness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">coef_isld</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">max_total_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">params</span><span class="p">,</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">basic_sampler</span><span class="p">(</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">total_min_bounds</span><span class="p">,</span> <span class="n">total_max_bounds</span><span class="p">,</span> <span class="n">total_min_delta</span><span class="p">,</span> <span class="n">total_max_delta</span><span class="p">,</span>
         <span class="n">widths_sampler_func</span><span class="o">=</span><span class="n">widths_sampler_func</span><span class="p">,</span>
     <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">max_total_thickness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">total_thickness</span> <span class="o">=</span> <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">total_thickness</span> <span class="o">&gt;</span> <span class="n">max_total_thickness</span>
+
+        <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.01</span>
+            <span class="n">rand_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">total_thickness</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span>
+            <span class="n">scale_coef</span> <span class="o">=</span> <span class="n">max_total_thickness</span> <span class="o">/</span> <span class="n">total_thickness</span> <span class="o">*</span> <span class="n">rand_scale</span>
+            <span class="n">scale_coef</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_coef</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+            <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
+
+            <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">max_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
+
+            <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+                <span class="n">total_min_bounds</span><span class="p">[:,</span> <span class="n">thickness_mask</span><span class="p">],</span>
+            <span class="p">)</span>
 
     <span class="n">max_roughness</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
         <span class="n">get_max_allowed_roughness</span><span class="p">(</span><span class="n">thicknesses</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">thickness_mask</span><span class="p">],</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef_roughness</span><span class="p">),</span>

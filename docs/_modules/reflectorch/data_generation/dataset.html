@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -328,6 +330,7 @@ document.write(`
 <span class="sd">        curves_scaler (CurvesScaler, optional): the reflectivity curve scaler. Defaults to an instance of LogAffineCurvesScaler, </span>
 <span class="sd">                                                which scales the curves to the range [-1, 1], the minimum considered intensity being 1e-10.</span>
 <span class="sd">        calc_denoised_curves (bool, optional): whether to add the curves without noise to the dictionary. Defaults to False.</span>
+<span class="sd">        calc_nonsmeared_curves (bool, optional): whether to add the curves without smearing to the dictionary (only relevant when smearing is applied). Defaults to False.</span>
 <span class="sd">        smearing (Smearing, optional): curve smearing generator. Defaults to None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -337,6 +340,7 @@ document.write(`
                  <span class="n">q_noise</span><span class="p">:</span> <span class="n">QNoiseGenerator</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">curves_scaler</span><span class="p">:</span> <span class="n">CurvesScaler</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">calc_denoised_curves</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">calc_nonsmeared_curves</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">smearing</span><span class="p">:</span> <span class="n">Smearing</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q_generator</span> <span class="o">=</span> <span class="n">q_generator</span>
@@ -346,6 +350,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">prior_sampler</span> <span class="o">=</span> <span class="n">prior_sampler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smearing</span> <span class="o">=</span> <span class="n">smearing</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">calc_denoised_curves</span> <span class="o">=</span> <span class="n">calc_denoised_curves</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_nonsmeared_curves</span> <span class="o">=</span> <span class="n">calc_nonsmeared_curves</span>
 
 <div class="viewcode-block" id="BasicDataset.update_batch_data">
 <a class="viewcode-back" href="../../../api.html#reflectorch.BasicDataset.update_batch_data">[docs]</a>
@@ -382,7 +387,15 @@ document.write(`
 
         <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;q_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">q_values</span>
 
-        <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_curves</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">refl_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">curves</span><span class="p">,</span> <span class="n">q_resolutions</span><span class="p">,</span> <span class="n">nonsmeared_curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_curves</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">refl_kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">q_resolutions</span><span class="p">):</span>
+            <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;q_resolutions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">q_resolutions</span>
+
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">nonsmeared_curves</span><span class="p">):</span>
+            <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;nonsmeared_curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nonsmeared_curves</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_denoised_curves</span><span class="p">:</span>
             <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">curves</span>
@@ -396,10 +409,13 @@ document.write(`
         <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;scaled_noisy_curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_noisy_curves</span>
 
         <span class="n">is_finite</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">scaled_noisy_curves</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">is_finite</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
             <span class="n">infinite_indices</span> <span class="o">=</span> <span class="o">~</span><span class="n">is_finite</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Batch with </span><span class="si">{</span><span class="n">infinite_indices</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s1"> curves with infinities skipped.&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span><span class="p">)</span>
+            <span class="n">to_recalculate</span> <span class="o">=</span> <span class="n">infinite_indices</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Infinite number appeared in the curve simulation! Recalculate </span><span class="si">{</span><span class="n">to_recalculate</span><span class="si">}</span><span class="s1"> curves.&#39;</span><span class="p">)</span>
+            <span class="n">recalculated_batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">to_recalculate</span><span class="p">)</span>
+            <span class="n">_insert_batch_data</span><span class="p">(</span><span class="n">batch_data</span><span class="p">,</span> <span class="n">recalculated_batch_data</span><span class="p">,</span> <span class="n">infinite_indices</span><span class="p">)</span>
 
         <span class="n">is_finite</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;scaled_noisy_curves&#39;</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">is_finite</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -409,13 +425,19 @@ document.write(`
         <span class="k">return</span> <span class="n">batch_data</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_calc_curves</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_calc_curves</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">,</span> <span class="n">refl_kwargs</span><span class="p">):</span>
+        <span class="n">nonsmeared_curves</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">smearing</span><span class="p">:</span>
-            <span class="n">curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smearing</span><span class="o">.</span><span class="n">get_curves</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_nonsmeared_curves</span><span class="p">:</span>
+                <span class="n">nonsmeared_curves</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="o">**</span><span class="n">refl_kwargs</span><span class="p">)</span>
+            <span class="n">curves</span><span class="p">,</span> <span class="n">q_resolutions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smearing</span><span class="o">.</span><span class="n">get_curves</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">refl_kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">curves</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="o">**</span><span class="n">refl_kwargs</span><span class="p">)</span>
+            <span class="n">q_resolutions</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">curves</span></div>
+        <span class="k">return</span> <span class="n">curves</span><span class="p">,</span> <span class="n">q_resolutions</span><span class="p">,</span> <span class="n">nonsmeared_curves</span></div>
 
 
 

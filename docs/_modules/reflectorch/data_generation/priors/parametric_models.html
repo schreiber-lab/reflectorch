@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -311,7 +313,6 @@ document.write(`
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">reflectorch.data_generation.utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">get_param_labels</span><span class="p">,</span>
-    <span class="n">get_param_labels_absorption_model</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.sampler_strategies</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">SamplerStrategy</span><span class="p">,</span>
@@ -347,7 +348,7 @@ document.write(`
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;get the number of parameters</span>
-<span class="sd">        </span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            int:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -417,7 +418,7 @@ document.write(`
 
 <div class="viewcode-block" id="ParametricModel.get_param_labels">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.ParametricModel.get_param_labels">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;get the list with the name of the parameters</span>
 
 <span class="sd">        Returns:</span>
@@ -474,9 +475,10 @@ document.write(`
     <span class="k">def</span> <span class="nf">_init_sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                <span class="n">constrained_roughness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                                <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                               <span class="n">nuisance_params_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">constrained_roughness</span><span class="p">:</span>
-            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span>
+            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span> <span class="o">+</span> <span class="n">nuisance_params_dim</span>
             <span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="n">roughness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="n">thickness_mask</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -520,8 +522,8 @@ document.write(`
 
         <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span>
 
-    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
@@ -566,9 +568,10 @@ document.write(`
                                <span class="n">constrained_isld</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                                <span class="n">max_thickness_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
                                <span class="n">max_sld_share</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+                               <span class="n">nuisance_params_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">constrained_roughness</span><span class="p">:</span>
-            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span>
+            <span class="n">num_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_dim</span> <span class="o">+</span> <span class="n">nuisance_params_dim</span>
             <span class="n">thickness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="n">roughness_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="n">thickness_mask</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -578,10 +581,11 @@ document.write(`
                 <span class="n">sld_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
                 <span class="n">isld_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
                 <span class="n">sld_mask</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">isld_mask</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">isld_mask</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">return</span> <span class="n">ConstrainedRoughnessAndImgSldSamplerStrategy</span><span class="p">(</span>
                     <span class="n">thickness_mask</span><span class="p">,</span> <span class="n">roughness_mask</span><span class="p">,</span> <span class="n">sld_mask</span><span class="p">,</span> <span class="n">isld_mask</span><span class="p">,</span>
-                    <span class="n">max_thickness_share</span><span class="o">=</span><span class="n">max_thickness_share</span><span class="p">,</span> <span class="n">max_sld_share</span><span class="o">=</span><span class="n">max_sld_share</span>
+                    <span class="n">max_thickness_share</span><span class="o">=</span><span class="n">max_thickness_share</span><span class="p">,</span> <span class="n">max_sld_share</span><span class="o">=</span><span class="n">max_sld_share</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">ConstrainedRoughnessSamplerStrategy</span><span class="p">(</span>
@@ -621,9 +625,9 @@ document.write(`
 
         <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span>
 
-    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">get_param_labels_absorption_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span>
-
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span> <span class="n">parameterization_type</span><span class="o">=</span><span class="s1">&#39;absorption&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
         <span class="n">num_params</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -671,8 +675,9 @@ document.write(`
 
         <span class="k">return</span> <span class="n">params</span>
 
-    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\Delta q$ (Å$^{{-1}}$)&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\Delta I$&quot;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;$\Delta q$ (Å$^{{-1}}$)&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\Delta I$&quot;</span><span class="p">]</span>
+
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_params2dict</span><span class="p">(</span><span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
@@ -700,7 +705,7 @@ document.write(`
 
 <span class="k">def</span> <span class="nf">reflectivity_with_shifts</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roughness</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="n">q_shift</span><span class="p">,</span> <span class="n">norm_shift</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">+</span> <span class="n">q_shift</span>
-    <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roughness</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm_shift</span>
+    <span class="k">return</span> <span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roughness</span><span class="p">,</span> <span class="n">sld</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm_shift</span>   
 
 <span class="k">class</span> <span class="nc">NoFresnelModel</span><span class="p">(</span><span class="n">StandardModel</span><span class="p">):</span>
     <span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;no_fresnel_model&#39;</span>
@@ -1081,6 +1086,78 @@ document.write(`
         <span class="n">sld</span><span class="o">=</span><span class="n">slds</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">params</span>
+
+
+<span class="k">class</span> <span class="nc">NuisanceParamsWrapper</span><span class="p">(</span><span class="n">ParametricModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wraps a base model (e.g. StandardModel) to add nuisance parameters, allowing independent enabling/disabling.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        base_model (ParametricModel): The base parametric model.</span>
+<span class="sd">        nuisance_params_config (Dict[str, bool]): Dictionary where keys are parameter names</span>
+<span class="sd">                                                  and values are `True` (enable) or `False` (disable).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_model</span><span class="p">:</span> <span class="n">ParametricModel</span><span class="p">,</span> <span class="n">nuisance_params_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span> <span class="o">=</span> <span class="n">base_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nuisance_params_config</span> <span class="o">=</span> <span class="n">nuisance_params_config</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">is_enabled</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nuisance_params_config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">is_enabled</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">param_dim</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">)</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_model</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_sampler_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">_init_sampler_strategy</span><span class="p">(</span><span class="n">nuisance_params_dim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">param_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_dim</span>
+
+    <span class="k">def</span> <span class="nf">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extracts base model parameters only.&quot;&quot;&quot;</span>
+        <span class="n">base_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">param_dim</span>
+        <span class="n">base_part</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">base_dim</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="n">base_part</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reflectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">parametrized_model</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes reflectivity with optional nuisance parameter shifts.&quot;&quot;&quot;</span>
+        <span class="n">base_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">param_dim</span>
+        <span class="n">base_params</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">base_dim</span><span class="p">]</span>
+        <span class="n">nuisance_part</span> <span class="o">=</span> <span class="n">parametrized_model</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">base_dim</span><span class="p">:]</span>
+
+        <span class="n">nuisance_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">nuisance_part</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="s2">&quot;log10_background&quot;</span> <span class="ow">in</span> <span class="n">nuisance_dict</span><span class="p">:</span>
+            <span class="n">nuisance_dict</span><span class="p">[</span><span class="s2">&quot;background&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">nuisance_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;log10_background&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">base_params</span><span class="p">,</span> <span class="o">**</span><span class="n">nuisance_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">init_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+                    <span class="n">bound_width_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize bounds for enabled nuisance parameters.&quot;&quot;&quot;</span>
+        <span class="n">min_bounds_base</span><span class="p">,</span> <span class="n">max_bounds_base</span><span class="p">,</span> <span class="n">min_deltas_base</span><span class="p">,</span> <span class="n">max_deltas_base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">init_bounds</span><span class="p">(</span>
+            <span class="n">param_ranges</span><span class="p">,</span> <span class="n">bound_width_ranges</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">ordered_bounds_nuisance</span> <span class="o">=</span> <span class="p">[</span><span class="n">param_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">]</span>
+        <span class="n">delta_bounds_nuisance</span> <span class="o">=</span> <span class="p">[</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">ordered_bounds_nuisance</span><span class="p">:</span>
+            <span class="n">min_bounds_nuisance</span><span class="p">,</span> <span class="n">max_bounds_nuisance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">ordered_bounds_nuisance</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">min_deltas_nuisance</span><span class="p">,</span> <span class="n">max_deltas_nuisance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">delta_bounds_nuisance</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+            <span class="n">min_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">min_bounds_base</span><span class="p">,</span> <span class="n">min_bounds_nuisance</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">max_bounds_base</span><span class="p">,</span> <span class="n">max_bounds_nuisance</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">min_deltas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">min_deltas_base</span><span class="p">,</span> <span class="n">min_deltas_nuisance</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">max_deltas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">max_deltas_base</span><span class="p">,</span> <span class="n">max_deltas_nuisance</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span> <span class="o">=</span> <span class="n">min_bounds_base</span><span class="p">,</span> <span class="n">max_bounds_base</span><span class="p">,</span> <span class="n">min_deltas_base</span><span class="p">,</span> <span class="n">max_deltas_base</span>
+
+        <span class="k">return</span> <span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">,</span> <span class="n">min_deltas</span><span class="p">,</span> <span class="n">max_deltas</span>
+    
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled_nuisance_params</span>
 </pre></div>
 
                 </article>
