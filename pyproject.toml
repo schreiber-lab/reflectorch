@@ -22,10 +22,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "Environment :: GPU :: NVIDIA CUDA",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Development Status :: 4 - Beta",
     "Topic :: Scientific/Engineering :: Physics",
-    "Intended Audience :: Science/Research",
+    "Intended Audience :: Science/Research"
 ]
 requires-python = ">=3.7"
 dependencies = [
