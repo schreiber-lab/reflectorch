@@ -17,7 +17,7 @@ maintainers = [
 description = "A Pytorch-based package for the analysis of reflectometry data"
 keywords = ["reflectometry", "machine learning"]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
