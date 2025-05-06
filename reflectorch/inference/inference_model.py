@@ -201,7 +201,11 @@ class EasyInferenceModel(object):
             upper_bound_check = (prior_bounds[sld_indices, 1] <= training_max_bounds[sld_indices]).all()
             assert lower_bound_check and upper_bound_check, "Shifting the layer SLDs by the ambient SLD exceeded the training ranges."
 
-        scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
+        try:
+            scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
+        except ValueError as e:
+            print(str(e))
+            return None
 
         if not self.trainer.train_with_q_input:
             q_values = self.trainer.loader.q_generator.q
@@ -470,16 +474,33 @@ class EasyInferenceModel(object):
         return scaled_curve
     
     def _scale_prior_bounds(self, prior_bounds: List[Tuple]):
-        prior_bounds = torch.tensor(prior_bounds)
-        prior_bounds = prior_bounds.to(self.device).T
-        min_bounds, max_bounds = prior_bounds[:, None]
+        try:
+            prior_bounds = torch.tensor(prior_bounds)
+            prior_bounds = prior_bounds.to(self.device).T
+            min_bounds, max_bounds = prior_bounds[:, None]
 
-        scaled_bounds = torch.cat([
-            self.trainer.loader.prior_sampler.scale_bounds(min_bounds), 
-            self.trainer.loader.prior_sampler.scale_bounds(max_bounds)
-        ], -1)
+            scaled_bounds = torch.cat([
+                self.trainer.loader.prior_sampler.scale_bounds(min_bounds), 
+                self.trainer.loader.prior_sampler.scale_bounds(max_bounds)
+            ], -1)
 
-        return scaled_bounds.float()
+            return scaled_bounds.float()
+
+        except RuntimeError as e:
+            expected_param_dim = self.trainer.loader.prior_sampler.param_dim
+            actual_param_dim = prior_bounds.shape[1] if prior_bounds.ndim == 2 else len(prior_bounds)
+
+            msg = (
+                f"\n **Parameter dimension mismatch during inference!**\n"
+                f"- Model expects **{expected_param_dim}** parameters.\n"
+                f"- You provided **{actual_param_dim}** prior bounds.\n\n"
+                f"💡This often occurs when:\n"
+                f"- The model was trained with additional nuisance parameters like `r_scale`, `q_shift`, or `log10_background`,\n"
+                f"  but they were not included in the `prior_bounds` passed to `.predict()`.\n"
+                f"- The number of layers or parameterization type differs from the one used during training.\n\n"
+                f" Check the configuration or the summary of expected parameters."
+            )
+            raise ValueError(msg) from e
     
     def interpolate_data_to_model_q(self, q_exp, curve_exp):
         if isinstance(self.trainer.loader.q_generator, ConstantQ):
