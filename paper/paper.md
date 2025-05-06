@@ -18,12 +18,12 @@ authors:
   - name: Alexander Hinderhofer
     orcid: 0000-0001-8152-6386
     affiliation: 1
-    affiliation: 1
   - name: Alexander Gerlach
     orcid: 0000-0003-1787-1868
     affiliation: 1
   - name: Dmitry Lapkin
     orcid: 0000-0003-0680-8740
+    affiliation: 1
   - name: Frank Schreiber
     orcid: 0000-0003-3659-6718
     affiliation: 1

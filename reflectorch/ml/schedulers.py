@@ -1,3 +1,4 @@
+import math
 from torch.optim import lr_scheduler
 
 import numpy as np
@@ -12,6 +13,7 @@ __all__ = [
     'LogCyclicLR',
     'ReduceLROnPlateau',
     'OneCycleLR',
+    'CosineAnnealingWithWarmup',
 ]
 
 
@@ -68,6 +70,31 @@ class ScheduleLR(TrainerCallback):
             batch_num (int): index of the current iteration
         """
         self.lr_scheduler.step()
+
+    def simulate_and_plot(self, total_steps: int, initial_lr: float, log_scale: bool = False):
+        import torch
+        import matplotlib.pyplot as plt
+
+        dummy_optim = torch.optim.Adam([torch.zeros(1)], lr=initial_lr)
+        scheduler = self.lr_scheduler_cls(dummy_optim, **self.kwargs)
+
+        lrs = []
+        for step in range(total_steps):
+            lrs.append(dummy_optim.param_groups[0]['lr'])
+            scheduler.step()
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(lrs, label='Learning Rate')
+        plt.xlabel('Steps')
+        plt.ylabel('Learning Rate')
+        plt.title('Learning Rate Schedule')
+
+        if log_scale:
+            plt.yscale('log')
+
+        plt.grid(True, which="both", linestyle='--', linewidth=0.5)
+        plt.legend()
+        plt.show()
 
 
 class StepLR(ScheduleLR):
@@ -176,6 +203,21 @@ class LogCyclicLR(TrainerCallback):
         for param_group in self.param_groups:
             trainer.set_lr(lr, param_group)
 
+    def simulate_and_plot(self, total_steps: int, log_scale: bool = True):
+        import matplotlib.pyplot as plt
+        lrs = [self.get_lr(batch_num) for batch_num in range(total_steps)]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(lrs, label='Learning Rate')
+        plt.xlabel('Steps')
+        plt.ylabel('Learning Rate')
+        plt.title('Learning Rate Schedule')
+        if log_scale:
+            plt.yscale('log')
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        plt.legend()
+        plt.show()
+
 
 class ReduceLROnPlateau(TrainerCallback):
     """Learning rate scheduler which reduces the learning rate when the loss stops decreasing
@@ -238,3 +280,77 @@ class OneCycleLR(ScheduleLR):
             three_phase=three_phase,
             **kwargs
         )
+
+class CosineAnnealingWithWarmup(TrainerCallback):
+    """
+    Cosine annealing scheduler with a warm-up stage.
+
+    Args:
+        max_lr (float): The maximum learning rate after the warm-up phase.
+        min_lr (float): The minimum learning rate after the warm-up phase.
+        warmup_iters (int): The number of iterations for the warm-up phase.
+        total_iters (int): The total number of iterations for the scheduler (including warm-up).
+    """
+    def __init__(self, max_lr=None, min_lr=1.0e-6, warmup_iters=100, total_iters=100000):
+        self.max_lr = max_lr
+        self.min_lr = min_lr
+        self.warmup_iters = warmup_iters
+        self.total_iters = total_iters
+
+    def get_lr(self, step):
+        """
+        Compute the learning rate for a given iteration.
+
+        Args:
+            step (int): The current iteration.
+
+        Returns:
+            float: The learning rate for the current iteration.
+        """
+        if step < self.warmup_iters:
+            # Warm-up stage: Linear increase from 0 to max_lr
+            return self.max_lr * step / self.warmup_iters
+        elif step < self.total_iters:
+            # Cosine annealing stage
+            t = (step - self.warmup_iters) / (self.total_iters - self.warmup_iters)
+            return self.min_lr + 0.5 * (self.max_lr - self.min_lr) * (1 + math.cos(math.pi * t))
+        else:
+            # Beyond total iterations: Return min_lr
+            return self.min_lr
+    
+    def start_training(self, trainer: Trainer) -> None:
+        self.max_lr = trainer.lr()
+
+    def end_batch(self, trainer: Trainer, batch_num: int):
+        """
+        Updates the learning rate at the end of each batch.
+
+        Args:
+            trainer (Trainer): The trainer object.
+            batch_num (int): The current batch number.
+        """
+        lr = self.get_lr(batch_num)
+        trainer.set_lr(lr)
+
+    def simulate_and_plot(self, total_steps: int = None, log_scale: bool = False):
+        """
+        Simulates and plots the learning rate evolution.
+
+        Args:
+            total_batches (int, optional): Total number of batches to simulate. If None, uses self.total_iters.
+        """
+        
+        total_steps = total_steps or self.total_iters
+        lrs = [self.get_lr(step) for step in range(total_steps)]
+
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 6))
+        plt.plot(lrs, label='Learning Rate')
+        plt.xlabel('Steps')
+        plt.ylabel('Learning Rate')
+        plt.title('Learning Rate Scheduler')
+        if log_scale:
+            plt.yscale('log')
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        plt.legend()
+        plt.show()

@@ -5,11 +5,11 @@ __all__ = [
     "ConvEncoder",
     "ConvDecoder",
     "ConvAutoencoder",
-    "ConvVAE",
     "FnoEncoder",
     "SpectralConv1d",
     "ConvResidualNet1D",
     "ResidualMLP",
+    "NetworkWithPriors",
     "NetworkWithPriorsConvEmb",
     "NetworkWithPriorsFnoEmb",
 ]

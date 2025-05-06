@@ -72,7 +72,6 @@ def run_train_on_cluster(config_name: str):
 
 def _change_to_test_config(config, batch_size: int, num_iterations: int):
     config = dict(config)
-    config['training']['logger']['use_neptune'] = False
     config['training']['num_iterations'] = num_iterations
     config['training']['batch_size'] = batch_size
     config['training']['update_tqdm_freq'] = 1

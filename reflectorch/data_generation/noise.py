@@ -1,11 +1,11 @@
-from typing import Union, Tuple
+from typing import List, Union, Tuple
 from math import log10
 
 import torch
 from torch import Tensor
 
 from reflectorch.data_generation.process_data import ProcessData
-from reflectorch.data_generation.utils import uniform_sampler
+from reflectorch.data_generation.utils import logdist_sampler, uniform_sampler
 
 __all__ = [
     "QNoiseGenerator",
@@ -18,6 +18,7 @@ __all__ = [
     "ShiftNoise",
     "BackgroundNoise",
     "BasicExpIntensityNoise",
+    "GaussianExpIntensityNoise",
     "BasicQNoiseGenerator",
 ]
 
@@ -102,18 +103,22 @@ class BasicQNoiseGenerator(QNoiseGenerator):
                                     Defaults to (0, 1e-3).
     """
     def __init__(self,
+                 apply_systematic_shifts: bool = True,
                  shift_std: float = 1e-3,
+                 apply_gaussian_noise: bool = False,
                  noise_std: Union[float, Tuple[float, float]] = (0, 1e-3),
                  add_to_context: bool = False,
                  ):
-        self.q_shift = QSystematicShiftGenerator(shift_std, add_to_context=add_to_context)
-        self.q_noise = QNormalNoiseGenerator(noise_std, add_to_context=add_to_context)
+        self.q_shift = QSystematicShiftGenerator(shift_std, add_to_context=add_to_context) if apply_systematic_shifts else None
+        self.q_noise = QNormalNoiseGenerator(noise_std, add_to_context=add_to_context) if apply_gaussian_noise else None
 
     def apply(self, qs: Tensor, context: dict = None):
-        """applies random noise to the q values"""
+        """applies noise to the q values"""
         qs = torch.atleast_2d(qs)
-        qs = self.q_shift.apply(qs, context)
-        qs = self.q_noise.apply(qs, context)
+        if self.q_shift:
+            qs = self.q_shift.apply(qs, context)
+        if self.q_noise:
+            qs = self.q_noise.apply(qs, context)
         return qs
 
 
@@ -154,6 +159,51 @@ class MultiplicativeLogNormalNoiseGenerator(IntensityNoiseGenerator):
 
         return noise * curves
 
+class GaussianNoiseGenerator(IntensityNoiseGenerator):
+    """Noise generator which applies noise as R_n = R + eps, with eps~N(0, sigmas) and sigmas = relative_errors * R
+
+    Args:
+        relative_errors (Union[float, Tuple[float, float], List[Tuple[float, float]]])
+        consistent_relative_errors (bool): If True the relative_error is the same for all point of a curve, otherwise it is sampled uniformly.
+    """
+
+    def __init__(self, relative_errors: Union[float, Tuple[float, float], List[float], List[Tuple[float, float]]], 
+                 consistent_rel_err: bool = False,
+                 add_to_context: bool = False):
+        self.relative_errors = relative_errors
+        self.consistent_rel_err = consistent_rel_err
+        self.add_to_context = add_to_context
+
+    def apply(self, curves: Tensor, context: dict = None):
+        """Applies Gaussian noise to the curves."""
+        relative_errors = self.relative_errors
+        num_channels = curves.shape[1] if curves.dim() == 3 else 1
+
+        if isinstance(relative_errors, float):
+            relative_errors = torch.ones_like(curves) * relative_errors
+
+        elif isinstance(relative_errors, (list, tuple)) and isinstance(relative_errors[0], float):
+            if self.consistent_rel_err:
+                relative_errors = uniform_sampler(*relative_errors, curves.shape[0], num_channels, device=curves.device, dtype=curves.dtype)
+                if num_channels > 1:
+                    relative_errors = relative_errors.unsqueeze(-1)
+            else:
+                relative_errors = uniform_sampler(*relative_errors, *curves.shape, device=curves.device, dtype=curves.dtype)
+
+        else:
+            if self.consistent_rel_err:
+                relative_errors = torch.stack([uniform_sampler(*item, curves.shape[0], 1, device=curves.device, dtype=curves.dtype) for item in relative_errors], dim=1)
+            else:
+                relative_errors = torch.stack([uniform_sampler(*item, curves.shape[0], curves.shape[-1], device=curves.device, dtype=curves.dtype) for item in relative_errors], dim=1)
+
+        sigmas = relative_errors * curves
+        noise = torch.normal(mean=0., std=sigmas).clamp_min_(0.0)
+
+        if self.add_to_context and context is not None:
+            context['relative_errors'] = relative_errors
+            context['sigmas'] = sigmas
+            
+        return curves + noise
 
 class PoissonNoiseGenerator(IntensityNoiseGenerator):
     """Noise generator which applies Poisson noise to the reflectivity curves
@@ -273,6 +323,7 @@ class BackgroundNoise(IntensityNoiseGenerator):
 
     Args:
         background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
+        add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.
     """
     def __init__(self,
                  background_range: tuple = (1.0e-10, 1.0e-8),
@@ -283,7 +334,7 @@ class BackgroundNoise(IntensityNoiseGenerator):
 
     def apply(self, curves: Tensor, context: dict = None) -> Tensor:
         """applies background noise to the curves"""
-        backgrounds = uniform_sampler(
+        backgrounds = logdist_sampler(
             *self.background_range, curves.shape[0], 1,
             device=curves.device, dtype=curves.dtype
         )
@@ -294,6 +345,61 @@ class BackgroundNoise(IntensityNoiseGenerator):
 
         return curves
 
+class GaussianExpIntensityNoise(IntensityNoiseGenerator):
+    """
+    A composite noise generator that applies Gaussian, shift and background noise to reflectivity curves.
+
+    This class combines three types of noise:
+    1. Gaussian noise: Applies Gaussian noise (to account for count-based Poisson noise as well as other sources of error)
+    2. Shift noise: Applies a multiplicative shift to the curves, equivalent to a vertical shift in logarithmic space.
+    3. Background noise: Adds a constant background value to the curves.
+
+    Args:
+        relative_errors (Union[float, Tuple[float, float], List[Tuple[float, float]]]): The range of relative errors for Gaussian noise. Defaults to (0.001, 0.15).
+        consistent_rel_err (bool, optional): If True, uses a consistent relative error for Gaussian noise across all points in a curve. Defaults to False.
+        shift_range (tuple, optional): The range of shift factors for shift noise. Defaults to (-0.1, 0.2e-2).
+        background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
+        apply_shift (bool, optional): If True, applies shift noise to the curves. Defaults to False.
+        apply_background (bool, optional): If True, applies background noise to the curves. Defaults to False.
+        same_background_across_channels(bool, optional): If True, the same background is applied to all channels of a multi-channel curve. Defaults to False.
+        add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.
+    """
+    def __init__(self,
+                 relative_errors: Tuple[float, float] = (0.001, 0.15),
+                 consistent_rel_err: bool = False,
+                 apply_shift: bool = False,
+                 shift_range: tuple = (-0.1, 0.2e-2),
+                 apply_background: bool = False,
+                 background_range: tuple = (1.0e-10, 1.0e-8),
+                 same_background_across_channels: bool = False,
+                 add_to_context: bool = False,
+                 ):
+        
+        self.gaussian_noise = GaussianNoiseGenerator(
+            relative_errors=relative_errors,
+            consistent_rel_err=consistent_rel_err,
+            add_to_context=add_to_context,
+        )
+
+        self.shift_noise = ShiftNoise(
+            shift_range=shift_range, add_to_context=add_to_context
+        ) if apply_shift else None
+
+        self.background_noise = BackgroundNoise(
+            background_range=background_range, add_to_context=add_to_context
+        ) if apply_background else None
+
+    def apply(self, curves: Tensor, context: dict = None):
+        """applies the specified types of noise to the input curves"""
+        if self.shift_noise:
+            curves = self.shift_noise(curves, context)
+        
+        if self.background_noise:
+            curves = self.background_noise.apply(curves, context)
+
+        curves = self.gaussian_noise(curves, context)
+        
+        return curves
 
 class BasicExpIntensityNoise(IntensityNoiseGenerator):
     """

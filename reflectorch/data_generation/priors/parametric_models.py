@@ -10,7 +10,6 @@ from reflectorch.data_generation.reflectivity import (
 )
 from reflectorch.data_generation.utils import (
     get_param_labels,
-    get_param_labels_absorption_model,
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
@@ -44,7 +43,7 @@ class ParametricModel(object):
     @property
     def param_dim(self) -> int:
         """get the number of parameters
-        
+
         Returns:
             int:
         """
@@ -106,7 +105,7 @@ class ParametricModel(object):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
+    def get_param_labels(self, **kwargs) -> List[str]:
         """get the list with the name of the parameters
 
         Returns:
@@ -158,9 +157,10 @@ class StandardModel(ParametricModel):
     def _init_sampler_strategy(self,
                                constrained_roughness: bool = True,
                                max_thickness_share: float = 0.5,
+                               nuisance_params_dim: int = 0,
                                **kwargs):
         if constrained_roughness:
-            num_params = self.param_dim
+            num_params = self.param_dim + nuisance_params_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)
             thickness_mask[:self.max_num_layers] = True
@@ -204,8 +204,8 @@ class StandardModel(ParametricModel):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels(self.max_num_layers)
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, **kwargs)
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -250,9 +250,10 @@ class ModelWithAbsorption(StandardModel):
                                constrained_isld: bool = True,
                                max_thickness_share: float = 0.5,
                                max_sld_share: float = 0.2,
+                               nuisance_params_dim: int = 0,
                                **kwargs):
         if constrained_roughness:
-            num_params = self.param_dim
+            num_params = self.param_dim + nuisance_params_dim
             thickness_mask = torch.zeros(num_params, dtype=torch.bool)
             roughness_mask = torch.zeros(num_params, dtype=torch.bool)
             thickness_mask[:self.max_num_layers] = True
@@ -262,10 +263,11 @@ class ModelWithAbsorption(StandardModel):
                 sld_mask = torch.zeros(num_params, dtype=torch.bool)
                 isld_mask = torch.zeros(num_params, dtype=torch.bool)
                 sld_mask[2 * self.max_num_layers + 1:3 * self.max_num_layers + 2] = True
-                isld_mask[3 * self.max_num_layers + 2:] = True
+                isld_mask[3 * self.max_num_layers + 2:4 * self.max_num_layers + 3] = True
                 return ConstrainedRoughnessAndImgSldSamplerStrategy(
                     thickness_mask, roughness_mask, sld_mask, isld_mask,
-                    max_thickness_share=max_thickness_share, max_sld_share=max_sld_share
+                    max_thickness_share=max_thickness_share, max_sld_share=max_sld_share,
+                    **kwargs
                 )
             else:
                 return ConstrainedRoughnessSamplerStrategy(
@@ -305,9 +307,9 @@ class ModelWithAbsorption(StandardModel):
 
         return min_bounds, max_bounds, min_deltas, max_deltas
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels_absorption_model(self.max_num_layers)
-
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, parameterization_type='absorption', **kwargs)
+    
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
         num_params = parametrized_model.shape[-1]
@@ -355,8 +357,9 @@ class ModelWithShifts(StandardModel):
 
         return params
 
-    def get_param_labels(self) -> List[str]:
-        return get_param_labels(self.max_num_layers) + [r"$\Delta q$ (Å$^{{-1}}$)", r"$\Delta I$"]
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, **kwargs) + [r"$\Delta q$ (Å$^{{-1}}$)", r"$\Delta I$"]
+
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -384,7 +387,7 @@ class ModelWithShifts(StandardModel):
 
 def reflectivity_with_shifts(q, thickness, roughness, sld, q_shift, norm_shift, **kwargs):
     q = torch.atleast_2d(q) + q_shift
-    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift
+    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift   
 
 class NoFresnelModel(StandardModel):
     NAME = 'no_fresnel_model'
@@ -765,3 +768,75 @@ def multilayer_model3(parametrized_model: Tensor, d_full_rel_max: int = 30):
         sld=slds
     )
     return params
+
+
+class NuisanceParamsWrapper(ParametricModel):
+    """
+    Wraps a base model (e.g. StandardModel) to add nuisance parameters, allowing independent enabling/disabling.
+
+    Args:
+        base_model (ParametricModel): The base parametric model.
+        nuisance_params_config (Dict[str, bool]): Dictionary where keys are parameter names
+                                                  and values are `True` (enable) or `False` (disable).
+    """
+
+    def __init__(self, base_model: ParametricModel, nuisance_params_config: Dict[str, bool] = None, **kwargs):
+        self.base_model = base_model
+        self.nuisance_params_config = nuisance_params_config or {}
+
+        self.enabled_nuisance_params = [name for name, is_enabled in self.nuisance_params_config.items() if is_enabled]
+
+        self.PARAMETER_NAMES = self.base_model.PARAMETER_NAMES + tuple(self.enabled_nuisance_params)
+        self._param_dim = self.base_model.param_dim + len(self.enabled_nuisance_params)
+        
+        super().__init__(base_model.max_num_layers, **kwargs)
+
+    def _init_sampler_strategy(self, **kwargs):
+        return self.base_model._init_sampler_strategy(nuisance_params_dim=len(self.enabled_nuisance_params), **kwargs)
+
+    @property
+    def param_dim(self) -> int:
+        return self._param_dim
+
+    def to_standard_params(self, parametrized_model: Tensor) -> dict:
+        """Extracts base model parameters only."""
+        base_dim = self.base_model.param_dim
+        base_part = parametrized_model[..., :base_dim]
+        return self.base_model.to_standard_params(base_part)
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        """Computes reflectivity with optional nuisance parameter shifts."""
+        base_dim = self.base_model.param_dim
+        base_params = parametrized_model[..., :base_dim]
+        nuisance_part = parametrized_model[..., base_dim:]
+
+        nuisance_dict = {param: nuisance_part[..., i].unsqueeze(-1) for i, param in enumerate(self.enabled_nuisance_params)}
+        if "log10_background" in nuisance_dict:
+            nuisance_dict["background"] = 10 ** nuisance_dict.pop("log10_background")
+
+        return self.base_model.reflectivity(q, base_params, **nuisance_dict, **kwargs)
+
+    def init_bounds(self, param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]], device=None, dtype=None):
+        """Initialize bounds for enabled nuisance parameters."""
+        min_bounds_base, max_bounds_base, min_deltas_base, max_deltas_base = self.base_model.init_bounds(
+            param_ranges, bound_width_ranges, device, dtype)
+
+        ordered_bounds_nuisance = [param_ranges[k] for k in self.enabled_nuisance_params]
+        delta_bounds_nuisance = [bound_width_ranges[k] for k in self.enabled_nuisance_params]
+
+        if ordered_bounds_nuisance:
+            min_bounds_nuisance, max_bounds_nuisance = torch.tensor(ordered_bounds_nuisance, device=device, dtype=dtype).T[:, None]
+            min_deltas_nuisance, max_deltas_nuisance = torch.tensor(delta_bounds_nuisance, device=device, dtype=dtype).T[:, None]
+
+            min_bounds = torch.cat([min_bounds_base, min_bounds_nuisance], dim=-1)
+            max_bounds = torch.cat([max_bounds_base, max_bounds_nuisance], dim=-1)
+            min_deltas = torch.cat([min_deltas_base, min_deltas_nuisance], dim=-1)
+            max_deltas = torch.cat([max_deltas_base, max_deltas_nuisance], dim=-1)
+        else:
+            min_bounds, max_bounds, min_deltas, max_deltas = min_bounds_base, max_bounds_base, min_deltas_base, max_deltas_base
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+    
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return self.base_model.get_param_labels(**kwargs) + self.enabled_nuisance_params

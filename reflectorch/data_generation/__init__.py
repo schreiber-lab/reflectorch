@@ -41,6 +41,7 @@ from reflectorch.data_generation.noise import (
     ScalingNoise,
     BackgroundNoise,
     BasicExpIntensityNoise,
+    GaussianExpIntensityNoise,
     BasicQNoiseGenerator,
 )
 from reflectorch.data_generation.scale_curves import (
@@ -111,6 +112,7 @@ __all__ = [
     "LogLikelihood",
     "PoissonLogLikelihood",
     "BasicExpIntensityNoise",
+    "GaussianExpIntensityNoise",
     "BasicQNoiseGenerator",
     "ConstantAngle",
     "SubpriorParametricSampler",

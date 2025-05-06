@@ -2,11 +2,14 @@ import warnings
 
 import numpy as np
 from scipy.optimize import minimize, curve_fit
+import torch
 
+from reflectorch.data_generation.priors.base import PriorSampler
 from reflectorch.data_generation.reflectivity import abeles_np
 
 __all__ = [
     "standard_refl_fit",
+    "refl_fit",
     "fit_refl_curve",
     "restore_masked_params",
     "get_fit_with_growth",
@@ -26,7 +29,6 @@ def standard_restore_params(fitted_params) -> dict:
 def mse_loss(curve1, curve2):
     return np.sum((curve1 - curve2) ** 2)
 
-
 def standard_refl_fit(
         q: np.ndarray, curve: np.ndarray,
         init_params: np.ndarray,
@@ -41,7 +43,7 @@ def standard_refl_fit(
         init_params = np.clip(init_params, *bounds)
 
     res = curve_fit(
-        get_scaled_curve_func(
+        standard_get_scaled_curve_func(
             refl_generator=refl_generator,
             restore_params_func=restore_params_func,
             scale_curve_func=scale_curve_func,
@@ -53,9 +55,60 @@ def standard_refl_fit(
     curve = refl_generator(q, **restore_params_func(res[0]))
     return res[0], curve
 
+def refl_fit(
+        q: np.ndarray, 
+        curve: np.ndarray,
+        init_params: np.ndarray,
+        prior_sampler: PriorSampler,
+        bounds: np.ndarray = None,
+        error_bars: np.ndarray = None,
+        scale_curve_func=np.log10,
+        reflectivity_kwargs: dict = None,
+        **kwargs
+):
+    if bounds is not None:
+        # introduce a small perturbation for fixed bounds
+        epsilon = 1e-6
+        adjusted_bounds = bounds.copy()
+
+        for i in range(bounds.shape[1]): 
+            if bounds[0, i] == bounds[1, i]:
+                adjusted_bounds[0, i] -= epsilon
+                adjusted_bounds[1, i] += epsilon
+
+        init_params = np.clip(init_params, *adjusted_bounds)
+        kwargs['bounds'] = adjusted_bounds
+
+    reflectivity_kwargs = reflectivity_kwargs or {}
+    for key, value in reflectivity_kwargs.items():
+        if isinstance(value, float):
+            reflectivity_kwargs[key] = torch.tensor([[value]], dtype=torch.float64)
+        elif isinstance(value, np.ndarray):
+            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)       
+
+    res = curve_fit(
+        f=get_scaled_curve_func(
+            scale_curve_func=scale_curve_func,
+            prior_sampler=prior_sampler,
+            reflectivity_kwargs=reflectivity_kwargs,
+        ),
+        xdata=q, 
+        ydata=scale_curve_func(curve),
+        p0=init_params,
+        sigma=error_bars if error_bars is not None else None,
+        absolute_sigma=True,
+        **kwargs
+    )
+
+    curve = prior_sampler.param_model.reflectivity(torch.tensor(q, dtype=torch.float64), 
+                                                   torch.tensor(res[0], dtype=torch.float64).unsqueeze(0), 
+                                                   **reflectivity_kwargs).squeeze().numpy()
+    return res[0], curve
+
 
 def get_fit_with_growth(
-        q: np.ndarray, curve: np.ndarray,
+        q: np.ndarray, 
+        curve: np.ndarray,
         init_params: np.ndarray,
         bounds: np.ndarray = None,
         init_d_change: float = 0.,
@@ -68,10 +121,16 @@ def get_fit_with_growth(
         bounds = np.concatenate([bounds, np.array([0, max_d_change])[..., None]], -1)
 
     params, curve = standard_refl_fit(
-        q, curve, init_params, bounds, refl_generator=growth_reflectivity,
+        q, 
+        curve, 
+        init_params, 
+        bounds, 
+        refl_generator=growth_reflectivity,
         restore_params_func=get_restore_params_with_growth_func(q_size=q.size, d_idx=0),
-        scale_curve_func=scale_curve_func, **kwargs
+        scale_curve_func=scale_curve_func, 
+        **kwargs
     )
+
     params[0] += params[-1] / 2
     return params, curve
 
@@ -97,8 +156,7 @@ def fit_refl_curve(q: np.ndarray, curve: np.ndarray,
         warnings.warn(f"Minimization did not converge.")
     return res.x
 
-
-def get_scaled_curve_func(
+def standard_get_scaled_curve_func(
         refl_generator=abeles_np,
         restore_params_func=standard_restore_params,
         scale_curve_func=np.log10,
@@ -106,6 +164,25 @@ def get_scaled_curve_func(
     def scaled_curve_func(q, *fitted_params):
         fitted_params = restore_params_func(np.asarray(fitted_params))
         fitted_curve = refl_generator(q, **fitted_params)
+        scaled_curve = scale_curve_func(fitted_curve)
+        return scaled_curve
+
+    return scaled_curve_func
+
+def get_scaled_curve_func(
+        scale_curve_func=np.log10,
+        prior_sampler: PriorSampler = None,
+        reflectivity_kwargs: dict = None,
+):  
+    reflectivity_kwargs = reflectivity_kwargs or {}
+    
+    def scaled_curve_func(q, *fitted_params):
+        q_tensor = torch.from_numpy(q).to(torch.float64)
+        fitted_params_tensor = torch.tensor(fitted_params, dtype=torch.float64).unsqueeze(0)
+        
+        fitted_curve_tensor = prior_sampler.param_model.reflectivity(q_tensor, fitted_params_tensor, **reflectivity_kwargs)
+        fitted_curve = fitted_curve_tensor.squeeze().numpy()
+        
         scaled_curve = scale_curve_func(fitted_curve)
         return scaled_curve
 

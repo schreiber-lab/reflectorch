@@ -9,8 +9,8 @@ def test_constantq(batch_size, q_range):
     q_values = q_generator.get_batch(batch_size=batch_size)
 
     assert q_values.shape == (batch_size, q_range[-1])
-    assert q_values.min() == q_range[0]
-    assert q_values.max() == q_range[1]
+    assert q_values.min().float() == q_range[0]
+    assert q_values.max().float() == q_range[1]
 
 @pytest.mark.parametrize("batch_size", [1, 128])
 @pytest.mark.parametrize("q_min_range", [(0.005, 0.05), (0.01, 0.01)])
@@ -21,5 +21,5 @@ def test_variableq(batch_size, q_min_range, q_max_range, n_q_range):
     q_values = q_generator.get_batch(batch_size=batch_size)
 
     assert n_q_range[0] <= q_values.shape[-1] <= n_q_range[1]
-    assert q_values.min() >= q_min_range[0]
-    assert q_values.max() <= q_max_range[1]
+    assert q_values.min().float() >= q_min_range[0]
+    assert q_values.max().float() <= q_max_range[1]

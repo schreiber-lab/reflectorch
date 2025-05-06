@@ -7,7 +7,9 @@ options:  # The options key will be applied to all chapters, but not sub-section
   numbered: True
 chapters:
 - file: installation
+- file: simulations
 - file: using_reflectorch
+- file: using_reflectorch_neutron
 - file: training_reflectorch
 - file: advanced_functionality
 - file: api

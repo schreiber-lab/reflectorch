@@ -50,6 +50,8 @@ class ConstantQ(QGenerator):
                     q = q[1:]
                 else:
                     q = q[:-1]
+        self.q_min = q.min().item()
+        self.q_max = q.max().item()
         self.q = q
 
     def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
@@ -63,14 +65,26 @@ class ConstantQ(QGenerator):
         """
         return self.q.clone()[None].expand(batch_size, self.q.shape[0])
     
+    def scale_q(self, q):
+        """Scales the q values to the range [-1, 1].
+
+        Args:
+            q (Tensor): unscaled q values
+
+        Returns:
+            Tensor: scaled q values
+        """
+        scaled_q_01 = (q - self.q_min) / (self.q_max - self.q_min)
+        return 2.0 * (scaled_q_01 - 0.5)
+    
 
 class VariableQ(QGenerator):
     """Q generator for reflectivity curves with variable discretization
 
     Args:
-        q_min_range (list, optional): the range for sampling the minimum q value of the curves, *q_min*. Defaults to [0.01, 0.03].
-        q_max_range (list, optional): the range for sampling the maximum q value of the curves, *q_max*. Defaults to [0.1, 0.5].
-        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between *q_min* and *q_max*, 
+        q_min_range (list, optional): the range for sampling the minimum q value of the curves, q_min. Defaults to [0.01, 0.03].
+        q_max_range (list, optional): the range for sampling the maximum q value of the curves, q_max. Defaults to [0.1, 0.5].
+        n_q_range (list, optional): the range for the number of points in the curves (equidistantly sampled between q_min and q_max, 
                                     the number of points varies between batches but is constant within a batch). Defaults to [64, 256].
         device (optional): the Pytorch device. Defaults to DEFAULT_DEVICE.
         dtype (optional): the Pytorch data type. Defaults to DEFAULT_DTYPE.
@@ -80,12 +94,14 @@ class VariableQ(QGenerator):
                  q_min_range: Tuple[float, float] = (0.01, 0.03),
                  q_max_range: Tuple[float, float] = (0.1, 0.5),
                  n_q_range: Tuple[int, int] = (64, 256),
+                 mode: str = 'equidistant',
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE,
                  ):
         self.q_min_range = q_min_range
         self.q_max_range = q_max_range
         self.n_q_range = n_q_range
+        self.mode = mode
         self.device = device
         self.dtype = dtype
 
@@ -98,14 +114,18 @@ class VariableQ(QGenerator):
         Returns:
             Tensor: generated batch of q values
         """
-        q_min = np.random.uniform(*self.q_min_range, batch_size)
-        q_max = np.random.uniform(*self.q_max_range, batch_size)
-        if self.n_q_range[0] == self.n_q_range[1]:
-            n_q = self.n_q_range[0]
-        else:
-            n_q = np.random.randint(self.n_q_range[0], self.n_q_range[1] + 1)
-        
-        q = torch.from_numpy(np.linspace(q_min, q_max, n_q).T).to(self.device).to(self.dtype)
+
+        q_min = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_min_range[1] - self.q_min_range[0]) + self.q_min_range[0]
+        q_max = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_max_range[1] - self.q_max_range[0]) + self.q_max_range[0]
+
+        n_q = torch.randint(self.n_q_range[0], self.n_q_range[1] + 1, (1,), device=self.device).item()
+
+        if self.mode == 'equidistant':
+            q = torch.linspace(0, 1, n_q, device=self.device, dtype=self.dtype)
+        elif self.mode == 'random':
+            q = torch.rand(n_q, device=self.device, dtype=self.dtype).sort().values
+
+        q = q_min[:, None] + q * (q_max - q_min)[:, None]
         
         return q
     

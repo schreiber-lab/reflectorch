@@ -25,6 +25,7 @@ class BasicDataset(object):
         curves_scaler (CurvesScaler, optional): the reflectivity curve scaler. Defaults to an instance of LogAffineCurvesScaler, 
                                                 which scales the curves to the range [-1, 1], the minimum considered intensity being 1e-10.
         calc_denoised_curves (bool, optional): whether to add the curves without noise to the dictionary. Defaults to False.
+        calc_nonsmeared_curves (bool, optional): whether to add the curves without smearing to the dictionary (only relevant when smearing is applied). Defaults to False.
         smearing (Smearing, optional): curve smearing generator. Defaults to None.
     """
     def __init__(self,
@@ -34,6 +35,7 @@ class BasicDataset(object):
                  q_noise: QNoiseGenerator = None,
                  curves_scaler: CurvesScaler = None,
                  calc_denoised_curves: bool = False,
+                 calc_nonsmeared_curves: bool = False,
                  smearing: Smearing = None,
                  ):
         self.q_generator = q_generator
@@ -43,6 +45,7 @@ class BasicDataset(object):
         self.prior_sampler = prior_sampler
         self.smearing = smearing
         self.calc_denoised_curves = calc_denoised_curves
+        self.calc_nonsmeared_curves = calc_nonsmeared_curves
 
     def update_batch_data(self, batch_data: BATCH_DATA_TYPE) -> None:
         """implement in a subclass to edit batch_data dict inplace"""
@@ -74,7 +77,15 @@ class BasicDataset(object):
 
         batch_data['q_values'] = q_values
 
-        curves = self._calc_curves(q_values, params)
+        refl_kwargs = {}
+
+        curves, q_resolutions, nonsmeared_curves = self._calc_curves(q_values, params, refl_kwargs)
+
+        if torch.is_tensor(q_resolutions):
+            batch_data['q_resolutions'] = q_resolutions
+
+        if torch.is_tensor(nonsmeared_curves):
+            batch_data['nonsmeared_curves'] = nonsmeared_curves
 
         if self.calc_denoised_curves:
             batch_data['curves'] = curves
@@ -88,10 +99,13 @@ class BasicDataset(object):
         batch_data['scaled_noisy_curves'] = scaled_noisy_curves
 
         is_finite = torch.all(torch.isfinite(scaled_noisy_curves), -1)
+
         if not torch.all(is_finite).item():
             infinite_indices = ~is_finite
-            warnings.warn(f'Batch with {infinite_indices.sum().item()} curves with infinities skipped.')
-            return self.get_batch(batch_size = batch_size)
+            to_recalculate = infinite_indices.sum().item()
+            warnings.warn(f'Infinite number appeared in the curve simulation! Recalculate {to_recalculate} curves.')
+            recalculated_batch_data = self.get_batch(to_recalculate)
+            _insert_batch_data(batch_data, recalculated_batch_data, infinite_indices)
 
         is_finite = torch.all(torch.isfinite(batch_data['scaled_noisy_curves']), -1)
         assert torch.all(is_finite).item()
@@ -100,13 +114,19 @@ class BasicDataset(object):
 
         return batch_data
 
-    def _calc_curves(self, q_values: Tensor, params: BasicParams):
+    def _calc_curves(self, q_values: Tensor, params: BasicParams, refl_kwargs):
+        nonsmeared_curves = None
+
         if self.smearing:
-            curves = self.smearing.get_curves(q_values, params)
+            if self.calc_nonsmeared_curves:
+                nonsmeared_curves = params.reflectivity(q_values, **refl_kwargs)
+            curves, q_resolutions = self.smearing.get_curves(q_values, params, refl_kwargs)
         else:
-            curves = params.reflectivity(q_values)
+            curves = params.reflectivity(q_values, **refl_kwargs)
+            q_resolutions = None
+
         curves = curves.to(q_values)
-        return curves
+        return curves, q_resolutions, nonsmeared_curves
 
 
 def _insert_batch_data(tgt_batch_data, add_batch_data, indices):

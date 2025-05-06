@@ -12,6 +12,7 @@ from reflectorch.data_generation.priors.no_constraints import (
 
 from reflectorch.data_generation.priors.parametric_models import (
     MULTILAYER_MODELS,
+    NuisanceParamsWrapper,
     ParametricModel,
 )
 from reflectorch.data_generation.priors.scaler_mixin import ScalerMixin
@@ -54,9 +55,9 @@ class BasicParams(AbstractParams):
         self.min_bounds = min_bounds
         self.max_bounds = max_bounds
 
-    def get_param_labels(self) -> List[str]:
+    def get_param_labels(self, **kwargs) -> List[str]:
         """gets the parameter labels"""
-        return self.param_model.get_param_labels()
+        return self.param_model.get_param_labels(**kwargs)
 
     def reflectivity(self, q: Tensor, log: bool = False, **kwargs):
         r"""computes the reflectivity curves directly from the parameters
@@ -97,6 +98,18 @@ class BasicParams(AbstractParams):
         """gets the slds"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['sld']
+        
+    @property
+    def real_slds(self):
+        """gets the real part of the slds"""
+        params = self.param_model.to_standard_params(self.parameters)
+        return params['sld'].real
+    
+    @property
+    def imag_slds(self):
+        """gets the imaginary part of the slds (only for complex dtypes)"""
+        params = self.param_model.to_standard_params(self.parameters)
+        return params['sld'].imag
 
     @staticmethod
     def rearrange_context_from_params(
@@ -201,11 +214,19 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             scaled_range (Tuple[float, float], optional): the range for scaling the parameters. Defaults to (-1., 1.)
         """
         self.scaled_range = scaled_range
-        self.param_model: ParametricModel = MULTILAYER_MODELS[model_name](
-            max_num_layers,
-            logdist=logdist,
-            **kwargs
-        )
+
+        self.shift_param_config = kwargs.pop('shift_param_config', {})
+
+        base_model: ParametricModel = MULTILAYER_MODELS[model_name](max_num_layers, logdist=logdist, **kwargs)
+        if any(self.shift_param_config.values()):
+            self.param_model = NuisanceParamsWrapper(
+                base_model=base_model,
+                nuisance_params_config=self.shift_param_config,
+                **kwargs,
+            )
+        else:
+            self.param_model = base_model
+
         self.device = device
         self.dtype = dtype
         self.num_layers = max_num_layers
