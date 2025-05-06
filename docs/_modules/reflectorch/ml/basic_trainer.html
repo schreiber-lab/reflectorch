@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -302,7 +304,8 @@ document.write(`
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Type</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 
-<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="kn">import</span> <span class="n">trange</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span> <span class="k">as</span> <span class="n">standard_tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="kn">import</span> <span class="n">tqdm</span> <span class="k">as</span> <span class="n">notebook_tqdm</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -334,7 +337,6 @@ document.write(`
 <span class="sd">        logger (Union[Logger, Tuple[Logger, ...], Loggers], optional): logger. Defaults to None.</span>
 <span class="sd">        optim_cls (Type[torch.optim.Optimizer], optional): Pytorch optimizer. Defaults to torch.optim.Adam.</span>
 <span class="sd">        optim_kwargs (dict, optional): optimizer arguments. Defaults to None.</span>
-<span class="sd">        train_with_q_input (bool, optional): if ``True`` the q values are also used as input. Defaults to False.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">TOTAL_LOSS_KEY</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;total_loss&#39;</span>
@@ -345,7 +347,6 @@ document.write(`
                  <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                  <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                  <span class="n">clip_grad_norm_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">train_with_q_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">logger</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Logger</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Logger</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Loggers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">optim_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">,</span>
                  <span class="n">optim_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -356,7 +357,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clip_grad_norm_max</span> <span class="o">=</span> <span class="n">clip_grad_norm_max</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train_with_q_input</span> <span class="o">=</span> <span class="n">train_with_q_input</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure_optimizer</span><span class="p">(</span><span class="n">optim_cls</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">optim_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lrs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -386,7 +386,8 @@ document.write(`
                     <span class="n">num_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                     <span class="n">callbacks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="s1">&#39;TrainerCallback&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s1">&#39;TrainerCallback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
                     <span class="n">disable_tqdm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                    <span class="n">update_tqdm_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="n">use_notebook_tqdm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="n">update_tqdm_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                     <span class="n">grad_accumulation_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;starts the training process</span>
@@ -395,6 +396,7 @@ document.write(`
 <span class="sd">            num_batches (int): total number of training iterations</span>
 <span class="sd">            callbacks (Union[Tuple[&#39;TrainerCallback&#39;], &#39;TrainerCallback&#39;]): the trainer callbacks. Defaults to ().</span>
 <span class="sd">            disable_tqdm (bool, optional): if ``True``, the progress bar is disabled. Defaults to False.</span>
+<span class="sd">            use_notebook_tqdm (bool, optional): should be set to ``True`` when used in a Jupyter Notebook. Defaults to False.</span>
 <span class="sd">            update_tqdm_freq (int, optional): frequency for updating the progress bar. Defaults to 10.</span>
 <span class="sd">            grad_accumulation_steps (int, optional): number of gradient accumulation steps. Defaults to 1.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -404,7 +406,8 @@ document.write(`
 
         <span class="n">callbacks</span> <span class="o">=</span> <span class="n">_StackedTrainerCallbacks</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">callbacks</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="p">])</span>
 
-        <span class="n">pbar</span> <span class="o">=</span> <span class="n">trange</span><span class="p">(</span><span class="n">num_batches</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="n">disable_tqdm</span><span class="p">)</span>
+        <span class="n">tqdm_class</span> <span class="o">=</span> <span class="n">notebook_tqdm</span> <span class="k">if</span> <span class="n">use_notebook_tqdm</span> <span class="k">else</span> <span class="n">standard_tqdm</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm_class</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_batches</span><span class="p">),</span> <span class="n">disable</span><span class="o">=</span><span class="n">disable_tqdm</span><span class="p">)</span>
 
         <span class="n">callbacks</span><span class="o">.</span><span class="n">start_training</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
@@ -429,6 +432,7 @@ document.write(`
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clip_grad_norm_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">max_norm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_grad_norm_max</span><span class="p">)</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
             <span class="n">avr_loss_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">avr_loss_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -449,6 +453,16 @@ document.write(`
         <span class="k">if</span> <span class="n">is_divisor</span><span class="p">(</span><span class="n">batch_num</span><span class="p">,</span> <span class="n">update_tqdm_freq</span><span class="p">):</span>
             <span class="n">last_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">TOTAL_LOSS_KEY</span><span class="p">][</span><span class="o">-</span><span class="mi">10</span><span class="p">:])</span>
             <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loss = </span><span class="si">{</span><span class="n">last_loss</span><span class="si">:</span><span class="s1">.2e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="n">postfix</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TOTAL_LOSS_KEY</span><span class="p">:</span>
+                    <span class="n">last_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">postfix</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">last_value</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span>
+
+            <span class="n">postfix</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">()</span><span class="si">:</span><span class="s1">.2e</span><span class="si">}</span><span class="s1">&#39;</span>
+
+            <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">postfix</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_batch_by_idx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>

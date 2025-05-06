@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -313,6 +315,7 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.parametric_models</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">MULTILAYER_MODELS</span><span class="p">,</span>
+    <span class="n">NuisanceParamsWrapper</span><span class="p">,</span>
     <span class="n">ParametricModel</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.scaler_mixin</span> <span class="kn">import</span> <span class="n">ScalerMixin</span>
@@ -359,9 +362,9 @@ document.write(`
 
 <div class="viewcode-block" id="BasicParams.get_param_labels">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.BasicParams.get_param_labels">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">get_param_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the parameter labels&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">get_param_labels</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BasicParams.reflectivity">
@@ -406,6 +409,18 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the slds&quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">real_slds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the real part of the slds&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">real</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">imag_slds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;gets the imaginary part of the slds (only for complex dtypes)&quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="o">.</span><span class="n">to_standard_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sld&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rearrange_context_from_params</span><span class="p">(</span>
@@ -522,11 +537,19 @@ document.write(`
 <span class="sd">            scaled_range (Tuple[float, float], optional): the range for scaling the parameters. Defaults to (-1., 1.)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaled_range</span> <span class="o">=</span> <span class="n">scaled_range</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span><span class="p">:</span> <span class="n">ParametricModel</span> <span class="o">=</span> <span class="n">MULTILAYER_MODELS</span><span class="p">[</span><span class="n">model_name</span><span class="p">](</span>
-            <span class="n">max_num_layers</span><span class="p">,</span>
-            <span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_param_config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;shift_param_config&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="n">base_model</span><span class="p">:</span> <span class="n">ParametricModel</span> <span class="o">=</span> <span class="n">MULTILAYER_MODELS</span><span class="p">[</span><span class="n">model_name</span><span class="p">](</span><span class="n">max_num_layers</span><span class="p">,</span> <span class="n">logdist</span><span class="o">=</span><span class="n">logdist</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_param_config</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span> <span class="o">=</span> <span class="n">NuisanceParamsWrapper</span><span class="p">(</span>
+                <span class="n">base_model</span><span class="o">=</span><span class="n">base_model</span><span class="p">,</span>
+                <span class="n">nuisance_params_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_param_config</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_model</span> <span class="o">=</span> <span class="n">base_model</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">max_num_layers</span>

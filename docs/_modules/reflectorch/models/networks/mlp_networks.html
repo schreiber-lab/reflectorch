@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -311,77 +313,79 @@ document.write(`
 <span class="kn">from</span> <span class="nn">reflectorch.models.encoders.fno</span> <span class="kn">import</span> <span class="n">FnoEncoder</span>
 <span class="kn">from</span> <span class="nn">reflectorch.models.activations</span> <span class="kn">import</span> <span class="n">activation_by_name</span>
 
-<div class="viewcode-block" id="NetworkWithPriorsConvEmb">
-<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriorsConvEmb">[docs]</a>
-<span class="k">class</span> <span class="nc">NetworkWithPriorsConvEmb</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;MLP network with 1D CNN embedding network</span>
+<div class="viewcode-block" id="NetworkWithPriors">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriors">[docs]</a>
+<span class="k">class</span> <span class="nc">NetworkWithPriors</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MLP network with an embedding network</span>
 
 <span class="sd">    .. image:: ../documentation/FigureReflectometryNetwork.png</span>
 <span class="sd">        :width: 800px</span>
 <span class="sd">        :align: center</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        in_channels (int, optional): the number of input channels of the 1D CNN. Defaults to 1.</span>
-<span class="sd">        hidden_channels (tuple, optional): list with the number of channels for each layer of the 1D CNN. Defaults to (32, 64, 128, 256, 512).</span>
-<span class="sd">        dim_embedding (int, optional): the dimension of the embedding produced by the 1D CNN. Defaults to 128.</span>
-<span class="sd">        dim_avpool (int, optional): the type of activation function in the 1D CNN. Defaults to 1.</span>
-<span class="sd">        embedding_net_activation (str, optional): the type of activation function in the 1D CNN. Defaults to &#39;gelu&#39;.</span>
-<span class="sd">        use_batch_norm (bool, optional): whether to use batch normalization (in both the 1D CNN and the MLP). Defaults to False.</span>
+<span class="sd">        embedding_net_type (str): the type of embedding network, either &#39;conv&#39; or &#39;fno&#39;.</span>
+<span class="sd">        embedding_net_kwargs (dict): dictionary containing the keyword arguments for the embedding network.</span>
 <span class="sd">        dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.</span>
+<span class="sd">        dim_conditioning_params (int, optional): the dimension of other parameters the network is conditioned on (e.g. for the smearing coefficient dq/q)</span>
 <span class="sd">        layer_width (int, optional): the width of a linear layer in the MLP. Defaults to 512.</span>
 <span class="sd">        num_blocks (int, optional): the number of residual blocks in the MLP. Defaults to 4.</span>
 <span class="sd">        repeats_per_block (int, optional): the number of normalization/activation/linear repeats in a block. Defaults to 2.</span>
 <span class="sd">        mlp_activation (str, optional):  the type of activation function in the MLP. Defaults to &#39;gelu&#39;.</span>
+<span class="sd">        use_batch_norm (bool, optional): whether to use batch normalization in the MLP. Defaults to True.</span>
+<span class="sd">        use_layer_norm (bool, optional): whether to use layer normalization in the MLP (if use_batch_norm is False). Defaults to False.</span>
 <span class="sd">        dropout_rate (float, optional): dropout rate for each block. Defaults to 0.0.</span>
+<span class="sd">        tanh_output (bool, optional): whether to apply a tanh function to the output. Defaults to False.</span>
 <span class="sd">        use_selu_init (bool, optional): whether to use the special weights initialization for the &#39;selu&#39; activation function. Defaults to False.</span>
 <span class="sd">        pretrained_embedding_net (str, optional): the path to the weights of a pretrained embedding network. Defaults to None.</span>
 <span class="sd">        residual (bool, optional): whether the blocks have a residual skip connection. Defaults to True.</span>
 <span class="sd">        adaptive_activation (bool, optional): must be set to ``True`` if the activation function is adaptive. Defaults to False.</span>
 <span class="sd">        conditioning (str, optional): the manner in which the prior bounds are provided as input to the network. Defaults to &#39;concat&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">      &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-                 <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
-                 <span class="n">dim_embedding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-                 <span class="n">dim_avpool</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-                 <span class="n">embedding_net_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
-                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">embedding_net_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># &#39;conv&#39;, &#39;fno&#39;</span>
+                 <span class="n">embedding_net_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                 <span class="n">pretrained_embedding_net</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">dim_out</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">dim_conditioning_params</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">layer_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
                  <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
                  <span class="n">repeats_per_block</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
                  <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
+                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_layer_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">dropout_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">tanh_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">use_selu_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">pretrained_embedding_net</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">adaptive_activation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">conditioning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;concat&#39;</span><span class="p">,</span>
-                 <span class="p">):</span>
+                 <span class="n">concat_condition_first_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">=</span> <span class="n">in_channels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">=</span> <span class="n">conditioning</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">ConvEncoder</span><span class="p">(</span>
-            <span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> 
-            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span> 
-            <span class="n">dim_latent</span><span class="o">=</span><span class="n">dim_embedding</span><span class="p">,</span> 
-            <span class="n">dim_avpool</span><span class="o">=</span><span class="n">dim_avpool</span><span class="p">,</span>
-            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span> 
-            <span class="n">activation</span><span class="o">=</span><span class="n">embedding_net_activation</span>
-        <span class="p">)</span>
-        
         <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dim_out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_conditioning_params</span> <span class="o">=</span> <span class="n">dim_conditioning_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tanh_output</span> <span class="o">=</span> <span class="n">tanh_output</span>
+
+        <span class="k">if</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;conv&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">ConvEncoder</span><span class="p">(</span><span class="o">**</span><span class="n">embedding_net_kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;fno&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">FnoEncoder</span><span class="p">(</span><span class="o">**</span><span class="n">embedding_net_kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;no_embedding_net&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported embedding_net_type: </span><span class="si">{</span><span class="n">embedding_net_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_embedding</span> <span class="o">=</span> <span class="n">embedding_net_kwargs</span><span class="p">[</span><span class="s1">&#39;dim_embedding&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span><span class="p">:</span>
-            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
+            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_embedding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_conditioning_params</span>
             <span class="n">dim_condition</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">elif</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;glu&#39;</span> <span class="ow">or</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;film&#39;</span><span class="p">:</span>
-            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span>
-            <span class="n">dim_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
+            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_embedding</span>
+            <span class="n">dim_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_conditioning_params</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conditioning type &#39;</span><span class="si">{</span><span class="n">conditioning</span><span class="si">}</span><span class="s2">&#39; is not supported.&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">ResidualMLP</span><span class="p">(</span>
             <span class="n">dim_in</span><span class="o">=</span><span class="n">dim_mlp_in</span><span class="p">,</span>
@@ -392,15 +396,16 @@ document.write(`
             <span class="n">repeats_per_block</span><span class="o">=</span><span class="n">repeats_per_block</span><span class="p">,</span>
             <span class="n">activation</span><span class="o">=</span><span class="n">mlp_activation</span><span class="p">,</span>
             <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span>
+            <span class="n">use_layer_norm</span><span class="o">=</span><span class="n">use_layer_norm</span><span class="p">,</span>
             <span class="n">dropout_rate</span><span class="o">=</span><span class="n">dropout_rate</span><span class="p">,</span>
             <span class="n">residual</span><span class="o">=</span><span class="n">residual</span><span class="p">,</span>
             <span class="n">adaptive_activation</span><span class="o">=</span><span class="n">adaptive_activation</span><span class="p">,</span>
             <span class="n">conditioning</span><span class="o">=</span><span class="n">conditioning</span><span class="p">,</span>
+            <span class="n">concat_condition_first_layer</span><span class="o">=</span><span class="n">concat_condition_first_layer</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">embedding_net_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">embedding_net_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;activation&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">mlp_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
 
@@ -408,152 +413,321 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">pretrained_embedding_net</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="NetworkWithPriorsConvEmb.forward">
-<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriorsConvEmb.forward">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="NetworkWithPriors.forward">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriors.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conditioning_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            curves (Tensor): reflectivity curves</span>
-<span class="sd">            bounds (Tensor): prior bounds</span>
-<span class="sd">            q_values (Tensor, optional): q values. Defaults to None.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Tensor: prediction</span>
+<span class="sd">            scaled_curves (torch.Tensor): Input tensor of shape [batch_size, n_points] or [batch_size, n_channels, n_points].</span>
+<span class="sd">            scaled_bounds (torch.Tensor): Tensor representing prior bounds, shape [batch_size, 2*n_params].</span>
+<span class="sd">            scaled_q_values (torch.Tensor, optional): Tensor of shape [batch_size, n_points].</span>
+<span class="sd">            scaled_conditioning_params (torch.Tensor, optional): Additional parameters for conditioning, shape [batch_size, ...].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">curves</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">additional_channels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">q_values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">additional_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_values</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">additional_channels</span><span class="p">:</span>
+            <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">]</span> <span class="o">+</span> <span class="n">additional_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [batch_size, n_channels, n_points]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span><span class="p">:</span> 
-            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">),</span> <span class="n">bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="n">conditioning_params</span><span class="p">]</span> <span class="k">if</span> <span class="n">conditioning_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;glu&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;film&#39;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">),</span> <span class="n">condition</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;glu&#39;</span><span class="p">,</span> <span class="s1">&#39;film&#39;</span><span class="p">]:</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">bounds</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="n">conditioning_params</span><span class="p">]</span> <span class="k">if</span> <span class="n">conditioning_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conditioning type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span><span class="si">}</span><span class="s2"> not recognized.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tanh_output</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">x</span></div>
 </div>
 
-    
-    
+
+<div class="viewcode-block" id="NetworkWithPriorsConvEmb">
+<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriorsConvEmb">[docs]</a>
+<span class="k">class</span> <span class="nc">NetworkWithPriorsConvEmb</span><span class="p">(</span><span class="n">NetworkWithPriors</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for back-compatibility with previous versions of the package&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">embedding_net_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;in_channels&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;in_channels&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s1">&#39;hidden_channels&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;hidden_channels&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]),</span>
+            <span class="s1">&#39;dim_embedding&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dim_embedding&#39;</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+            <span class="s1">&#39;dim_avpool&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dim_avpool&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;embedding_net_activation&#39;</span><span class="p">,</span> <span class="s1">&#39;gelu&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;use_batch_norm&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;use_batch_norm&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">embedding_net_type</span><span class="o">=</span><span class="s1">&#39;conv&#39;</span><span class="p">,</span>
+            <span class="n">embedding_net_kwargs</span><span class="o">=</span><span class="n">embedding_net_kwargs</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="NetworkWithPriorsFnoEmb">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriorsFnoEmb">[docs]</a>
-<span class="k">class</span> <span class="nc">NetworkWithPriorsFnoEmb</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;MLP network with FNO embedding network</span>
+<span class="k">class</span> <span class="nc">NetworkWithPriorsFnoEmb</span><span class="p">(</span><span class="n">NetworkWithPriors</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for back-compatibility with previous versions of the package&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">embedding_net_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;in_channels&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;in_channels&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s1">&#39;dim_embedding&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dim_embedding&#39;</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+            <span class="s1">&#39;modes&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;modes&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+            <span class="s1">&#39;width_fno&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;width_fno&#39;</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+            <span class="s1">&#39;n_fno_blocks&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;n_fno_blocks&#39;</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+            <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;embedding_net_activation&#39;</span><span class="p">,</span> <span class="s1">&#39;gelu&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;fusion_self_attention&#39;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;fusion_self_attention&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">}</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        in_channels (int, optional): the number of input channels to the FNO-based embedding network. Defaults to 2.</span>
-<span class="sd">        dim_embedding (int, optional): the dimension of the embedding produced by the FNO. Defaults to 128.</span>
-<span class="sd">        modes (int, optional):  the number of Fourier modes that are utilized. Defaults to 16.</span>
-<span class="sd">        width_fno (int, optional): the number of channels in the FNO blocks. Defaults to 64.</span>
-<span class="sd">        embedding_net_activation (str, optional):  the type of activation function in the embedding network. Defaults to &#39;gelu&#39;.</span>
-<span class="sd">        n_fno_blocks (int, optional): the number of FNO blocks. Defaults to 6.</span>
-<span class="sd">        fusion_self_attention (bool, optional): if ``True`` a fusion layer is used after the FNO blocks to produce the final output. Defaults to False.</span>
-<span class="sd">        dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.</span>
-<span class="sd">        layer_width (int, optional): the width of a linear layer in the MLP. Defaults to 512.</span>
-<span class="sd">        num_blocks (int, optional): the number of residual blocks in the MLP. Defaults to 4.</span>
-<span class="sd">        repeats_per_block (int, optional): the number of normalization/activation/linear repeats in a block. Defaults to 2.</span>
-<span class="sd">        use_batch_norm (bool, optional): whether to use batch normalization (only in the MLP). Defaults to False.</span>
-<span class="sd">        mlp_activation (str, optional):  the type of activation function in the MLP. Defaults to &#39;gelu&#39;.</span>
-<span class="sd">        dropout_rate (float, optional): dropout rate for each block. Defaults to 0.0.</span>
-<span class="sd">        use_selu_init (bool, optional): whether to use the special weights initialization for the &#39;selu&#39; activation function. Defaults to False.</span>
-<span class="sd">        residual (bool, optional): whether the blocks have a residual skip connection. Defaults to True.</span>
-<span class="sd">        adaptive_activation (bool, optional): must be set to ``True`` if the activation function is adaptive. Defaults to False.</span>
-<span class="sd">        conditioning (str, optional): the manner in which the prior bounds are provided as input to the network. Defaults to &#39;concat&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-                 <span class="n">dim_embedding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-                 <span class="n">modes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
-                 <span class="n">width_fno</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-                 <span class="n">embedding_net_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
-                 <span class="n">n_fno_blocks</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-                 <span class="n">fusion_self_attention</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">dim_out</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
-                 <span class="n">layer_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
-                 <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
-                 <span class="n">repeats_per_block</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-                 <span class="n">use_batch_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;gelu&#39;</span><span class="p">,</span>
-                 <span class="n">dropout_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-                 <span class="n">use_selu_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                 <span class="n">adaptive_activation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">conditioning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;concat&#39;</span><span class="p">,</span>
-                 <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">embedding_net_type</span><span class="o">=</span><span class="s1">&#39;fno&#39;</span><span class="p">,</span>
+            <span class="n">embedding_net_kwargs</span><span class="o">=</span><span class="n">embedding_net_kwargs</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">=</span> <span class="n">conditioning</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">FnoEncoder</span><span class="p">(</span>
-            <span class="n">ch_in</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> 
-            <span class="n">dim_embedding</span><span class="o">=</span><span class="n">dim_embedding</span><span class="p">,</span> 
-            <span class="n">modes</span><span class="o">=</span><span class="n">modes</span><span class="p">,</span> 
-            <span class="n">width_fno</span><span class="o">=</span><span class="n">width_fno</span><span class="p">,</span> 
-            <span class="n">n_fno_blocks</span><span class="o">=</span><span class="n">n_fno_blocks</span><span class="p">,</span> 
-            <span class="n">activation</span><span class="o">=</span><span class="n">embedding_net_activation</span><span class="p">,</span>
-            <span class="n">fusion_self_attention</span><span class="o">=</span><span class="n">fusion_self_attention</span>
-        <span class="p">)</span>
+<span class="c1"># class NetworkWithPriorsConvEmb(nn.Module):</span>
+<span class="c1">#     &quot;&quot;&quot;MLP network with 1D CNN embedding network</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dim_out</span>
+<span class="c1">#     .. image:: ../documentation/FigureReflectometryNetwork.png</span>
+<span class="c1">#         :width: 800px</span>
+<span class="c1">#         :align: center</span>
 
-        <span class="k">if</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span><span class="p">:</span>
-            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
-            <span class="n">dim_condition</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">elif</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;glu&#39;</span> <span class="ow">or</span> <span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;film&#39;</span><span class="p">:</span>
-            <span class="n">dim_mlp_in</span> <span class="o">=</span> <span class="n">dim_embedding</span>
-            <span class="n">dim_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_prior_bounds</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+<span class="c1">#     Args:</span>
+<span class="c1">#         in_channels (int, optional): the number of input channels of the 1D CNN. Defaults to 1.</span>
+<span class="c1">#         hidden_channels (tuple, optional): list with the number of channels for each layer of the 1D CNN. Defaults to (32, 64, 128, 256, 512).</span>
+<span class="c1">#         dim_embedding (int, optional): the dimension of the embedding produced by the 1D CNN. Defaults to 128.</span>
+<span class="c1">#         dim_avpool (int, optional): the type of activation function in the 1D CNN. Defaults to 1.</span>
+<span class="c1">#         embedding_net_activation (str, optional): the type of activation function in the 1D CNN. Defaults to &#39;gelu&#39;.</span>
+<span class="c1">#         use_batch_norm (bool, optional): whether to use batch normalization (in both the 1D CNN and the MLP). Defaults to False.</span>
+<span class="c1">#         dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.</span>
+<span class="c1">#         layer_width (int, optional): the width of a linear layer in the MLP. Defaults to 512.</span>
+<span class="c1">#         num_blocks (int, optional): the number of residual blocks in the MLP. Defaults to 4.</span>
+<span class="c1">#         repeats_per_block (int, optional): the number of normalization/activation/linear repeats in a block. Defaults to 2.</span>
+<span class="c1">#         mlp_activation (str, optional):  the type of activation function in the MLP. Defaults to &#39;gelu&#39;.</span>
+<span class="c1">#         dropout_rate (float, optional): dropout rate for each block. Defaults to 0.0.</span>
+<span class="c1">#         use_selu_init (bool, optional): whether to use the special weights initialization for the &#39;selu&#39; activation function. Defaults to False.</span>
+<span class="c1">#         pretrained_embedding_net (str, optional): the path to the weights of a pretrained embedding network. Defaults to None.</span>
+<span class="c1">#         residual (bool, optional): whether the blocks have a residual skip connection. Defaults to True.</span>
+<span class="c1">#         adaptive_activation (bool, optional): must be set to ``True`` if the activation function is adaptive. Defaults to False.</span>
+<span class="c1">#         conditioning (str, optional): the manner in which the prior bounds are provided as input to the network. Defaults to &#39;concat&#39;.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     def __init__(self,</span>
+<span class="c1">#                  in_channels: int = 1,</span>
+<span class="c1">#                  hidden_channels: tuple = (32, 64, 128, 256, 512),</span>
+<span class="c1">#                  dim_embedding: int = 128,</span>
+<span class="c1">#                  dim_avpool: int = 1,</span>
+<span class="c1">#                  embedding_net_activation: str = &#39;gelu&#39;,</span>
+<span class="c1">#                  use_batch_norm: bool = False,</span>
+<span class="c1">#                  dim_out: int = 8,</span>
+<span class="c1">#                  layer_width: int = 512,</span>
+<span class="c1">#                  num_blocks: int = 4,</span>
+<span class="c1">#                  repeats_per_block: int = 2,</span>
+<span class="c1">#                  mlp_activation: str = &#39;gelu&#39;,</span>
+<span class="c1">#                  dropout_rate: float = 0.0,</span>
+<span class="c1">#                  use_selu_init: bool = False,</span>
+<span class="c1">#                  pretrained_embedding_net: str = None,</span>
+<span class="c1">#                  residual: bool = True,</span>
+<span class="c1">#                  adaptive_activation: bool = False,</span>
+<span class="c1">#                  conditioning: str = &#39;concat&#39;,</span>
+<span class="c1">#                  ):</span>
+<span class="c1">#         super().__init__()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">ResidualMLP</span><span class="p">(</span>
-            <span class="n">dim_in</span><span class="o">=</span><span class="n">dim_mlp_in</span><span class="p">,</span>
-            <span class="n">dim_out</span><span class="o">=</span><span class="n">dim_out</span><span class="p">,</span>
-            <span class="n">dim_condition</span><span class="o">=</span><span class="n">dim_condition</span><span class="p">,</span>
-            <span class="n">layer_width</span><span class="o">=</span><span class="n">layer_width</span><span class="p">,</span>
-            <span class="n">num_blocks</span><span class="o">=</span><span class="n">num_blocks</span><span class="p">,</span>
-            <span class="n">repeats_per_block</span><span class="o">=</span><span class="n">repeats_per_block</span><span class="p">,</span>
-            <span class="n">activation</span><span class="o">=</span><span class="n">mlp_activation</span><span class="p">,</span>
-            <span class="n">use_batch_norm</span><span class="o">=</span><span class="n">use_batch_norm</span><span class="p">,</span>
-            <span class="n">dropout_rate</span><span class="o">=</span><span class="n">dropout_rate</span><span class="p">,</span>
-            <span class="n">residual</span><span class="o">=</span><span class="n">residual</span><span class="p">,</span>
-            <span class="n">adaptive_activation</span><span class="o">=</span><span class="n">adaptive_activation</span><span class="p">,</span>
-            <span class="n">conditioning</span><span class="o">=</span><span class="n">conditioning</span><span class="p">,</span>
-        <span class="p">)</span>
+<span class="c1">#         self.in_channels = in_channels</span>
+<span class="c1">#         self.conditioning = conditioning</span>
 
-        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">embedding_net_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">FnoEncoder</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+<span class="c1">#         self.embedding_net = ConvEncoder(</span>
+<span class="c1">#             in_channels=in_channels, </span>
+<span class="c1">#             hidden_channels=hidden_channels, </span>
+<span class="c1">#             dim_latent=dim_embedding, </span>
+<span class="c1">#             dim_avpool=dim_avpool,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm, </span>
+<span class="c1">#             activation=embedding_net_activation</span>
+<span class="c1">#         )</span>
+        
+<span class="c1">#         self.dim_prior_bounds = 2 * dim_out</span>
 
-        <span class="k">if</span> <span class="n">use_selu_init</span> <span class="ow">and</span> <span class="n">mlp_activation</span> <span class="o">==</span> <span class="s1">&#39;selu&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">selu_init</span><span class="p">)</span>
+<span class="c1">#         if conditioning == &#39;concat&#39;:</span>
+<span class="c1">#             dim_mlp_in = dim_embedding + self.dim_prior_bounds</span>
+<span class="c1">#             dim_condition = 0</span>
+<span class="c1">#         elif conditioning == &#39;glu&#39; or conditioning == &#39;film&#39;:</span>
+<span class="c1">#             dim_mlp_in = dim_embedding</span>
+<span class="c1">#             dim_condition = self.dim_prior_bounds</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise NotImplementedError</span>
+
+<span class="c1">#         self.mlp = ResidualMLP(</span>
+<span class="c1">#             dim_in=dim_mlp_in,</span>
+<span class="c1">#             dim_out=dim_out,</span>
+<span class="c1">#             dim_condition=dim_condition,</span>
+<span class="c1">#             layer_width=layer_width,</span>
+<span class="c1">#             num_blocks=num_blocks,</span>
+<span class="c1">#             repeats_per_block=repeats_per_block,</span>
+<span class="c1">#             activation=mlp_activation,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             dropout_rate=dropout_rate,</span>
+<span class="c1">#             residual=residual,</span>
+<span class="c1">#             adaptive_activation=adaptive_activation,</span>
+<span class="c1">#             conditioning=conditioning,</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         if use_selu_init and embedding_net_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.embedding_net.apply(selu_init)</span>
+
+<span class="c1">#         if use_selu_init and mlp_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.mlp.apply(selu_init)</span>
+
+<span class="c1">#         if pretrained_embedding_net:</span>
+<span class="c1">#             self.embedding_net.load_weights(pretrained_embedding_net)</span>
+
+
+<span class="c1">#     def forward(self, curves: Tensor, bounds: Tensor, q_values: Optional[Tensor] = None):</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         Args:</span>
+<span class="c1">#             curves (Tensor): reflectivity curves</span>
+<span class="c1">#             bounds (Tensor): prior bounds</span>
+<span class="c1">#             q_values (Tensor, optional): q values. Defaults to None.</span>
+
+<span class="c1">#         Returns:</span>
+<span class="c1">#             Tensor: prediction</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         if q_values is not None:</span>
+<span class="c1">#             curves = torch.cat([curves[:, None, :], q_values[:, None, :]], dim=1)</span>
+
+<span class="c1">#         if self.conditioning == &#39;concat&#39;: </span>
+<span class="c1">#             x = torch.cat([self.embedding_net(curves), bounds], dim=-1)</span>
+<span class="c1">#             x = self.mlp(x)</span>
+
+<span class="c1">#         elif self.conditioning == &#39;glu&#39; or self.conditioning == &#39;film&#39;:</span>
+<span class="c1">#             x = self.mlp(self.embedding_net(curves), condition=bounds)</span>
+
+<span class="c1">#         return x</span>
+    
+    
+<span class="c1"># class NetworkWithPriorsFnoEmb(nn.Module):</span>
+<span class="c1">#     &quot;&quot;&quot;MLP network with FNO embedding network</span>
+
+<span class="c1">#     Args:</span>
+<span class="c1">#         in_channels (int, optional): the number of input channels to the FNO-based embedding network. Defaults to 2.</span>
+<span class="c1">#         dim_embedding (int, optional): the dimension of the embedding produced by the FNO. Defaults to 128.</span>
+<span class="c1">#         modes (int, optional):  the number of Fourier modes that are utilized. Defaults to 16.</span>
+<span class="c1">#         width_fno (int, optional): the number of channels in the FNO blocks. Defaults to 64.</span>
+<span class="c1">#         embedding_net_activation (str, optional):  the type of activation function in the embedding network. Defaults to &#39;gelu&#39;.</span>
+<span class="c1">#         n_fno_blocks (int, optional): the number of FNO blocks. Defaults to 6.</span>
+<span class="c1">#         fusion_self_attention (bool, optional): if ``True`` a fusion layer is used after the FNO blocks to produce the final output. Defaults to False.</span>
+<span class="c1">#         dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.</span>
+<span class="c1">#         layer_width (int, optional): the width of a linear layer in the MLP. Defaults to 512.</span>
+<span class="c1">#         num_blocks (int, optional): the number of residual blocks in the MLP. Defaults to 4.</span>
+<span class="c1">#         repeats_per_block (int, optional): the number of normalization/activation/linear repeats in a block. Defaults to 2.</span>
+<span class="c1">#         use_batch_norm (bool, optional): whether to use batch normalization (only in the MLP). Defaults to False.</span>
+<span class="c1">#         mlp_activation (str, optional):  the type of activation function in the MLP. Defaults to &#39;gelu&#39;.</span>
+<span class="c1">#         dropout_rate (float, optional): dropout rate for each block. Defaults to 0.0.</span>
+<span class="c1">#         use_selu_init (bool, optional): whether to use the special weights initialization for the &#39;selu&#39; activation function. Defaults to False.</span>
+<span class="c1">#         residual (bool, optional): whether the blocks have a residual skip connection. Defaults to True.</span>
+<span class="c1">#         adaptive_activation (bool, optional): must be set to ``True`` if the activation function is adaptive. Defaults to False.</span>
+<span class="c1">#         conditioning (str, optional): the manner in which the prior bounds are provided as input to the network. Defaults to &#39;concat&#39;.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     def __init__(self,</span>
+<span class="c1">#                  in_channels: int = 2,</span>
+<span class="c1">#                  dim_embedding: int = 128,</span>
+<span class="c1">#                  modes: int = 16,</span>
+<span class="c1">#                  width_fno: int = 64,</span>
+<span class="c1">#                  embedding_net_activation: str = &#39;gelu&#39;,</span>
+<span class="c1">#                  n_fno_blocks : int = 6,</span>
+<span class="c1">#                  fusion_self_attention: bool = False,</span>
+<span class="c1">#                  dim_out: int = 8,</span>
+<span class="c1">#                  layer_width: int = 512,</span>
+<span class="c1">#                  num_blocks: int = 4,</span>
+<span class="c1">#                  repeats_per_block: int = 2,</span>
+<span class="c1">#                  use_batch_norm: bool = False,</span>
+<span class="c1">#                  mlp_activation: str = &#39;gelu&#39;,</span>
+<span class="c1">#                  dropout_rate: float = 0.0,</span>
+<span class="c1">#                  use_selu_init: bool = False,</span>
+<span class="c1">#                  residual: bool = True,</span>
+<span class="c1">#                  adaptive_activation: bool = False,</span>
+<span class="c1">#                  conditioning: str = &#39;concat&#39;,</span>
+<span class="c1">#                  ):</span>
+<span class="c1">#         super().__init__()</span>
+
+<span class="c1">#         self.conditioning = conditioning</span>
+
+<span class="c1">#         self.embedding_net = FnoEncoder(</span>
+<span class="c1">#             ch_in=in_channels, </span>
+<span class="c1">#             dim_embedding=dim_embedding, </span>
+<span class="c1">#             modes=modes, </span>
+<span class="c1">#             width_fno=width_fno, </span>
+<span class="c1">#             n_fno_blocks=n_fno_blocks, </span>
+<span class="c1">#             activation=embedding_net_activation,</span>
+<span class="c1">#             fusion_self_attention=fusion_self_attention</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         self.dim_prior_bounds = 2 * dim_out</span>
+
+<span class="c1">#         if conditioning == &#39;concat&#39;:</span>
+<span class="c1">#             dim_mlp_in = dim_embedding + self.dim_prior_bounds</span>
+<span class="c1">#             dim_condition = 0</span>
+<span class="c1">#         elif conditioning == &#39;glu&#39; or conditioning == &#39;film&#39;:</span>
+<span class="c1">#             dim_mlp_in = dim_embedding</span>
+<span class="c1">#             dim_condition = self.dim_prior_bounds</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise NotImplementedError</span>
+
+<span class="c1">#         self.mlp = ResidualMLP(</span>
+<span class="c1">#             dim_in=dim_mlp_in,</span>
+<span class="c1">#             dim_out=dim_out,</span>
+<span class="c1">#             dim_condition=dim_condition,</span>
+<span class="c1">#             layer_width=layer_width,</span>
+<span class="c1">#             num_blocks=num_blocks,</span>
+<span class="c1">#             repeats_per_block=repeats_per_block,</span>
+<span class="c1">#             activation=mlp_activation,</span>
+<span class="c1">#             use_batch_norm=use_batch_norm,</span>
+<span class="c1">#             dropout_rate=dropout_rate,</span>
+<span class="c1">#             residual=residual,</span>
+<span class="c1">#             adaptive_activation=adaptive_activation,</span>
+<span class="c1">#             conditioning=conditioning,</span>
+<span class="c1">#         )</span>
+
+<span class="c1">#         if use_selu_init and embedding_net_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.FnoEncoder.apply(selu_init)</span>
+
+<span class="c1">#         if use_selu_init and mlp_activation == &#39;selu&#39;:</span>
+<span class="c1">#             self.mlp.apply(selu_init)</span>
 
             
-<div class="viewcode-block" id="NetworkWithPriorsFnoEmb.forward">
-<a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriorsFnoEmb.forward">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            curves (Tensor): reflectivity curves</span>
-<span class="sd">            bounds (Tensor): prior bounds</span>
-<span class="sd">            q_values (Tensor, optional): q values. Defaults to None.</span>
+<span class="c1">#     def forward(self, curves: Tensor, bounds: Tensor, q_values: Optional[Tensor] =None):</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         Args:</span>
+<span class="c1">#             curves (Tensor): reflectivity curves</span>
+<span class="c1">#             bounds (Tensor): prior bounds</span>
+<span class="c1">#             q_values (Tensor, optional): q values. Defaults to None.</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            Tensor: prediction</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">curves</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">,</span> <span class="n">q_values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1">#         Returns:</span>
+<span class="c1">#             Tensor: prediction</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         if curves.dim() &lt; 3:</span>
+<span class="c1">#             curves = curves[:, None, :]</span>
+<span class="c1">#         if q_values is not None:</span>
+<span class="c1">#             curves = torch.cat([curves, q_values[:, None, :]], dim=1)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span><span class="p">:</span> 
-            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">),</span> <span class="n">bounds</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="c1">#         if self.conditioning == &#39;concat&#39;: </span>
+<span class="c1">#             x = torch.cat([self.embedding_net(curves), bounds], dim=-1)</span>
+<span class="c1">#             x = self.mlp(x)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;glu&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;film&#39;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">),</span> <span class="n">condition</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span>
+<span class="c1">#         elif self.conditioning == &#39;glu&#39; or self.conditioning == &#39;film&#39;:</span>
+<span class="c1">#             x = self.mlp(self.embedding_net(curves), condition=bounds)</span>
 
-        <span class="k">return</span> <span class="n">x</span></div>
-</div>
-
+<span class="c1">#         return x</span>
 
 
 

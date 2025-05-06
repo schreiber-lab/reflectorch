@@ -177,10 +177,12 @@
         </ul>
         <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">2. Using a trained reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">3. Training a reflectorch model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">4. Advanced functionality</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api.html">5. API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
 </ul>
 
     </div>
@@ -312,15 +314,15 @@ document.write(`
 <span class="sd">    The intensity at a q point will be the average of the intensities of neighbouring q points, weighted by a gaussian profile.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sigma_range (tuple, optional): the range for sampling the resolutions. Defaults to (1e-4, 5e-3).</span>
+<span class="sd">        sigma_range (tuple, optional): the range for sampling the resolutions. Defaults to (0.01, 0.1).</span>
 <span class="sd">        constant_dq (bool, optional): if ``True`` the smearing is constant (the resolution is given by the constant dq at each point in the curve) </span>
 <span class="sd">                                    otherwise the smearing is linear (the resolution is given by the constant dq/q at each point in the curve). Defaults to True.</span>
 <span class="sd">        gauss_num (int, optional): the number of interpolating gaussian profiles. Defaults to 31.</span>
 <span class="sd">        share_smeared (float, optional): the share of curves in the batch for which the resolution smearing is applied. Defaults to 0.2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">sigma_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span>
-                 <span class="n">constant_dq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">sigma_range</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+                 <span class="n">constant_dq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">gauss_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">31</span><span class="p">,</span>
                  <span class="n">share_smeared</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
                  <span class="p">):</span>
@@ -341,34 +343,68 @@ document.write(`
         <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
         <span class="n">indices</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)[:</span><span class="n">num_smeared</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">dq</span><span class="p">,</span> <span class="n">indices</span>
+    
+<div class="viewcode-block" id="Smearing.scale_resolutions">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Smearing.scale_resolutions">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_resolutions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resolutions</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scales the q-resolution values to [-1,1] range using the internal sigma range&quot;&quot;&quot;</span>
+        <span class="n">sigma_min</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">share_smeared</span> <span class="o">!=</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">resolutions</span> <span class="o">-</span> <span class="n">sigma_min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span> <span class="o">-</span> <span class="n">sigma_min</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span></div>
 
-    <span class="k">def</span> <span class="nf">get_curves</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">get_curves</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">BasicParams</span><span class="p">,</span> <span class="n">refl_kwargs</span><span class="p">:</span><span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">refl_kwargs</span> <span class="o">=</span> <span class="n">refl_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+
         <span class="n">dq</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_resolutions</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">q_resolutions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">q_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">q_values</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">q_values</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="o">**</span><span class="n">refl_kwargs</span><span class="p">),</span> <span class="n">q_resolutions</span>
+        
+        <span class="n">refl_kwargs_not_smeared</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">refl_kwargs_smeared</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">refl_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">params</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+                <span class="n">refl_kwargs_not_smeared</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span>
+                <span class="n">refl_kwargs_smeared</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">refl_kwargs_not_smeared</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">refl_kwargs_smeared</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-        <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">q_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-
+         <span class="c1"># Compute unsmeared reflectivity</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">~</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">q_values</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">q_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">q</span> <span class="o">=</span> <span class="n">q_values</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">q</span> <span class="o">=</span> <span class="n">q_values</span>
 
-            <span class="n">curves</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">reflectivity_not_smeared</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="n">refl_kwargs_not_smeared</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reflectivity_not_smeared</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Compute smeared reflectivity</span>
         <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">q_values</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">q_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">q</span> <span class="o">=</span> <span class="n">q_values</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">q</span> <span class="o">=</span> <span class="n">q_values</span>
 
-            <span class="n">curves</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span>
-                <span class="n">q</span><span class="p">,</span> <span class="n">dq</span><span class="o">=</span><span class="n">dq</span><span class="p">,</span> <span class="n">constant_dq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">constant_dq</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">gauss_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gauss_num</span>
+            <span class="n">reflectivity_smeared</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">reflectivity</span><span class="p">(</span>
+                <span class="n">q</span><span class="p">,</span> <span class="n">dq</span><span class="o">=</span><span class="n">dq</span><span class="p">,</span> <span class="n">constant_dq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">constant_dq</span><span class="p">,</span> <span class="n">gauss_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gauss_num</span><span class="p">,</span> <span class="o">**</span><span class="n">refl_kwargs_smeared</span>
             <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reflectivity_smeared</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">return</span> <span class="n">curves</span></div>
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">q_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="o">~</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">curves</span><span class="p">[</span><span class="o">~</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">reflectivity_not_smeared</span>
+        
+        <span class="n">curves</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">reflectivity_smeared</span>
+
+        <span class="n">q_resolutions</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">dq</span>
+
+        <span class="k">return</span> <span class="n">curves</span><span class="p">,</span> <span class="n">q_resolutions</span></div>
 
 </pre></div>
 
