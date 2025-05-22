@@ -64,6 +64,8 @@ Configuration files and the corresponding pretrained model weights are hosted on
 <!-- [![Docker](https://img.shields.io/badge/Docker-2496ED.svg?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/)
 Docker images for reflectorch *will* be hosted on Dockerhub. -->
 
+## Contributing
+If you'd like to contribute to the package, please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ## Citation
 If you find our work useful in your research, please cite as follows:
