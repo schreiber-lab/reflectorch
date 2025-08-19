@@ -163,6 +163,7 @@ def get_density_profiles(
     else:
         if ambient_sld.ndim == 1:
             ambient_sld = ambient_sld.unsqueeze(-1)
+        ambient_sld = ambient_sld.expand(bs, 1)
 
     slds_all = torch.cat([ambient_sld, slds], dim=-1)  # new dimension: n+2
     d_rhos = torch.diff(slds_all, dim=-1)  # (bs, n+1)
