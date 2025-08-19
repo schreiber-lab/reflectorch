@@ -37,7 +37,7 @@ class ParametricModel(object):
         self.max_num_layers = max_num_layers
         self._sampler_strategy = self._init_sampler_strategy(**kwargs)
 
-    def _init_sampler_strategy(self, **kwargs):
+    def _init_sampler_strategy(self, nuisance_params_dim: int = 0, **kwargs):
         return BasicSamplerStrategy(**kwargs)
 
     @property
