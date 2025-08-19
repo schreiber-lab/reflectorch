@@ -7,6 +7,7 @@ from torch import nn, cat, split, Tensor
 
 from reflectorch.models.networks.residual_net import ResidualMLP
 from reflectorch.models.encoders.conv_encoder import ConvEncoder
+from reflectorch.models.encoders.integral_kernel_embedding import IntegralConvEmbedding
 from reflectorch.models.encoders.fno import FnoEncoder
 from reflectorch.models.activations import activation_by_name
 
@@ -18,7 +19,7 @@ class NetworkWithPriors(nn.Module):
         :align: center
 
     Args:
-        embedding_net_type (str): the type of embedding network, either 'conv' or 'fno'.
+        embedding_net_type (str): the type of embedding network, either 'conv', 'fno' or 'integral_conv'.
         embedding_net_kwargs (dict): dictionary containing the keyword arguments for the embedding network.
         dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.
         dim_conditioning_params (int, optional): the dimension of other parameters the network is conditioned on (e.g. for the smearing coefficient dq/q)
@@ -66,6 +67,8 @@ class NetworkWithPriors(nn.Module):
             self.embedding_net = ConvEncoder(**embedding_net_kwargs)
         elif embedding_net_type == 'fno':
             self.embedding_net = FnoEncoder(**embedding_net_kwargs)
+        elif embedding_net_type == 'integral_conv':
+            self.embedding_net = IntegralConvEmbedding(**embedding_net_kwargs)
         elif embedding_net_type == 'no_embedding_net':
             self.embedding_net = nn.Identity()
         else:
@@ -108,7 +111,7 @@ class NetworkWithPriors(nn.Module):
             self.embedding_net.load_weights(pretrained_embedding_net)
 
 
-    def forward(self, curves, bounds, q_values=None, conditioning_params=None):
+    def forward(self, curves, bounds, q_values=None, conditioning_params=None, key_padding_mask=None, unscaled_q_values=None):
         """
         Args:
             scaled_curves (torch.Tensor): Input tensor of shape [batch_size, n_points] or [batch_size, n_channels, n_points].
@@ -121,13 +124,16 @@ class NetworkWithPriors(nn.Module):
             curves = curves.unsqueeze(1)
 
         additional_channels = []
-        if q_values is not None:
+        if q_values is not None and not isinstance(self.embedding_net, IntegralConvEmbedding):
             additional_channels.append(q_values.unsqueeze(1))
 
         if additional_channels:
             curves = torch.cat([curves] + additional_channels, dim=1)  # [batch_size, n_channels, n_points]
 
-        x = self.embedding_net(curves)
+        if isinstance(self.embedding_net, IntegralConvEmbedding):
+            x = self.embedding_net(q=unscaled_q_values.float(), y=curves.permute(0, 2, 1), drop_mask=key_padding_mask)
+        else:
+            x = self.embedding_net(curves)
 
         if self.conditioning == 'concat': 
             x = torch.cat([x, bounds] + ([conditioning_params] if conditioning_params is not None else []), dim=-1)

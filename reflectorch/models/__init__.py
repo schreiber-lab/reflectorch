@@ -6,6 +6,7 @@ __all__ = [
     "ConvDecoder",
     "ConvAutoencoder",
     "FnoEncoder",
+    "IntegralConvEmbedding",
     "SpectralConv1d",
     "ConvResidualNet1D",
     "ResidualMLP",

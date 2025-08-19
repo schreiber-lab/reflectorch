@@ -4,6 +4,7 @@ from reflectorch.models.encoders.conv_encoder import (
     ConvAutoencoder,
 )
 from reflectorch.models.encoders.fno import FnoEncoder, SpectralConv1d
+from reflectorch.models.encoders.integral_kernel_embedding import IntegralConvEmbedding
 from reflectorch.models.encoders.conv_res_net import ConvResidualNet1D
 
 
@@ -14,4 +15,5 @@ __all__ = [
     "ConvResidualNet1D",
     "FnoEncoder",
     "SpectralConv1d",
+    "IntegralConvEmbedding",
 ]
