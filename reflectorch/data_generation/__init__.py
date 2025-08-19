@@ -29,6 +29,7 @@ from reflectorch.data_generation.q_generator import (
     ConstantQ,
     VariableQ,
     EquidistantQ,
+    MaskedVariableQ,
 )
 from reflectorch.data_generation.noise import (
     QNoiseGenerator,
@@ -78,6 +79,7 @@ __all__ = [
     "ConstantQ",
     "VariableQ",
     "EquidistantQ",
+    "MaskedVariableQ",
     "QNoiseGenerator",
     "IntensityNoiseGenerator",
     "MultiplicativeLogNormalNoiseGenerator",

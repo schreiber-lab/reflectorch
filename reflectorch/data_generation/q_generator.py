@@ -16,6 +16,7 @@ __all__ = [
     "VariableQ",
     "EquidistantQ",
     "ConstantAngle",
+    "MaskedVariableQ",
 ]
 
 
@@ -198,49 +199,77 @@ class EquidistantQ(QGenerator):
         return qs
 
 
-class TransformerQ(QGenerator):
+class MaskedVariableQ:
     def __init__(self,
-                 q_max: float = 0.2,
-                 num_values: Union[int, Tuple[int, int]] = (30, 512),
-                 min_dq_ratio: float = 5.,
-                 device=None,
-                 dtype=torch.float64,
-                 ):
-        self.min_dq_ratio = min_dq_ratio
-        self.q_max = q_max
-        self._dq_range = q_max / num_values[1], q_max / num_values[0]
-        self._num_values = num_values
+                 q_min_range=(0.01, 0.03),
+                 q_max_range=(0.1, 0.5),
+                 n_q_range=(64, 256),
+                 mode='equidistant',
+                 shuffle_mask=False,
+                 total_thickness_constraint=True,
+                 min_points_per_fringe=4,
+                 device=DEFAULT_DEVICE,
+                 dtype=DEFAULT_DTYPE):
+        self.q_min_range = q_min_range
+        self.q_max_range = q_max_range
+        self.n_q_range = n_q_range
         self.device = device
         self.dtype = dtype
-
-    def get_batch(self, batch_size: int, context: dict = None) -> Tensor:
+        self.mode = mode
+        self.shuffle_mask = shuffle_mask
+        self.total_thickness_constraint = total_thickness_constraint
+        self.min_points_per_fringe = min_points_per_fringe
+    
+    def get_batch(self, batch_size, context):
         assert context is not None
 
-        params: BasicParams = context['params']
-        total_thickness = params.thicknesses.sum(-1)
+        q_min = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_min_range[1] - self.q_min_range[0]) + self.q_min_range[0]
+        q_max = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_max_range[1] - self.q_max_range[0]) + self.q_max_range[0]
 
-        assert total_thickness.shape[0] == batch_size
+        max_n_q = self.n_q_range[1]
 
-        min_dqs = torch.clamp(
-            2 * np.pi / total_thickness / self.min_dq_ratio, self._dq_range[0], self._dq_range[1] * 0.9
-        )
+        if self.mode == 'equidistant':
+            positions = torch.linspace(0, 1, max_n_q, device=self.device, dtype=self.dtype).expand(batch_size, max_n_q)
+        elif self.mode == 'random':
+            positions = torch.rand(batch_size, max_n_q, device=self.device, dtype=self.dtype)
+            positions, _ = positions.sort(dim=-1)
+        elif self.mode == 'mixed':
+            positions = torch.empty(batch_size, max_n_q, device=self.device, dtype=self.dtype)
 
-        dqs = torch.rand_like(min_dqs) * (self._dq_range[1] - min_dqs) + min_dqs
+            half = batch_size // 2 # half batch gets equidistant
+            eq_pos = torch.linspace(0, 1, max_n_q, device=self.device, dtype=self.dtype).expand(half, max_n_q)
+            positions[:half] = eq_pos
 
-        num_q_values = torch.clamp(self.q_max // dqs, *self._num_values).to(torch.int)
+            rand_pos = torch.rand(batch_size - half, max_n_q, device=self.device, dtype=self.dtype) # other half gets sorted random
+            rand_pos, _ = rand_pos.sort(dim=-1)
+            positions[half:] = rand_pos
+        else:
+            raise ValueError(f"Unknown spacing mode: {self.mode}")
 
-        q_values, mask = generate_q_padding_mask(num_q_values, self.q_max)
+        q = q_min[:, None] + positions * (q_max - q_min)[:, None]
 
-        context['tgt_key_padding_mask'] = mask
-        context['num_q_values'] = num_q_values
+        n_qs = torch.randint(self.n_q_range[0], self.n_q_range[1] + 1, (batch_size,), device=self.device)
 
-        return q_values
+        if 'params' in context and self.total_thickness_constraint: ### N_points > 1 + (Q_spread * total_thickness * min_np_per_kiessing_fringe) / (2*pi)
+            d_total = context['params'].thicknesses.sum(-1)
+            limit = 1 + ((q_max - q_min) * d_total * self.min_points_per_fringe) / (2*np.pi)
+            limit = limit.ceil().int()
+            n_qs = torch.maximum(n_qs, limit)
+            n_qs = torch.clamp(n_qs, max=self.n_q_range[1])
 
+        indices = torch.arange(max_n_q, device=self.device).expand(batch_size, max_n_q)
+        valid_mask = indices < n_qs[:, None] # right side padding
+        
+        if self.shuffle_mask: # shuffle valid positions (inter-spread padding)
+            perm = torch.argsort(torch.rand(batch_size, max_n_q, device=self.device), dim=-1)
+            valid_mask = torch.gather(valid_mask, dim=1, index=perm)
 
-def generate_q_padding_mask(num_q_values: Tensor, q_max: float):
-    batch_size = num_q_values.shape[0]
-    dqs = (q_max / num_q_values)[:, None]
-    q_values = torch.arange(1, num_q_values.max().item() + 1)[None].repeat(batch_size, 1) * dqs
-    mask = (q_values > q_max + dqs / 2)
-    q_values[mask] = 0.
-    return q_values, mask
+        context['key_padding_mask'] = valid_mask
+        context['n_points'] = valid_mask.sum(dim=-1)
+
+        return q
+    
+    def scale_q(self, q):
+        scaled_q_01 = (q - self.q_min_range[0]) / (self.q_max_range[1] - self.q_min_range[0]) 
+
+        return 2.0 * (scaled_q_01 - 0.5)
