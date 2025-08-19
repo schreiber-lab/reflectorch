@@ -63,6 +63,8 @@ def refl_fit(
         bounds: np.ndarray = None,
         error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
+        method: str = 'trf', #'lm', 'trf'
+        polishing_max_nfev: int = None,
         reflectivity_kwargs: dict = None,
         **kwargs
 ):
@@ -77,14 +79,23 @@ def refl_fit(
                 adjusted_bounds[1, i] += epsilon
 
         init_params = np.clip(init_params, *adjusted_bounds)
-        kwargs['bounds'] = adjusted_bounds
+        if method != 'lm':
+            kwargs['bounds'] = adjusted_bounds
 
     reflectivity_kwargs = reflectivity_kwargs or {}
     for key, value in reflectivity_kwargs.items():
         if isinstance(value, float):
             reflectivity_kwargs[key] = torch.tensor([[value]], dtype=torch.float64)
         elif isinstance(value, np.ndarray):
-            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)       
+            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)     
+
+    curve = np.clip(curve, a_min=1e-12, a_max=None)
+
+    if error_bars is not None and scale_curve_func == np.log10:
+        error_bars = np.clip(error_bars, a_min=1e-20, a_max=None)
+        scaled_error_bars = error_bars / (curve * np.log(10))
+    else:
+        scaled_error_bars = None  
 
     res = curve_fit(
         f=get_scaled_curve_func(
@@ -93,10 +104,12 @@ def refl_fit(
             reflectivity_kwargs=reflectivity_kwargs,
         ),
         xdata=q, 
-        ydata=scale_curve_func(curve),
+        ydata=scale_curve_func(curve).reshape(-1),
         p0=init_params,
-        sigma=error_bars if error_bars is not None else None,
+        sigma=scaled_error_bars,
         absolute_sigma=True,
+        method=method,
+        max_nfev=polishing_max_nfev,
         **kwargs
     )
 
@@ -184,7 +197,8 @@ def get_scaled_curve_func(
         fitted_curve = fitted_curve_tensor.squeeze().numpy()
         
         scaled_curve = scale_curve_func(fitted_curve)
-        return scaled_curve
+
+        return scaled_curve.reshape(-1)
 
     return scaled_curve_func
 
