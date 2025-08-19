@@ -278,7 +278,7 @@ def load_pretrained(model, model_name: str, saved_models_dir: Path):
         raise FileNotFoundError(f'File {str(model_path)} does not exist.')
     
     try:
-        pretrained = torch.load(model_path)
+        pretrained = torch.load(model_path, weights_only=False)
     except Exception as err:
         raise RuntimeError(f'Could not load model from {str(model_path)}') from err
     
@@ -295,6 +295,8 @@ def load_pretrained(model, model_name: str, saved_models_dir: Path):
 def init_dset(config: dict):
     """Initializes the dataset / dataloader object"""
     dset_cls = globals().get(config['cls']) if 'cls' in config else ReflectivityDataLoader
+    dset_kwargs = config.get('kwargs', {})
+
     prior_sampler = init_from_conf(config['prior_sampler'])
     intensity_noise = init_from_conf(config['intensity_noise'])
     q_generator = init_from_conf(config['q_generator'])
@@ -309,6 +311,7 @@ def init_dset(config: dict):
         curves_scaler=curves_scaler,
         smearing=smearing,
         q_noise=q_noise,
+        **dset_kwargs,
     )
 
     return dset
@@ -358,7 +361,7 @@ def convert_pt_to_safetensors(input_dir):
                 continue
 
             print(f"Converting {pt_file_path} to .safetensors format.")
-            data_pt = torch.load(pt_file_path)
+            data_pt = torch.load(pt_file_path, weights_only=False)
             model_state_dict = data_pt["model"]
             model_state_dict = split_complex_tensors(model_state_dict) #handle tensors with complex dtype which are not natively supported by safetensors
 
