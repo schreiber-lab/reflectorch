@@ -496,11 +496,16 @@ class EasyInferenceModel(object):
         if calc_polished_curve:
             polished_params_dict['polished_curve'] = curve_polished
 
+        if ambient_sld_tensor is not None:
+            ambient_sld_tensor = ambient_sld_tensor.to(polished_params.slds.device)
+
+
         if calc_polished_sld_profile:
             _, sld_profile_polished, _ = get_density_profiles(
-                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds + (ambient_sld_tensor or 0), ambient_sld_tensor, z_axis=sld_x_axis.cpu(),
+                polished_params.thicknesses, polished_params.roughnesses, polished_params.slds + (ambient_sld_tensor or 0), ambient_sld_tensor, 
+                z_axis=sld_x_axis.to(polished_params.slds.device),
             )
-            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().numpy()
+            polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
 
         return polished_params_dict
     
@@ -566,7 +571,8 @@ class EasyInferenceModel(object):
     def get_param_labels(self, **kwargs):
         return self.trainer.loader.prior_sampler.param_model.get_param_labels(**kwargs)
     
-    def _preprocess_input_data(self,
+    @staticmethod
+    def _preprocess_input_data(
                            reflectivity_curve,
                            q_values,
                            sigmas=None,
@@ -681,11 +687,18 @@ class EasyInferenceModel(object):
                 n_q_model = q_generator.n_q_range[0]
                 q_min = max(q_exp.min(), q_generator.q_min_range[0])
                 q_max = min(q_exp.max(), q_generator.q_max_range[1])
-                q_model = np.linspace(q_min, q_max, n_q_model)
+                if self.trainer.loader.q_generator.mode == 'logspace':
+                    q_model = torch.logspace(start=torch.log10(torch.tensor(q_min, device=self.device)),
+                                             end=torch.log10(torch.tensor(q_max, device=self.device)),
+                                             steps=n_q_model, device=self.device).to('cpu')
+                    logspace = True
+                else:
+                    q_model = np.linspace(q_min, q_max, n_q_model)
+                    logspace = False
             else:
                 return _prepare_return(q_exp, refl_exp, sigmas_exp, q_res_exp, None, as_dict)
 
-            refl_out = interp_reflectivity(q_model, q_exp, refl_exp)
+            refl_out = interp_reflectivity(q_model, q_exp, refl_exp, logspace=logspace)
             sigmas_out = _interp_or_keep(q_model, q_exp, sigmas_exp)
             q_res_out = _interp_or_keep(q_model, q_exp, q_res_exp)
             return _prepare_return(q_model, refl_out, sigmas_out, q_res_out, None, as_dict)

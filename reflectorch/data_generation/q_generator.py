@@ -125,6 +125,11 @@ class VariableQ(QGenerator):
             q = torch.linspace(0, 1, n_q, device=self.device, dtype=self.dtype)
         elif self.mode == 'random':
             q = torch.rand(n_q, device=self.device, dtype=self.dtype).sort().values
+        elif self.mode == 'logspace':
+            q = torch.logspace(
+                start=torch.log10(torch.tensor(1e-4, dtype=self.dtype, device=self.device)),
+                end=torch.log10(torch.tensor(1.0, dtype=self.dtype, device=self.device)),
+                steps=n_q, dtype=self.dtype, device=self.device)
 
         q = q_min[:, None] + q * (q_max - q_min)[:, None]
         

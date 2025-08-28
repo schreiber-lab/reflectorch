@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def interp_reflectivity(q_interp, q, reflectivity, min_value: float = 1e-10):
+def interp_reflectivity(q_interp, q, reflectivity, min_value: float = 1e-10, logspace = False):
     """Interpolate data on a base 10 logarithmic scale
 
     Args:
@@ -13,4 +13,7 @@ def interp_reflectivity(q_interp, q, reflectivity, min_value: float = 1e-10):
     Returns:
         array-like: interpolated reflectivity curve
     """
-    return 10 ** np.interp(q_interp, q, np.log10(np.clip(reflectivity, min_value, None)))
+    if not(logspace):
+        return 10 ** np.interp(q_interp, q, np.log10(np.clip(reflectivity, min_value, None)))
+    else:
+        return 10 ** np.interp(np.log10(q_interp), np.log10(q), np.log10(np.clip(reflectivity, min_value, None)))
