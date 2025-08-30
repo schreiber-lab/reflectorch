@@ -24,7 +24,9 @@ class BasicBatchData:
     scaled_sigmas: Optional[torch.Tensor] = None
     scaled_q_values: Optional[torch.Tensor] = None
     scaled_denoised_curves: Optional[torch.Tensor] = None
+    key_padding_mask: Optional[torch.Tensor] = None
     scaled_conditioning_params: Optional[torch.Tensor] = None
+    unscaled_q_values: Optional[torch.Tensor] = None
 
 class RealTimeSimTrainer(Trainer):
     """Trainer with functionality to customize the sampled batch of data"""
@@ -74,6 +76,7 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
         scaled_curves = batch_data['scaled_noisy_curves'].to(torch.float32)
         scaled_denoised_curves = get_scaled_or_none('curves', self.loader.curves_scaler.scale)
         scaled_q_values = get_scaled_or_none('q_values', self.loader.q_generator.scale_q) if self.train_with_q_input else None
+        key_padding_mask = batch_data.get('key_padding_mask', None)
 
         scaled_q_resolutions = get_scaled_or_none('q_resolutions', self.loader.smearing.scale_resolutions) if self.condition_on_q_resolutions else None
         conditioning_params = []
@@ -92,6 +95,8 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
             scaled_q_values=scaled_q_values,
             scaled_denoised_curves=scaled_denoised_curves,
             scaled_conditioning_params=scaled_conditioning_params,
+            unscaled_q_values=batch_data['q_values'],
+            key_padding_mask=key_padding_mask,
         )
 
     def get_loss_dict(self, batch_data: BasicBatchData):
@@ -100,13 +105,17 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
         scaled_curves=batch_data.scaled_curves
         scaled_bounds=batch_data.scaled_bounds
         scaled_q_values=batch_data.scaled_q_values
+        key_padding_mask=batch_data.key_padding_mask
         scaled_conditioning_params=batch_data.scaled_conditioning_params
+        unscaled_q_values=batch_data.unscaled_q_values
 
         predicted_params = self.model(
             curves = scaled_curves,
             bounds = scaled_bounds,
             q_values = scaled_q_values,
             conditioning_params = scaled_conditioning_params,
+            key_padding_mask = key_padding_mask,
+            unscaled_q_values = unscaled_q_values,
         )
 
         if not self.rescale_loss_interval_width:

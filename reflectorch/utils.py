@@ -66,3 +66,33 @@ def energy_to_wavelength(energy: float):
 def wavelength_to_energy(wavelength: float):
     """Conversion from photon wavelength (angstroms) to photon energy (eV)"""
     return 1.2398 / wavelength * 1e4
+
+def get_filtering_mask(Q, R, dR, threshold=0.3, consecutive=3,
+                        remove_singles=True, remove_consecutives=True,
+                        q_start_trunc=0.1):
+    Q, R, dR = Q.copy(), R.copy(), dR.copy()
+    rel_error = np.abs(dR / R)
+
+    # Mask for singles
+    mask_singles = (rel_error >= threshold) if remove_singles else np.zeros_like(Q, dtype=bool)
+
+    # Mask for truncation
+    mask_consecutive = np.zeros_like(Q, dtype=bool)
+    if remove_consecutives:
+        count = 0
+        cutoff_idx = None
+        for i in range(len(Q)):
+            if Q[i] < q_start_trunc:
+                continue
+            if rel_error[i] >= threshold:
+                count += 1
+                if count >= consecutive:
+                    cutoff_idx = i - consecutive + 1
+                    break
+            else:
+                count = 0
+        if cutoff_idx is not None:
+            mask_consecutive[cutoff_idx:] = True
+
+    final_mask = mask_singles | mask_consecutive
+    return ~final_mask
