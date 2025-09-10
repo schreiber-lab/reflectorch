@@ -25,7 +25,7 @@ from .components import (
     WidgetSettingsExtractor
 )
 from .interactive_plotting import InteractivePlotManager, plot_reflectivity_interactive
-from ...inference.plotting import plot_reflectivity, print_prediction_results
+from ...inference.plotting import plot_reflectivity
 
 
 class ReflectorchWidget:
@@ -189,6 +189,102 @@ class ReflectorchWidget:
         
         # Setup truncation synchronization
         self._setup_truncation_sync()
+        
+        # Create initial plot with experimental data
+        self._create_initial_plot(coord_display)
+        
+        # Setup reactive plot updates for plotting controls
+        self._setup_reactive_plot_updates(coord_display)
+    
+    def _create_initial_plot(self, coord_display):
+        """Create initial plot showing experimental data"""
+        try:
+            # Use default settings for initial plot since controls are just being created
+            settings = {
+                'show_error_bars': True,
+                'show_q_resolution': True,
+                'exp_color': 'blue',
+                'exp_errcolor': 'purple',
+                'log_x_axis': False,
+                'plot_sld_profile': True  # Always create with SLD support for later updates
+            }
+            
+            # Plot initial experimental data
+            self._plot_initial_data(settings, coord_display)
+            
+        except Exception as e:
+            print(f"⚠️  Could not create initial plot: {str(e)}")
+    
+    def _plot_initial_data(self, settings, coord_display):
+        """Plot only experimental data before any prediction"""
+        # Prepare experimental data for plotting
+        q_exp_plot = self._data['q_values']
+        r_exp_plot = self._data['reflectivity_curve']
+        yerr_plot = self._data['sigmas'] if settings['show_error_bars'] and self._data['sigmas'] is not None else None
+        xerr_plot = self._data['q_resolution'] if settings['show_q_resolution'] and self._data['q_resolution'] is not None else None
+        
+        # Plot with appropriate backend
+        if self.interactive_plots:
+            self._plot_initial_interactive(
+                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
+                settings, coord_display
+            )
+        else:
+            self._plot_initial_static(
+                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
+                settings
+            )
+    
+    def _plot_initial_interactive(self, q_exp, r_exp, yerr, xerr, settings, coord_display):
+        """Plot initial experimental data using interactive backend"""
+        figure_id = "reflectorch_widget"
+        
+        # Always create with SLD profile support to match PlottingControls default (True)
+        # and prevent layout mismatches during prediction updates
+        fig, axes = plot_reflectivity_interactive(
+            plot_manager=self.plot_manager,
+            figure_id=figure_id,
+            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
+            exp_style=('errorbar' if (yerr is not None or xerr is not None) else 'scatter'),
+            exp_color=settings['exp_color'],
+            exp_errcolor=settings['exp_errcolor'],
+            exp_label='experimental data',
+            # No prediction data yet
+            q_pred=None, r_pred=None, 
+            q_pol=None, r_pol=None,
+            z_sld=None, sld_pred=None, sld_pol=None,
+            plot_sld_profile=True,  # Always True to match default and prevent layout changes
+            logx=settings['log_x_axis'], logy=True,
+            figsize=(12, 6),
+            legend=True
+        )
+        
+        # Sync coordinate display
+        if coord_display:
+            plot_coord_display = self.plot_manager.get_coordinate_display(figure_id)
+            if plot_coord_display:
+                coord_display.value = plot_coord_display.value
+                def sync_coords(change):
+                    coord_display.value = change['new']
+                plot_coord_display.observe(sync_coords, names='value')
+    
+    def _plot_initial_static(self, q_exp, r_exp, yerr, xerr, settings):
+        """Plot initial experimental data using static matplotlib"""
+        plot_reflectivity(
+            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
+            exp_style=('errorbar' if (yerr is not None or xerr is not None) else 'scatter'),
+            exp_color=settings['exp_color'],
+            exp_errcolor=settings['exp_errcolor'],
+            exp_label='experimental data',
+            # No prediction data yet
+            q_pred=None, r_pred=None,
+            q_pol=None, r_pol=None,
+            z_sld=None, sld_pred=None, sld_pol=None,
+            plot_sld_profile=True,  # Always True to match default and prevent layout changes
+            logx=settings['log_x_axis'], logy=True,
+            figsize=(12, 6),
+            legend=True
+        )
     
     def _setup_event_handlers(self, predict_button, close_button, output, coord_display, container):
         """Setup button event handlers"""
@@ -236,9 +332,6 @@ class ReflectorchWidget:
                     filter_consecutive=settings['filter_consecutive'],
                     filter_q_start_trunc=settings['filter_q_start_trunc'],
                 )
-                
-                # Display text results
-                print_prediction_results(prediction_result)
                 
                 # Update parameter table with results
                 self.parameter_table.update_results(prediction_result)
@@ -364,3 +457,68 @@ class ReflectorchWidget:
             
             trunc_left.observe(sync_truncation, names='value')
             trunc_right.observe(sync_truncation, names='value')
+    
+    def _setup_reactive_plot_updates(self, coord_display):
+        """Setup observers for plotting controls that should trigger immediate plot updates"""
+        if not self.plotting_controls:
+            return
+            
+        # Find plotting controls that should trigger plot updates
+        reactive_controls = WidgetSettingsExtractor._find_widgets_by_description(
+            self.plotting_controls.widget, 
+            [
+                'Show error bars', 'Show q-resolution', 'Log x-axis', 'Plot SLD profile',
+                'Data color:', 'Error bars:', 'Prediction:', 'Polished:', 
+                'SLD pred:', 'SLD polish:'
+            ]
+        )
+        
+        def update_plot_on_change(change):
+            """Update plot when plotting controls change"""
+            # Only update if we have prediction results to show
+            if self.prediction_result is not None:
+                try:
+                    # Extract current settings
+                    settings = WidgetSettingsExtractor.extract_settings(
+                        self.parameter_table,
+                        self.preprocessing_controls,
+                        self.prediction_controls,
+                        self.plotting_controls
+                    )
+                    
+                    # Update plot with new settings
+                    self._plot_results(self.prediction_result, settings, coord_display)
+                    
+                except Exception as e:
+                    print(f"⚠️  Error updating plot: {str(e)}")
+            else:
+                # If no prediction results yet, just update the initial plot
+                try:
+                    self._update_initial_plot_style(coord_display)
+                except Exception as e:
+                    print(f"⚠️  Error updating initial plot: {str(e)}")
+        
+        # Setup observers for all reactive controls
+        for control in reactive_controls:
+            if hasattr(control, 'observe'):
+                control.observe(update_plot_on_change, names='value')
+    
+    def _update_initial_plot_style(self, coord_display):
+        """Update initial plot styling based on current control settings"""
+        if not self.plotting_controls:
+            return
+            
+        try:
+            # Extract current plotting settings
+            settings = WidgetSettingsExtractor.extract_settings(
+                self.parameter_table,
+                self.preprocessing_controls,
+                self.prediction_controls,
+                self.plotting_controls
+            )
+            
+            # Update initial plot with new styling
+            self._plot_initial_data(settings, coord_display)
+            
+        except Exception as e:
+            print(f"⚠️  Error updating initial plot style: {str(e)}")
