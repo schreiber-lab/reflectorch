@@ -1,52 +1,41 @@
 """
 Reflectorch Jupyter Widget
-
-This module provides a clean, simplified widget interface for reflectometry analysis.
-The widget features a tabbed interface with organized controls and real-time results.
-
-Key Features:
-- Professional tabbed interface
-- Interactive parameter table with live results
-- Comprehensive preprocessing and plotting controls
-- Interactive plotting with coordinate display
-- Clean, modular architecture
 """
 
 import numpy as np
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Union
 import ipywidgets as widgets
 from IPython.display import display
 
-from .components import (
-    ParameterTable, 
-    PreprocessingControls, 
-    PredictionControls, 
-    PlottingControls, 
-    WidgetSettingsExtractor
+from reflectorch.extensions.jupyter.plotly_plot_manager import (
+    PlotlyPlotManager,
+    plot_reflectivity_only,
+    plot_sld_only,
 )
-from .interactive_plotting import InteractivePlotManager, plot_reflectivity_interactive
-from ...inference.plotting import plot_reflectivity
+from reflectorch.extensions.jupyter.components import ParameterTable, PreprocessingControls, PredictionControls, PlottingControls, WidgetSettingsExtractor
 
 
-class ReflectorchWidget:
+class ReflectorchPlotlyWidget:
     """
-    Interactive Jupyter Widget for Reflectometry Analysis
+    Interactive Jupyter Widget for Reflectometry Analysis using Plotly
     
     A modern, tabbed interface for reflectometry data analysis with Reflectorch models.
-    Features real-time parameter updates, interactive plotting, and comprehensive controls.
+    Features real-time parameter updates, Plotly interactive plotting, and comprehensive controls.
+    
+    This is a Plotly-based alternative to the matplotlib-based ReflectorchWidget.
     
     Attributes:
         model: The EasyInferenceModel instance
         prediction_result: Latest prediction results
-        interactive_plots: Whether interactive plotting is enabled
+        plot_manager: PlotlyPlotManager for handling interactive plots
         
     Example:
         ```python
         from reflectorch.inference import EasyInferenceModel
-        from reflectorch.extensions.jupyter import ReflectorchWidget
+        from reflectorch.extensions.jupyter import ReflectorchPlotlyWidget
         
         model = EasyInferenceModel('config.yaml')
-        widget = ReflectorchWidget(model)
+        widget = ReflectorchPlotlyWidget(model)
         
         widget.display(
             reflectivity_curve=data,
@@ -59,18 +48,16 @@ class ReflectorchWidget:
         ```
     """
     
-    def __init__(self, model, interactive_plots: bool = True):
+    def __init__(self, model):
         """
-        Initialize the Reflectorch widget
+        Initialize the Reflectorch Plotly widget
         
         Args:
             model: EasyInferenceModel instance for making predictions
-            interactive_plots: Enable interactive plotting features (default: True)
         """
         self.model = model
-        self.interactive_plots = interactive_plots
         self.prediction_result = None
-        self.plot_manager = InteractivePlotManager() if interactive_plots else None
+        self.plot_manager = PlotlyPlotManager()
         
         # Widget components (initialized when display is called)
         self.parameter_table = None
@@ -93,17 +80,25 @@ class ReflectorchWidget:
                 sigmas: Optional[np.ndarray] = None,
                 q_resolution: Optional[Union[float, np.ndarray]] = None,
                 initial_prior_bounds: Optional[np.ndarray] = None,
-                ambient_sld: Optional[float] = None):
+                ambient_sld: Optional[float] = None,
+                controls_width: int = 700,
+                plot_width: int = 400,
+                plot_height: int = 300
+            ):
         """
         Display the widget interface
         
-        Args:
+        Parameters:
+        ----------
             reflectivity_curve: Experimental reflectivity data
             q_values: Momentum transfer values (required)
             sigmas: Experimental uncertainties (optional)
             q_resolution: Q-resolution, float or array (optional)
             initial_prior_bounds: Initial bounds for priors, shape (n_params, 2)
             ambient_sld: Ambient SLD value (optional)
+            controls_width: Width of the controls area in pixels. Default is 700px.
+            plot_width: Width of the plots in pixels. Default is 400px.
+            plot_height: Height of the plots in pixels. Default is 300px.
         """
         if q_values is None:
             raise ValueError("q_values must be provided")
@@ -158,64 +153,74 @@ class ReflectorchWidget:
         # Output areas
         output = widgets.Output()
         
-        # Coordinate display for interactive plotting
-        coord_display = None
-        if self.interactive_plots:
-            coord_display = widgets.HTML(
-                value="<i>Interactive plotting enabled - move cursor over plot for coordinates</i>",
-                style={'description_width': 'initial'},
-                layout={'margin': '5px 0px'}
-            )
+        # Create plot containers (initially empty)
+        reflectivity_plot_container = widgets.VBox([])
+        sld_plot_container = widgets.VBox([])
         
-        # Main layout
-        header = widgets.HTML("<h2>🔬 Reflectorch Analysis Widget</h2>")
+        # Combine plots vertically on the right
+        plot_area = widgets.VBox([
+            reflectivity_plot_container,
+            sld_plot_container
+        ])
         
-        main_controls = widgets.VBox([
+        # Main layout with controls on left, plots on right
+        header = widgets.HTML("<h2>🔬 Reflectorch Analysis Widget (Plotly)</h2>")
+        
+        controls_area = widgets.VBox([
             header,
             tabs,
             widgets.HBox([predict_button, close_button], layout=widgets.Layout(justify_content='center')),
+            output
+        ], layout=widgets.Layout(width=f'{controls_width}px'))
+        
+        # Horizontal layout: controls on left, plots on right
+        main_layout = widgets.HBox([
+            controls_area,
+            plot_area
         ])
         
-        layout_components = [main_controls]
-        if coord_display:
-            layout_components.append(coord_display)
-        layout_components.append(output)
-        
-        container = widgets.VBox(layout_components)
+        # Add border around the entire widget
+        container = widgets.VBox([main_layout], layout=widgets.Layout(
+            border='2px solid #d0d0d0',
+            border_radius='8px',
+            padding='15px',
+            margin='10px',
+            background_color='#fafafa'
+        ))
         display(container)
         
         # Setup event handlers
-        self._setup_event_handlers(predict_button, close_button, output, coord_display, container)
+        self._setup_event_handlers(predict_button, close_button, output, reflectivity_plot_container, sld_plot_container, container)
         
         # Setup truncation synchronization
         self._setup_truncation_sync()
         
-        # Create initial plot with experimental data
-        self._create_initial_plot(coord_display)
+        # Create initial plots with experimental data
+        self._create_initial_plots(reflectivity_plot_container, sld_plot_container, plot_width, plot_height)
         
         # Setup reactive plot updates for plotting controls
-        self._setup_reactive_plot_updates(coord_display)
+        self._setup_reactive_plot_updates(reflectivity_plot_container, sld_plot_container)
     
-    def _create_initial_plot(self, coord_display):
-        """Create initial plot showing experimental data"""
+    def _create_initial_plots(self, reflectivity_container, sld_container, plot_width, plot_height):
+        """Create initial plots showing experimental data"""
         try:
-            # Use default settings for initial plot since controls are just being created
+            # Use default settings for initial plots
             settings = {
                 'show_error_bars': True,
                 'show_q_resolution': True,
                 'exp_color': 'blue',
                 'exp_errcolor': 'purple',
                 'log_x_axis': False,
-                'plot_sld_profile': True  # Always create with SLD support for later updates
+                'plot_sld_profile': True
             }
             
             # Plot initial experimental data
-            self._plot_initial_data(settings, coord_display)
+            self._plot_initial_data(settings, reflectivity_container, sld_container, plot_width, plot_height)
             
         except Exception as e:
-            print(f"⚠️  Could not create initial plot: {str(e)}")
+            print(f"⚠️  Could not create initial plots: {str(e)}")
     
-    def _plot_initial_data(self, settings, coord_display):
+    def _plot_initial_data(self, settings, reflectivity_container, sld_container, plot_width, plot_height):
         """Plot only experimental data before any prediction"""
         # Prepare experimental data for plotting
         q_exp_plot = self._data['q_values']
@@ -223,70 +228,36 @@ class ReflectorchWidget:
         yerr_plot = self._data['sigmas'] if settings['show_error_bars'] and self._data['sigmas'] is not None else None
         xerr_plot = self._data['q_resolution'] if settings['show_q_resolution'] and self._data['q_resolution'] is not None else None
         
-        # Plot with appropriate backend
-        if self.interactive_plots:
-            self._plot_initial_interactive(
-                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
-                settings, coord_display
-            )
-        else:
-            self._plot_initial_static(
-                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
-                settings
-            )
-    
-    def _plot_initial_interactive(self, q_exp, r_exp, yerr, xerr, settings, coord_display):
-        """Plot initial experimental data using interactive backend"""
-        figure_id = "reflectorch_widget"
-        
-        # Always create with SLD profile support to match PlottingControls default (True)
-        # and prevent layout mismatches during prediction updates
-        fig, axes = plot_reflectivity_interactive(
+        # Create reflectivity plot
+        reflectivity_fig = plot_reflectivity_only(
             plot_manager=self.plot_manager,
-            figure_id=figure_id,
-            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
-            exp_style=('errorbar' if (yerr is not None or xerr is not None) else 'scatter'),
+            figure_id="reflectivity_plot",
+            q_exp=q_exp_plot, r_exp=r_exp_plot, yerr=yerr_plot, xerr=xerr_plot,
             exp_color=settings['exp_color'],
             exp_errcolor=settings['exp_errcolor'],
             exp_label='experimental data',
-            # No prediction data yet
-            q_pred=None, r_pred=None, 
-            q_pol=None, r_pol=None,
-            z_sld=None, sld_pred=None, sld_pol=None,
-            plot_sld_profile=True,  # Always True to match default and prevent layout changes
             logx=settings['log_x_axis'], logy=True,
-            figsize=(12, 6),
-            legend=True
+            width=plot_width, height=plot_height
         )
         
-        # Sync coordinate display
-        if coord_display:
-            plot_coord_display = self.plot_manager.get_coordinate_display(figure_id)
-            if plot_coord_display:
-                coord_display.value = plot_coord_display.value
-                def sync_coords(change):
-                    coord_display.value = change['new']
-                plot_coord_display.observe(sync_coords, names='value')
+        # Get the reflectivity plotly widget and add it to container
+        reflectivity_widget = self.plot_manager.get_widget("reflectivity_plot")
+        reflectivity_container.children = [reflectivity_widget]
+        
+        # Create empty SLD plot (will be populated after prediction)
+        if settings['plot_sld_profile']:
+            sld_fig = plot_sld_only(
+                plot_manager=self.plot_manager,
+                figure_id="sld_plot",
+                z_sld=None, sld_pred=None, sld_pol=None,
+                width=plot_width, height=plot_height
+            )
+            
+            # Get the SLD plotly widget and add it to container
+            sld_widget = self.plot_manager.get_widget("sld_plot")
+            sld_container.children = [sld_widget]
     
-    def _plot_initial_static(self, q_exp, r_exp, yerr, xerr, settings):
-        """Plot initial experimental data using static matplotlib"""
-        plot_reflectivity(
-            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
-            exp_style=('errorbar' if (yerr is not None or xerr is not None) else 'scatter'),
-            exp_color=settings['exp_color'],
-            exp_errcolor=settings['exp_errcolor'],
-            exp_label='experimental data',
-            # No prediction data yet
-            q_pred=None, r_pred=None,
-            q_pol=None, r_pol=None,
-            z_sld=None, sld_pred=None, sld_pol=None,
-            plot_sld_profile=True,  # Always True to match default and prevent layout changes
-            logx=settings['log_x_axis'], logy=True,
-            figsize=(12, 6),
-            legend=True
-        )
-    
-    def _setup_event_handlers(self, predict_button, close_button, output, coord_display, container):
+    def _setup_event_handlers(self, predict_button, close_button, output, reflectivity_container, sld_container, container):
         """Setup button event handlers"""
         
         @output.capture(clear_output=True)
@@ -337,7 +308,7 @@ class ReflectorchWidget:
                 self.parameter_table.update_results(prediction_result)
                 
                 # Plot results
-                self._plot_results(prediction_result, settings, coord_display)
+                self._plot_results(prediction_result, settings, reflectivity_container, sld_container)
                 
                 # Store results
                 self.prediction_result = prediction_result
@@ -349,16 +320,16 @@ class ReflectorchWidget:
         
         def on_close(_):
             """Handle close button click"""
-            if self.interactive_plots and self.plot_manager:
-                self.plot_manager.close_figure("reflectorch_widget")
+            self.plot_manager.close_figure("reflectivity_plot")
+            self.plot_manager.close_figure("sld_plot")
             container.close()
-            print("✅ Reflectorch widget closed")
+            print("✅ Reflectorch Plotly widget closed")
         
         # Connect event handlers
         predict_button.on_click(on_predict)
         close_button.on_click(on_close)
     
-    def _plot_results(self, prediction_result, settings, coord_display):
+    def _plot_results(self, prediction_result, settings, reflectivity_container, sld_container):
         """Plot prediction results with current settings"""
         # Prepare plotting data
         q_exp_plot = self._data['q_values']
@@ -375,71 +346,35 @@ class ReflectorchWidget:
         sld_pred = prediction_result.get('predicted_sld_profile', None)
         sld_pol = prediction_result.get('sld_profile_polished', None)
         
-        # Plot with appropriate backend
-        if self.interactive_plots:
-            self._plot_interactive(
-                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
-                q_pred, r_pred, q_pol, r_pol,
-                z_sld, sld_pred, sld_pol,
-                settings, coord_display
-            )
-        else:
-            self._plot_static(
-                q_exp_plot, r_exp_plot, yerr_plot, xerr_plot,
-                q_pred, r_pred, q_pol, r_pol,
-                z_sld, sld_pred, sld_pol,
-                settings
-            )
-    
-    def _plot_interactive(self, q_exp, r_exp, yerr, xerr, q_pred, r_pred, q_pol, r_pol, 
-                         z_sld, sld_pred, sld_pol, settings, coord_display):
-        """Plot using interactive backend"""
-        figure_id = "reflectorch_widget"
-        fig, axes = plot_reflectivity_interactive(
+        # Handle complex SLD
+        if sld_pred is not None and np.iscomplexobj(sld_pred):
+            sld_pred = sld_pred.real
+        if sld_pol is not None and np.iscomplexobj(sld_pol):
+            sld_pol = sld_pol.real
+        
+        # Update reflectivity plot
+        reflectivity_fig = plot_reflectivity_only(
             plot_manager=self.plot_manager,
-            figure_id=figure_id,
-            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
-            exp_style=('errorbar' if (settings['show_error_bars'] or settings['show_q_resolution']) else 'scatter'),
+            figure_id="reflectivity_plot",
+            q_exp=q_exp_plot, r_exp=r_exp_plot, yerr=yerr_plot, xerr=xerr_plot,
             exp_color=settings['exp_color'],
             exp_errcolor=settings['exp_errcolor'],
             q_pred=q_pred, r_pred=r_pred, pred_color=settings['pred_color'],
             q_pol=q_pol, r_pol=r_pol, pol_color=settings['pol_color'],
-            z_sld=z_sld, sld_pred=sld_pred, sld_pol=sld_pol,
-            sld_pred_color=settings['sld_pred_color'],
-            sld_pol_color=settings['sld_pol_color'],
-            plot_sld_profile=settings['plot_sld_profile'],
             logx=settings['log_x_axis'], logy=True,
-            figsize=(12, 6),
-            legend=True
+            width=600, height=300
         )
         
-        # Sync coordinate display
-        if coord_display:
-            plot_coord_display = self.plot_manager.get_coordinate_display(figure_id)
-            if plot_coord_display:
-                coord_display.value = plot_coord_display.value
-                def sync_coords(change):
-                    coord_display.value = change['new']
-                plot_coord_display.observe(sync_coords, names='value')
-    
-    def _plot_static(self, q_exp, r_exp, yerr, xerr, q_pred, r_pred, q_pol, r_pol,
-                    z_sld, sld_pred, sld_pol, settings):
-        """Plot using static matplotlib"""
-        plot_reflectivity(
-            q_exp=q_exp, r_exp=r_exp, yerr=yerr, xerr=xerr,
-            exp_style=('errorbar' if (settings['show_error_bars'] or settings['show_q_resolution']) else 'scatter'),
-            exp_color=settings['exp_color'],
-            exp_errcolor=settings['exp_errcolor'],
-            q_pred=q_pred, r_pred=r_pred, pred_color=settings['pred_color'],
-            q_pol=q_pol, r_pol=r_pol, pol_color=settings['pol_color'],
-            z_sld=z_sld, sld_pred=sld_pred, sld_pol=sld_pol,
-            sld_pred_color=settings['sld_pred_color'],
-            sld_pol_color=settings['sld_pol_color'],
-            plot_sld_profile=settings['plot_sld_profile'],
-            logx=settings['log_x_axis'], logy=True,
-            figsize=(12, 6),
-            legend=True
-        )
+        # Update SLD plot if requested
+        if settings['plot_sld_profile']:
+            sld_fig = plot_sld_only(
+                plot_manager=self.plot_manager,
+                figure_id="sld_plot",
+                z_sld=z_sld, sld_pred=sld_pred, sld_pol=sld_pol,
+                sld_pred_color=settings['sld_pred_color'],
+                sld_pol_color=settings['sld_pol_color'],
+                width=600, height=250
+            )
     
     def _setup_truncation_sync(self):
         """Setup synchronization between truncation sliders"""
@@ -458,7 +393,7 @@ class ReflectorchWidget:
             trunc_left.observe(sync_truncation, names='value')
             trunc_right.observe(sync_truncation, names='value')
     
-    def _setup_reactive_plot_updates(self, coord_display):
+    def _setup_reactive_plot_updates(self, reflectivity_container, sld_container):
         """Setup observers for plotting controls that should trigger immediate plot updates"""
         if not self.plotting_controls:
             return
@@ -487,14 +422,14 @@ class ReflectorchWidget:
                     )
                     
                     # Update plot with new settings
-                    self._plot_results(self.prediction_result, settings, coord_display)
+                    self._plot_results(self.prediction_result, settings, reflectivity_container, sld_container)
                     
                 except Exception as e:
                     print(f"⚠️  Error updating plot: {str(e)}")
             else:
                 # If no prediction results yet, just update the initial plot
                 try:
-                    self._update_initial_plot_style(coord_display)
+                    self._update_initial_plot_style(reflectivity_container, sld_container)
                 except Exception as e:
                     print(f"⚠️  Error updating initial plot: {str(e)}")
         
@@ -503,7 +438,7 @@ class ReflectorchWidget:
             if hasattr(control, 'observe'):
                 control.observe(update_plot_on_change, names='value')
     
-    def _update_initial_plot_style(self, coord_display):
+    def _update_initial_plot_style(self, reflectivity_container, sld_container):
         """Update initial plot styling based on current control settings"""
         if not self.plotting_controls:
             return
@@ -518,7 +453,7 @@ class ReflectorchWidget:
             )
             
             # Update initial plot with new styling
-            self._plot_initial_data(settings, coord_display)
+            self._plot_initial_data(settings, reflectivity_container, sld_container)
             
         except Exception as e:
             print(f"⚠️  Error updating initial plot style: {str(e)}")
