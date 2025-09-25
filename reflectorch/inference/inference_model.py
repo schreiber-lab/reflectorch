@@ -504,6 +504,20 @@ class EasyInferenceModel(object):
         if calc_polished_curve:
             polished_params_dict['polished_curve'] = curve_polished
 
+        """adding a snippet for chi^2 (chi-squared) for polished fit"""
+        if error_bars is not None and len(error_bars)== len(curve):
+            residuals = (curve - curve_polished)/ error_bars
+            chi_squared = np.sum(residuals)**2
+            degree_of_freedom = len(curve) - len(params)
+            reduced_chi_squared = chi_squared / degree_of_freedom
+            print(f"--- Polished Chi-Squared: {chi_squared:.4f}")
+            print(f"--- Reduced Chi-Squared (χ²/dof): {reduced_chi_squared:.4f} ---")
+        else:
+            """ if no error bars"""
+            residuals = curve - curve_polished
+            sum_of_squares = np.sum(residuals**2)
+            print(f"--- Sum of Squared Errors (Unweighted): {sum_of_squares:.4e} ---")
+
         if ambient_sld_tensor is not None:
             ambient_sld_tensor = ambient_sld_tensor.to(polished_params.slds.device)
 
