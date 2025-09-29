@@ -1,5 +1,7 @@
-import warnings
 
+import warnings
+import joblib
+from joblib import Parallel, delayed
 import numpy as np
 from scipy.optimize import minimize, curve_fit
 import torch
@@ -54,6 +56,35 @@ def standard_refl_fit(
 
     curve = refl_generator(q, **restore_params_func(res[0]))
     return res[0], curve
+
+
+
+def batch_standard_refl_fit(
+        q: np.ndarray,
+        curves: np.ndarray,
+        init_params_list: np.ndarray,
+        bounds: np.ndarray = None,
+        refl_generator=abeles_np,
+        restore_params_func=standard_restore_params,
+        scale_curve_func=np.log10,
+        n_jobs: int = -1,
+        verbose: int = 5,
+        **kwargs
+):
+    results = Parallel(n_jobs=n_jobs, verbose=verbose)(
+        delayed(standard_refl_fit)(
+            q, curve, init_params,
+            bounds=bounds,
+            refl_generator=refl_generator,
+            restore_params_func=restore_params_func,
+            scale_curve_func=scale_curve_func,
+            **kwargs
+        )
+        for curve, init_params in zip(curves, init_params_list)
+    )
+
+    params_array, curves_array = zip(*results)
+    return np.array(params_array), np.array(curves_array)
 
 def refl_fit(
         q: np.ndarray, 
