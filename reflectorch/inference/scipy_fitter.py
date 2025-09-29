@@ -15,6 +15,7 @@ __all__ = [
     "fit_refl_curve",
     "restore_masked_params",
     "get_fit_with_growth",
+    "batch_standard_refl_fit",
 ]
 
 
