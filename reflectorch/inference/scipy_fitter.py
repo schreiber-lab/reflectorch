@@ -71,6 +71,37 @@ def batch_standard_refl_fit(
         verbose: int = 5,
         **kwargs
 ):
+    """
+    Fit (polished fit) multiple reflectivity curves in parallel using joblib.
+
+    Parameters
+    ----------
+    q : np.ndarray
+        1D array of momentum transfer values (same for all curves).
+    curves : np.ndarray
+        2D array of reflectivity curves with shape (n_curves, n_q).
+    init_params_list : np.ndarray
+        2D array of initial parameter guesses for each curve .
+    bounds : np.ndarray, optional
+        Bounds for the parameters, shape (2, n_params). Default: None.
+    refl_generator : callable, optional
+        Function to generate reflectivity curve from parameters. Default: `abeles_np`.
+    restore_params_func : 
+    scale_curve_func :
+    n_jobs : int, optional
+        Number of parallel jobs to run. Default: -1 (all CPUs).
+    verbose : int, optional
+        Verbosity level for joblib. Default: 5.
+    **kwargs : dict
+        Extra keyword arguments passed to `scipy.optimize.curve_fit`.
+
+    Returns
+    -------
+    params_array : np.ndarray
+        Array of fitted parameter values for each curve, shape (n_curves, n_params).
+    curves_array : np.ndarray
+        Array of fitted reflectivity curves, shape (n_curves, n_q).
+    """
     results = Parallel(n_jobs=n_jobs, verbose=verbose)(
         delayed(standard_refl_fit)(
             q, curve, init_params,
