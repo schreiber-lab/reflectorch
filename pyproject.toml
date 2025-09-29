@@ -35,6 +35,7 @@ dependencies = [
     "PyYAML",
     "click",
     "matplotlib",
+    "joblib",
     "ipywidgets",
     "huggingface_hub",
     "safetensors",
