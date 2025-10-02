@@ -251,21 +251,22 @@ class EasyInferenceModel(object):
         if key_padding_mask is not None:
             prediction_dict['key_padding_mask'] = key_padding_mask
 
+        ### Shift the slds for nonzero ambient
+        prior_bounds = np.array(prior_bounds)
+        if ambient_sld:
+            sld_indices = self._shift_slds_by_ambient(prior_bounds, ambient_sld)
+
         ### Perform polishing on the original data
         if polish_prediction:
             polishing_kwargs = polishing_kwargs_reflectivity or {}
             polishing_kwargs.setdefault('dq', q_resolution_original)
-            
-            prior_bounds = np.array(prior_bounds)
-            if ambient_sld:
-                sld_indices = self._shift_slds_by_ambient(prior_bounds, ambient_sld)
 
             polished_dict = self._polish_prediction(
                 q=q_values_original,
                 curve=reflectivity_curve_original,
                 predicted_params=prediction_dict['predicted_params_object'],
                 priors=prior_bounds,
-                ambient_sld_tensor=torch.atleast_2d(torch.as_tensor(ambient_sld)).to(self.device) if ambient_sld is not None else None,
+                ambient_sld_tensor=torch.atleast_2d(torch.as_tensor(ambient_sld)) if ambient_sld is not None else None,
                 calc_polished_sld_profile=calc_polished_sld_profile,
                 sld_x_axis=torch.from_numpy(prediction_dict['predicted_sld_xaxis']),
                 polishing_kwargs_reflectivity = polishing_kwargs,
