@@ -577,6 +577,31 @@ class EasyInferenceModel(object):
             q, curve, self.trainer.loader.prior_sampler, curve * rel_err + abs_err
         )
     
+    def _batched_reflectivity(self,
+                          params_obj,
+                          q_values: Tensor,
+                          q_resolution_tensor,
+                          max_batch: int = None):
+        
+        N = params_obj.parameters.shape[0]
+        if max_batch is None or max_batch >= N:
+            curves = params_obj.reflectivity(q=q_values,
+                                             dq=q_resolution_tensor).cpu().numpy()
+            return curves
+
+        pieces = []
+
+        for start in range(0, N, max_batch):
+            stop = min(start + max_batch, N)
+            sl = slice(start, stop)
+
+            q_resolution_tensor_slice = q_resolution_tensor[sl] if q_resolution_tensor is not None else None
+
+            curves_b = params_obj[sl].reflectivity(q=q_values, dq=q_resolution_tensor_slice)
+            pieces.append(curves_b.cpu())
+
+        return torch.cat(pieces, dim=0).numpy()
+    
     def get_param_labels(self, **kwargs):
         return self.trainer.loader.prior_sampler.param_model.get_param_labels(**kwargs)
     
