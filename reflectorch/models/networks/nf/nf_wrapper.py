@@ -9,6 +9,8 @@ from nflows.utils import typechecks as check
 
 class FlowWrapper(Flow):
     @torch.no_grad()
+    def get_flow_with_frozen_context(self, context) -> "FrozenFlow":
+        return FrozenFlow(self, self._embedding_net(context))
 
     def log_prob(self, inputs, context=None):
         """
@@ -37,3 +39,21 @@ class FlowWrapper(Flow):
             if num_leftover > 0:
                 samples.append(self._sample(num_leftover, context))
             return torch.cat(samples, dim=0)
+
+
+class FrozenFlow(FlowWrapper):
+    def __init__(self, flow: FlowWrapper, frozen_context: Tensor):
+        super().__init__(flow._transform, flow._distribution)
+        self.frozen_context = frozen_context
+
+    def _sample(self, num_samples, context=None):
+        assert context is None, "Context must be None for a frozen flow."
+        return super()._sample(num_samples, context=self.frozen_context)
+
+    def _log_prob(self, inputs, context=None):
+        assert context is None, "Context must be None for a frozen flow."
+        return super()._log_prob(inputs, context=self.frozen_context)
+
+    def sample_and_log_prob(self, num_samples, context=None):
+        assert context is None, "Context must be None for a frozen flow."
+        return super().sample_and_log_prob(num_samples, context=self.frozen_context)
