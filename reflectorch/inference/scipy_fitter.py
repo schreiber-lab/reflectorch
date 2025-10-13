@@ -116,7 +116,12 @@ def refl_fit(
     curve = prior_sampler.param_model.reflectivity(torch.tensor(q, dtype=torch.float64), 
                                                    torch.tensor(res[0], dtype=torch.float64).unsqueeze(0), 
                                                    **reflectivity_kwargs).squeeze().numpy()
-    return res[0], curve
+    # cov matrix --> variance of the parameter estimate
+    if res[1] is not None and np.ndim(res[1]) == 2 and np.all(np.isfinite(res[1])):
+        pol_param_errs = np.sqrt(np.diag(res[1]))
+    else: 
+        pol_param_errs = np.full_like(res[1], np.nan)
+    return res[0], pol_param_errs, curve
 
 
 def get_fit_with_growth(
@@ -143,7 +148,7 @@ def get_fit_with_growth(
         scale_curve_func=scale_curve_func, 
         **kwargs
     )
-
+    
     params[0] += params[-1] / 2
     return params, curve
 
