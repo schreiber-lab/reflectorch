@@ -24,7 +24,7 @@ def print_prediction_results(prediction_dict, param_names=None, width=10, precis
         if pol is not None:
             hdr += f"  {'Polished'.rjust(width)}"
         if pol_err is not None:
-            hdr += f'   {'Polished err'.rjust(width)}'
+            hdr += f"   {'Polished err'.rjust(width)}"
         print(hdr)
         print("-" * len(hdr))
 
