@@ -9,6 +9,7 @@ from reflectorch.inference.preprocess_exp import (
     apply_footprint_correction,
 )
 from reflectorch.inference.torch_fitter import ReflGradientFit
+from reflectorch.inference.input_interface import Layer, Backing, Structure
 
 __all__ = [
     "InferenceModel",
@@ -18,6 +19,9 @@ __all__ = [
     "StandardPreprocessing",
     "standard_preprocessing",
     "ReflGradientFit",
+    "Layer",
+    "Backing",
+    "Structure",
     "interp_reflectivity",
     "apply_attenuation_correction",
     "apply_footprint_correction",
