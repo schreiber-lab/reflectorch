@@ -501,23 +501,32 @@ class ModelSelection:
         # Store selection - the model ID is the full repo ID for HF models
         self.selected_config = model_id
         self.selected_model = model_id
+
+    @property
+    def selected_model_config_name(self) -> str:
+        """Get the configuration name of the currently selected model"""
+        if self.selected_model is None:
+            return
+        return self.selected_model.split('/')[-1]
+
+    @property
+    def selected_model_data(self) -> Optional[Dict[str, Any]]:
+        """Get the data of the currently selected model"""
+        if self.selected_model is None:
+            return
+        for model in self.models_data:
+            if model.get('modelId') == self.selected_model:
+                return model
+        return None
         
     def get_selected_model_info(self) -> Optional[Dict[str, Any]]:
         """Get information about the currently selected model"""
         if self.selected_config is None:
             return None
-        
-        # Find the selected model data
-        selected_model_data = None
-        for model in self.models_data:
-            if model.get('modelId') == self.selected_model:
-                selected_model_data = model
-                break
-        
+                
         return {
-            'model_id': self.selected_model,
-            'config_name': self.selected_model,
+            'repo_id': self.organization ,
+            'config_name': self.selected_model_config_name,
             'model_name': self.selected_model,
-            'organization': self.organization,
-            'model_data': selected_model_data
+            'model_data': self.selected_model_data
         }

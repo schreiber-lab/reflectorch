@@ -362,15 +362,14 @@ class ReflectorchPlotlyWidget:
                     print("❌ No model selected")
                     return
                 
-                print(f"🔄 Loading model: {selected_model_info['model_name']}")
-                print("   This may take a moment if downloading from Hugging Face...")
+                print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
                 
                 # Import EasyInferenceModel here to avoid circular imports
                 from reflectorch.inference.inference_model import EasyInferenceModel
                 
                 # Create new model instance
                 new_model = EasyInferenceModel(
-                    model_name=selected_model_info['model_name'],
+                    config_name=selected_model_info['config_name'],
                     repo_id=selected_model_info['repo_id'],
                     device=self.model.device if hasattr(self.model, 'device') else 'cuda'
                 )
