@@ -81,6 +81,14 @@ class EasyInferenceModel(object):
             self.model_name += weights_extension
         self.model_dir = Path(root_dir) / 'saved_models' if root_dir else SAVED_MODELS_DIR
 
+        def _download_with_fallback(filename: str, local_target_dir: Path, legacy_subfolder: str):
+            """Try to download from repo root (new layout). If not found, retry with legacy `subfolder=legacy_subfolder`. Place result under local_target_dir using `local_dir`.
+            """
+            try: # new layout: files at repo root (same level as README.md)
+                hf_hub_download(repo_id=self.repo_id + '/' + config_name, filename=filename, local_dir=str(local_target_dir))
+            except Exception : # legacy layout fallback: e.g. subfolder='configs' or 'saved_models'
+                hf_hub_download(repo_id=self.repo_id, filename=filename, subfolder=legacy_subfolder, local_dir=str(local_target_dir.parent))
+
         config_path = Path(self.config_dir) / self.config_name
         if config_path.exists():
             print(f"Configuration file `{config_path}` found locally.")
@@ -89,7 +97,7 @@ class EasyInferenceModel(object):
             if self.repo_id is None:
                 raise ValueError("repo_id must be provided to download files from Huggingface.")
             print("Downloading from Huggingface...")
-            hf_hub_download(repo_id=self.repo_id, subfolder='configs', filename=self.config_name, local_dir=config_path.parents[1])
+            _download_with_fallback(self.config_name, self.config_dir, legacy_subfolder='configs')
 
         model_path = Path(self.model_dir) / self.model_name
         if model_path.exists():
@@ -99,7 +107,7 @@ class EasyInferenceModel(object):
             if self.repo_id is None:
                 raise ValueError("repo_id must be provided to download files from Huggingface.")
             print("Downloading from Huggingface...")
-            hf_hub_download(repo_id=self.repo_id, subfolder='saved_models', filename=self.model_name, local_dir=model_path.parents[1])
+            _download_with_fallback(self.model_name, self.model_dir, legacy_subfolder='saved_models')
 
         self.trainer = get_trainer_by_name(config_name=config_name, config_dir=self.config_dir, model_path=model_path, load_weights=True, inference_device = self.device)
         self.trainer.model.eval()
@@ -241,21 +249,22 @@ class EasyInferenceModel(object):
         if key_padding_mask is not None:
             prediction_dict['key_padding_mask'] = key_padding_mask
 
+        ### Shift the slds for nonzero ambient
+        prior_bounds = np.array(prior_bounds)
+        if ambient_sld:
+            sld_indices = self._shift_slds_by_ambient(prior_bounds, ambient_sld)
+
         ### Perform polishing on the original data
         if polish_prediction:
             polishing_kwargs = polishing_kwargs_reflectivity or {}
             polishing_kwargs.setdefault('dq', q_resolution_original)
-            
-            prior_bounds = np.array(prior_bounds)
-            if ambient_sld:
-                sld_indices = self._shift_slds_by_ambient(prior_bounds, ambient_sld)
 
             polished_dict = self._polish_prediction(
                 q=q_values_original,
                 curve=reflectivity_curve_original,
                 predicted_params=prediction_dict['predicted_params_object'],
                 priors=prior_bounds,
-                ambient_sld_tensor=torch.atleast_2d(torch.as_tensor(ambient_sld)).to(self.device) if ambient_sld is not None else None,
+                ambient_sld_tensor=torch.atleast_2d(torch.as_tensor(ambient_sld)) if ambient_sld is not None else None,
                 calc_polished_sld_profile=calc_polished_sld_profile,
                 sld_x_axis=torch.from_numpy(prediction_dict['predicted_sld_xaxis']),
                 polishing_kwargs_reflectivity = polishing_kwargs,
