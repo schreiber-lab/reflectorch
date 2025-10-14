@@ -6,7 +6,7 @@ Reflectorch widgets and plots in Jupyter notebooks.
 import numpy as np
 from typing import Optional, Union
 
-from reflectorch.extensions.jupyter.plotly_widget import ReflectorchPlotlyWidget
+from reflectorch.extensions.jupyter.widget import ReflectorchPlotlyWidget
 
 
 def create_widget(model, 

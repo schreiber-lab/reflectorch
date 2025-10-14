@@ -12,7 +12,14 @@ from reflectorch.extensions.jupyter.plotly_plot_manager import (
     plot_reflectivity_only,
     plot_sld_only,
 )
-from reflectorch.extensions.jupyter.components import ParameterTable, PreprocessingControls, PredictionControls, PlottingControls, WidgetSettingsExtractor
+from reflectorch.extensions.jupyter.components import (
+    ParameterTable,
+    PreprocessingControls,
+    PredictionControls,
+    PlottingControls,
+    WidgetSettingsExtractor,
+)
+from reflectorch.extensions.jupyter.model_selection import ModelSelection
 
 
 class ReflectorchPlotlyWidget:
@@ -64,6 +71,8 @@ class ReflectorchPlotlyWidget:
         self.preprocessing_controls = None
         self.prediction_controls = None
         self.plotting_controls = None
+        self.model_selection = None
+        self.tabs_widget = None  # Store reference to tabs for updating
         
         self._validate_model()
     
@@ -125,6 +134,7 @@ class ReflectorchPlotlyWidget:
         self.preprocessing_controls = PreprocessingControls(len(reflectivity_curve))
         self.prediction_controls = PredictionControls()
         self.plotting_controls = PlottingControls()
+        self.model_selection = ModelSelection()
         
         # Create tabbed interface
         tabs = widgets.Tab()
@@ -132,9 +142,13 @@ class ReflectorchPlotlyWidget:
             self.parameter_table.widget,
             self.preprocessing_controls.widget,
             self.prediction_controls.widget,
-            self.plotting_controls.widget
+            self.plotting_controls.widget,
+            self.model_selection.widget
         ]
-        tabs.titles = ['Parameters', 'Preprocessing', 'Prediction', 'Plotting']
+        tabs.titles = ['Parameters', 'Preprocessing', 'Prediction', 'Plotting', 'Models']
+        
+        # Store reference to tabs for later updates
+        self.tabs_widget = tabs
         
         # Control buttons
         predict_button = widgets.Button(
@@ -164,7 +178,7 @@ class ReflectorchPlotlyWidget:
         ])
         
         # Main layout with controls on left, plots on right
-        header = widgets.HTML("<h2>🔬 Reflectorch Analysis Widget (Plotly)</h2>")
+        header = widgets.HTML("<h2>Reflectorch Widget</h2>")
         
         controls_area = widgets.VBox([
             header,
@@ -191,6 +205,9 @@ class ReflectorchPlotlyWidget:
         
         # Setup event handlers
         self._setup_event_handlers(predict_button, close_button, output, reflectivity_plot_container, sld_plot_container, container)
+        
+        # Setup model selection integration
+        self._setup_model_selection_integration(output)
         
         # Setup truncation synchronization
         self._setup_truncation_sync()
@@ -328,6 +345,75 @@ class ReflectorchPlotlyWidget:
         # Connect event handlers
         predict_button.on_click(on_predict)
         close_button.on_click(on_close)
+    
+    def _setup_model_selection_integration(self, output):
+        """Setup integration with model selection tab"""
+        if not self.model_selection:
+            return
+        
+        load_button = self.model_selection._widgets['download_button']
+        
+        @output.capture(clear_output=False)
+        def on_load_model(_):
+            """Handle load model button click"""
+            try:
+                selected_model_info = self.model_selection.get_selected_model_info()
+                if selected_model_info is None:
+                    print("❌ No model selected")
+                    return
+                
+                print(f"🔄 Loading model: {selected_model_info['model_name']}")
+                print("   This may take a moment if downloading from Hugging Face...")
+                
+                # Import EasyInferenceModel here to avoid circular imports
+                from reflectorch.inference.inference_model import EasyInferenceModel
+                
+                # Create new model instance
+                new_model = EasyInferenceModel(
+                    model_name=selected_model_info['model_name'],
+                    repo_id=selected_model_info['repo_id'],
+                    device=self.model.device if hasattr(self.model, 'device') else 'cuda'
+                )
+                
+                print(f"📥 Model downloaded and initialized successfully")
+                
+                # Replace current model
+                self.model = new_model
+                
+                # Update parameter table with new model parameters
+                param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
+                min_bounds = self.model.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
+                max_bounds = self.model.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
+                max_deltas = self.model.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
+                
+                # Create new parameter table
+                new_parameter_table = ParameterTable(
+                    param_labels, min_bounds, max_bounds, max_deltas, None
+                )
+                
+                # Update the parameter table in the tabs (index 0 is Parameters tab)
+                if self.tabs_widget and hasattr(self.tabs_widget, 'children'):
+                    children_list = list(self.tabs_widget.children)
+                    children_list[0] = new_parameter_table.widget
+                    self.tabs_widget.children = children_list
+                    
+                    # Update our reference to the parameter table
+                    self.parameter_table = new_parameter_table
+                
+                # Clear previous prediction results
+                self.prediction_result = None
+                
+                print(f"✅ Model loaded successfully: {selected_model_info['config_name']}")
+                print(f"Parameters: {len(param_labels)} parameters, {self.model.trainer.loader.prior_sampler.max_num_layers} max layers")
+                print("💡 Tip: Go to the Parameters tab to see the updated parameter ranges for the new model")
+                
+            except Exception as e:
+                print(f"❌ Error loading model: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        
+        # Connect the load button
+        load_button.on_click(on_load_model)
     
     def _plot_results(self, prediction_result, settings, reflectivity_container, sld_container):
         """Plot prediction results with current settings"""
