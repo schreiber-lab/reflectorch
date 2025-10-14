@@ -1,6 +1,4 @@
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
-from reflectorch.inference import inference_model
-
 
 class Layer():
     def __init__(self, thickness_bounds, roughness_bounds, sld_bounds, imag_sld_bounds=None):
