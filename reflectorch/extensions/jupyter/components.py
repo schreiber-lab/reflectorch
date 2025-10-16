@@ -60,13 +60,26 @@ class ParameterTable:
         """Create the parameter table widget"""
         init_pb = np.array(initial_bounds) if initial_bounds is not None else None
         
+        # Add custom CSS for slider styling
+        slider_style = widgets.HTML("""
+        <style>
+            .widget-inline-hbox .widget-readout {
+                margin-left: 20px !important;
+            }
+            .widget-slider .ui-slider {
+                width: 280px !important;
+            }
+        </style>
+        """)
+        
         # Create header row
         header = widgets.HBox([
-            widgets.HTML("<b>Parameter</b>", layout=widgets.Layout(width='140px')),
-            widgets.HTML("<b>Prior Bounds</b>", layout=widgets.Layout(width='280px')),
-            widgets.HTML("<b>Predicted</b>", layout=widgets.Layout(width='100px')),
-            widgets.HTML("<b>Polished</b>", layout=widgets.Layout(width='100px'))
-        ], layout=widgets.Layout(margin='5px 0px'))
+            widgets.HTML("<b>Parameter</b>", layout=widgets.Layout(width='150px')),
+            widgets.HTML("<b>Prior Bounds</b>", layout=widgets.Layout(width='400px')),
+            widgets.HTML("<b>Predicted</b>", layout=widgets.Layout(width='120px', margin='0px 0px 0px 20px')),
+            widgets.HTML("<b>Polished</b>", layout=widgets.Layout(width='120px')),
+            widgets.HTML("<b>Uncertainty</b>", layout=widgets.Layout(width='120px'))
+        ], layout=widgets.Layout(margin='5px 0px', align_items='center'))
         
         # Create parameter rows
         parameter_rows = []
@@ -86,47 +99,53 @@ class ParameterTable:
             # Parameter label
             param_label = widgets.HTML(
                 value=f"<b>{label}</b>",
-                layout=widgets.Layout(width='140px', height='35px', margin='2px 5px')
+                layout=widgets.Layout(width='150px', display='flex', align_items='center', justify_content='flex-start')
             )
             
-            # Prior bounds slider
+            # Prior bounds slider - use container to control spacing
             slider = widgets.FloatRangeSlider(
                 value=[init_min, init_max],
                 min=float(self.min_bounds[i]),
                 max=float(self.max_bounds[i]),
                 step=0.01,
-                layout=widgets.Layout(width='280px', height='35px'),
-                readout_format='.3f',
-                style={'description_width': '0px'}
+                layout=widgets.Layout(width='400px'),
+                readout_format='.2f',
+                style={'description_width': '0px', 'handle_color': '#2196F3'}
             )
             
             # Result displays
             predicted_display = widgets.HTML(
                 value="<i>-</i>",
-                layout=widgets.Layout(width='100px', height='35px', margin='2px 5px')
+                layout=widgets.Layout(width='120px', margin='0px 0px 0px 20px', display='flex', align_items='center', justify_content='flex-start')
             )
             polished_display = widgets.HTML(
                 value="<i>-</i>",
-                layout=widgets.Layout(width='100px', height='35px', margin='2px 5px')
+                layout=widgets.Layout(width='120px', display='flex', align_items='center', justify_content='flex-start')
+            )
+            uncertainty_display = widgets.HTML(
+                value="<i>-</i>",
+                layout=widgets.Layout(width='120px', display='flex', align_items='center', justify_content='flex-start')
             )
             
             # Store references for updating results
             self.result_displays[i] = {
                 'predicted': predicted_display,
-                'polished': polished_display
+                'polished': polished_display,
+                'uncertainty': uncertainty_display
             }
             
             # Add slider validation
             self._add_slider_validation(slider, float(self.max_deltas[i]))
             self.sliders.append(slider)
             
-            # Create row layout
+            # Create row layout with vertical alignment
             row = widgets.HBox([
                 param_label,
                 slider,
                 predicted_display,
-                polished_display
-            ], layout=widgets.Layout(margin='2px 0px'))
+                polished_display,
+                uncertainty_display
+            ], layout=widgets.Layout(margin='5px 0px', align_items='center'))
             
             parameter_rows.append(row)
 
@@ -143,6 +162,7 @@ class ParameterTable:
         
         # Create the main parameter table
         main_table = widgets.VBox([
+            slider_style,
             title_row,
             header,
             widgets.HTML("<hr style='margin: 5px 0px;'>"),
@@ -189,21 +209,29 @@ class ParameterTable:
         
         predicted_params = prediction_result.get('predicted_params_array', [])
         polished_params = prediction_result.get('polished_params_array', None)
+        error_bars = prediction_result.get('polished_params_error_bars', None)
         
         for i, displays in self.result_displays.items():
             # Update predicted value
             if i < len(predicted_params):
                 pred_val = predicted_params[i]
-                displays['predicted'].value = f"{pred_val:.3f}"
+                displays['predicted'].value = f"{pred_val:.2f}"
             else:
                 displays['predicted'].value = "<i>-</i>"
             
             # Update polished value
             if polished_params is not None and i < len(polished_params):
                 pol_val = polished_params[i]
-                displays['polished'].value = f"{pol_val:.3f}"
+                displays['polished'].value = f"{pol_val:.2f}"
             else:
                 displays['polished'].value = "<i>-</i>"
+            
+            # Update uncertainty/error bars value
+            if error_bars is not None and i < len(error_bars):
+                err_val = error_bars[i]
+                displays['uncertainty'].value = f"±{err_val:.2f}"
+            else:
+                displays['uncertainty'].value = "<i>-</i>"
 
 
 class PreprocessingControls:

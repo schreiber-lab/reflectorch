@@ -30,12 +30,7 @@ from reflectorch.extensions.jupyter.log_widget import LogWidget
 class ReflectorchPlotlyWidget:
     """
     Interactive Jupyter Widget for Reflectometry Analysis using Plotly
-    
-    A modern, tabbed interface for reflectometry data analysis with Reflectorch models.
-    Features real-time parameter updates, Plotly interactive plotting, and comprehensive controls.
-    
-    This is a Plotly-based alternative to the matplotlib-based ReflectorchWidget.
-    
+        
     Attributes:
         model: The InferenceModel instance
         prediction_result: Latest prediction results

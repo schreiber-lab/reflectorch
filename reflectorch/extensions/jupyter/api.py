@@ -27,8 +27,7 @@ def create_widget(
     """
     Create and display a Reflectorch analysis widget
     
-    This is the main function for creating Reflectorch widgets. It provides a clean,
-    simple interface for reflectometry data analysis with comprehensive controls.
+    This is the main function for creating Reflectorch widgets.
     
     Parameters:
     ----------
@@ -46,11 +45,17 @@ def create_widget(
     Returns:
     -------
         ReflectorchPlotlyWidget instance with the widget displayed
-        
-    Features:
-    ----------
-    Returns:
-        ReflectorchWidget instance with the widget displayed
+    
+    Example:
+    -------
+        ```python
+        # Load data
+        from reflectorch.paths import ROOT_DIR
+        data = np.loadtxt(ROOT_DIR / "exp_data/data_C60.txt")
+
+        # create widget (displayed automatically)
+        widget = create_widget(q_values=data[..., 0], reflectivity_curve=data[..., 1])
+    ```
     """
     # Create widget instance
     widget = ReflectorchPlotlyWidget(
