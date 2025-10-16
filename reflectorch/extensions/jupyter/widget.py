@@ -17,6 +17,7 @@ from reflectorch.extensions.jupyter.components import (
     PreprocessingControls,
     PredictionControls,
     PlottingControls,
+    AdditionalParametersControls,
     WidgetSettingsExtractor,
 )
 from reflectorch.extensions.jupyter.model_selection import ModelSelection
@@ -32,16 +33,16 @@ class ReflectorchPlotlyWidget:
     This is a Plotly-based alternative to the matplotlib-based ReflectorchWidget.
     
     Attributes:
-        model: The EasyInferenceModel instance
+        model: The InferenceModel instance
         prediction_result: Latest prediction results
         plot_manager: PlotlyPlotManager for handling interactive plots
         
     Example:
         ```python
-        from reflectorch.inference import EasyInferenceModel
+        from reflectorch.inference import InferenceModel
         from reflectorch.extensions.jupyter import ReflectorchPlotlyWidget
         
-        model = EasyInferenceModel('config.yaml')
+        model = InferenceModel('config.yaml')
         widget = ReflectorchPlotlyWidget(model)
         
         widget.display(
@@ -60,7 +61,7 @@ class ReflectorchPlotlyWidget:
         Initialize the Reflectorch Plotly widget
         
         Args:
-            model: EasyInferenceModel instance for making predictions
+            model: InferenceModel instance for making predictions
         """
         self.model = model
         self.prediction_result = None
@@ -71,6 +72,7 @@ class ReflectorchPlotlyWidget:
         self.preprocessing_controls = None
         self.prediction_controls = None
         self.plotting_controls = None
+        self.additional_params_controls = None
         self.model_selection = None
         self.tabs_widget = None  # Store reference to tabs for updating
         
@@ -128,8 +130,12 @@ class ReflectorchPlotlyWidget:
         max_deltas = self.model.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
         
         # Create widget components
+        # Create additional params controls first so we can pass it to parameter table
+        self.additional_params_controls = AdditionalParametersControls(self.model)
+        
         self.parameter_table = ParameterTable(
-            param_labels, min_bounds, max_bounds, max_deltas, initial_prior_bounds
+            param_labels, min_bounds, max_bounds, max_deltas, initial_prior_bounds,
+            additional_params_controls=self.additional_params_controls
         )
         self.preprocessing_controls = PreprocessingControls(len(reflectivity_curve))
         self.prediction_controls = PredictionControls()
@@ -283,49 +289,27 @@ class ReflectorchPlotlyWidget:
             output.clear_output(wait=True)
             
             try:
-                # Extract settings from all components
+                # Extract settings from all components with data fallback
                 settings = WidgetSettingsExtractor.extract_settings(
                     self.parameter_table,
                     self.preprocessing_controls,
                     self.prediction_controls,
-                    self.plotting_controls
+                    self.plotting_controls,
+                    self.additional_params_controls,
+                    data=self._data
                 )
                 
-                # Run prediction
-                prediction_result = self.model.preprocess_and_predict(
-                    reflectivity_curve=self._data['reflectivity_curve'],
-                    q_values=self._data['q_values'],
-                    prior_bounds=settings['prior_bounds'],
-                    sigmas=self._data['sigmas'],
-                    q_resolution=self._data['q_resolution'],
-                    ambient_sld=self._data['ambient_sld'],
-                    
-                    # Prediction settings
-                    clip_prediction=True,
-                    polish_prediction=settings['polish_prediction'],
-                    use_sigmas_for_polishing=settings['use_sigmas_for_polishing'],
-                    calc_pred_curve=settings['calc_pred_curve'],
-                    calc_pred_sld_profile=(settings['calc_pred_sld'] or settings['plot_sld_profile']),
-                    calc_polished_sld_profile=(settings['calc_pol_sld'] or settings['plot_sld_profile']),
-                    sld_profile_padding_left=settings['sld_pad_left'],
-                    sld_profile_padding_right=settings['sld_pad_right'],
-                    
-                    # Preprocessing settings
-                    truncate_index_left=settings['truncate_left'],
-                    truncate_index_right=settings['truncate_right'],
-                    enable_error_bars_filtering=settings['enable_filtering'],
-                    filter_threshold=settings['filter_threshold'],
-                    filter_remove_singles=settings['filter_remove_singles'],
-                    filter_remove_consecutives=settings['filter_remove_consecutives'],
-                    filter_consecutive=settings['filter_consecutive'],
-                    filter_q_start_trunc=settings['filter_q_start_trunc'],
-                )
+                # Separate prediction and plotting parameters
+                prediction_params, plotting_params = WidgetSettingsExtractor.separate_settings(settings)
+                
+                # Run prediction with all parameters
+                prediction_result = self.model.preprocess_and_predict(**prediction_params)
                 
                 # Update parameter table with results
                 self.parameter_table.update_results(prediction_result)
                 
                 # Plot results
-                self._plot_results(prediction_result, settings, reflectivity_container, sld_container)
+                self._plot_results(prediction_result, plotting_params, reflectivity_container, sld_container)
                 
                 # Store results
                 self.prediction_result = prediction_result
