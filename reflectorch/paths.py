@@ -3,6 +3,7 @@ from pathlib import Path
 
 __all__ = [
     'ROOT_DIR',
+    'EXP_DATA_DIR',
     'SAVED_MODELS_DIR',
     'SAVED_LOSSES_DIR',
     'RUN_SCRIPTS_DIR',
@@ -13,6 +14,7 @@ __all__ = [
 ]
 
 ROOT_DIR: Path = Path(__file__).parents[1]
+EXP_DATA_DIR: Path = ROOT_DIR / 'exp_data'
 SAVED_MODELS_DIR: Path = ROOT_DIR / 'saved_models'
 SAVED_LOSSES_DIR: Path = ROOT_DIR / 'saved_losses'
 RUN_SCRIPTS_DIR: Path = ROOT_DIR / 'runs'
