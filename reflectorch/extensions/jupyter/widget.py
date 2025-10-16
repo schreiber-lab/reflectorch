@@ -224,7 +224,7 @@ class ReflectorchPlotlyWidget:
         plot_area = widgets.VBox([
             reflectivity_plot_container,
             sld_plot_container
-        ])
+        ], layout=widgets.Layout(margin='50px 0px 0px 0px'))
         
         # Main layout with controls on left, plots on right
         header = widgets.HTML("<h2>Reflectorch Widget</h2>")
