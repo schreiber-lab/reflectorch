@@ -38,7 +38,8 @@ dependencies = [
     "ipywidgets",
     "huggingface_hub",
     "safetensors",
-    "tensorboard"
+    "tensorboard",
+    "nflows"
 ]
 
 [project.optional-dependencies]

@@ -21,7 +21,7 @@ from reflectorch.runs.utils import (
     get_trainer_by_name, train_from_config
 )
 from reflectorch.runs.config import load_config
-from reflectorch.ml.trainers import PointEstimatorTrainer
+from reflectorch.ml.trainers import PointEstimatorTrainer, NFlowTrainer
 from reflectorch.data_generation.likelihoods import LogLikelihood
 
 from reflectorch.inference.preprocess_exp import StandardPreprocessing
@@ -370,6 +370,9 @@ class InferenceModel(object):
             dict: dictionary containing the predictions
         """
 
+        if not isinstance(self.trainer, PointEstimatorTrainer):
+            raise RuntimeError("`predict()` is only supported for models trained with `PointEstimatorTrainer`.")
+
         scaled_curve = self._scale_curve(reflectivity_curve)
         if prior_bounds is None:
             raise ValueError(f'Prior bounds were not provided')
@@ -483,6 +486,321 @@ class InferenceModel(object):
                 prediction_dict["param_names"].append("max_d_change")
 
         if ambient_sld and not supress_sld_amb_back_shift: #Note: the SLD shift will only be reflected in predicted_params_array but not in predicted_params_object; supress_sld_amb_back_shift is required for the 'preprocess_and_predict' method
+            self._restore_slds_after_ambient_shift(prediction_dict, sld_indices, ambient_sld)   
+
+        return prediction_dict
+    
+    def preprocess_and_sample(self, 
+                            reflectivity_curve: Union[np.ndarray, Tensor], 
+                            q_values: Union[np.ndarray, Tensor] = None, 
+                            prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
+                            sigmas: Union[np.ndarray, Tensor] = None,
+                            q_resolution: float = None,
+                            ambient_sld: float = None,
+                            num_samples: int = 1000,
+                            sampling_batch_size: int = None,
+                            sld_profile_padding_left: float = 0.2,
+                            sld_profile_padding_right: float = 1.1,
+                            kwargs_param_labels: dict = {},
+                            calc_sampled_curves: bool = False,
+                            maximum_sim_batch_size: int = None,
+                            calc_sampled_sld_profiles: bool = False,
+                            calc_log_likelihoods: bool = False,
+                            clip_prediction: bool = False,
+                            enable_importance_sampling: bool = False,
+                            rel_err_factor: float = 0.2,
+
+                            truncate_index_left: int = None,
+                            truncate_index_right: int = None,
+                            enable_error_bars_filtering: bool = True,
+                            filter_threshold=0.3,
+                            filter_remove_singles=True,
+                            filter_remove_consecutives=True,
+                            filter_consecutive=3,
+                            filter_q_start_trunc=0.1,
+                            ):
+        
+        ## Preprocess the data (filtering, truncation, error bar filtering)
+        (q_values, reflectivity_curve, sigmas, q_resolution, 
+        _, _, _, _) = self._preprocess_input_data(
+            reflectivity_curve=reflectivity_curve,
+            q_values=q_values,
+            sigmas=sigmas,
+            q_resolution=q_resolution,
+            truncate_index_left=truncate_index_left,
+            truncate_index_right=truncate_index_right,
+            enable_error_bars_filtering=enable_error_bars_filtering,
+            filter_threshold=filter_threshold,
+            filter_remove_singles=filter_remove_singles,
+            filter_remove_consecutives=filter_remove_consecutives,
+            filter_consecutive=filter_consecutive,
+            filter_q_start_trunc=filter_q_start_trunc,
+        )
+
+        ### Interpolate or pad reflectivity data to model-specific q-discretization
+        interp_data = self.interpolate_data_to_model_q(
+            q_exp=q_values,
+            refl_exp=reflectivity_curve,
+            sigmas_exp=sigmas,
+            q_res_exp=q_resolution,
+            as_dict=True
+        )
+
+        q_model = interp_data["q_model"]
+        reflectivity_curve_interp = interp_data["reflectivity"]
+        sigmas_interp = interp_data.get("sigmas")
+        q_resolution_interp = interp_data.get("q_resolution")
+        key_padding_mask = interp_data.get("key_padding_mask")
+
+        ### Call the actual sampling method
+        prediction_dict = self.sample(
+            num_samples=num_samples,
+            reflectivity_curve=reflectivity_curve_interp,
+            q_values=q_model,
+            prior_bounds=prior_bounds,
+            sigmas=sigmas_interp,
+            key_padding_mask=key_padding_mask,
+            q_resolution=q_resolution_interp,
+            ambient_sld=ambient_sld,
+            sld_profile_padding_left=sld_profile_padding_left,
+            sld_profile_padding_right=sld_profile_padding_right,
+            sampling_batch_size=sampling_batch_size,
+            enable_importance_sampling=enable_importance_sampling,
+            rel_err_factor=rel_err_factor,
+            calc_sampled_curves=calc_sampled_curves,
+            maximum_sim_batch_size=maximum_sim_batch_size,
+            calc_sampled_sld_profiles=calc_sampled_sld_profiles,
+            calc_log_likelihoods=calc_log_likelihoods,
+            clip_prediction=clip_prediction,
+            kwargs_param_labels=kwargs_param_labels,
+        )
+
+        prediction_dict['q_model'] = q_model
+        prediction_dict['reflectivity_curve_interp'] = reflectivity_curve_interp
+        if q_resolution_interp is not None:
+            prediction_dict['q_resolution_interp'] = q_resolution_interp
+        if sigmas_interp is not None:
+            prediction_dict['sigmas_interp'] = sigmas_interp
+        if key_padding_mask is not None:
+            prediction_dict['key_padding_mask'] = key_padding_mask
+
+        return prediction_dict
+    
+    def sample(self,
+               num_samples: int,
+               reflectivity_curve: Union[np.ndarray, Tensor], 
+               q_values: Union[np.ndarray, Tensor] = None, 
+               prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
+               sigmas: Union[np.ndarray, Tensor] = None,
+               key_padding_mask: Union[np.ndarray, Tensor] = None,
+               q_resolution: float = None,
+               ambient_sld: float = None,
+               clip_prediction: bool = False, 
+               polishing_kwargs_reflectivity: dict = None,
+               sld_profile_padding_left: float = 0.2,
+               sld_profile_padding_right: float = 1.1,
+               calc_sampled_curves: bool = False,
+               maximum_sim_batch_size: int = None,
+               calc_sampled_sld_profiles: bool = False,
+               calc_log_likelihoods: bool = False,
+               sampling_batch_size: int = None,
+               enable_importance_sampling: bool = False,
+               rel_err_factor: float = 0.2,
+               kwargs_param_labels: dict = {},
+               ):
+        """
+        """
+
+        if not isinstance(self.trainer, NFlowTrainer):
+            raise RuntimeError("`sample()` is only supported for models trained with `NFlowTrainer`.")
+
+        scaled_curve = self._scale_curve(reflectivity_curve)
+        prior_bounds = np.array(prior_bounds)
+
+        if ambient_sld:
+            sld_indices = self._shift_slds_by_ambient(prior_bounds, ambient_sld)
+
+        scaled_prior_bounds = self._scale_prior_bounds(prior_bounds)
+
+        if isinstance(self.trainer.loader.q_generator, ConstantQ):
+            q_values = self.trainer.loader.q_generator.q
+        else:
+            q_values = torch.atleast_2d(to_t(q_values)).to(scaled_curve)
+
+        scaled_q_values = self.trainer.loader.q_generator.scale_q(q_values).to(torch.float32) if self.trainer.train_with_q_input else None
+        scaled_sigmas = self.trainer.loader.curves_scaler.scale(sigmas) if self.trainer.train_with_sigmas else None
+        
+        if q_resolution is not None:
+            q_resolution_tensor = torch.atleast_2d(torch.as_tensor(q_resolution)).to(scaled_curve)
+            if isinstance(q_resolution, float):
+                unscaled_q_resolutions = q_resolution_tensor
+            else:
+                unscaled_q_resolutions = (q_resolution_tensor / q_values).nanmean(dim=-1, keepdim=True)
+            scaled_q_resolutions = self.trainer.loader.smearing.scale_resolutions(unscaled_q_resolutions) if self.trainer.condition_on_q_resolutions else None
+            scaled_conditioning_params = scaled_q_resolutions
+            if polishing_kwargs_reflectivity is None:
+                polishing_kwargs_reflectivity = {'dq': q_resolution}
+        else:
+            q_resolution_tensor = None
+            scaled_conditioning_params = None
+        
+        if key_padding_mask is not None:
+            key_padding_mask = torch.as_tensor(key_padding_mask, device=self.device)
+            key_padding_mask = key_padding_mask.unsqueeze(0) if key_padding_mask.dim() == 1 else key_padding_mask  
+
+        self.trainer.model.eval()
+
+        if not enable_importance_sampling:
+
+            def draw_batch_of_samples(n):
+                with torch.no_grad():
+                    if isinstance(self.trainer, NFlowTrainer):
+                        scaled_predicted_params = self.trainer.model.sample(
+                            num_samples=n,
+                            curves=scaled_curve, 
+                            bounds=(scaled_prior_bounds if self.trainer.train_with_bounds else None), 
+                            q_values=scaled_q_values,
+                            sigmas = scaled_sigmas,
+                            conditioning_params = scaled_conditioning_params,
+                            key_padding_mask = key_padding_mask,
+                            unscaled_q_values = q_values,
+                            )
+                        scaled_predicted_params = scaled_predicted_params.squeeze(0)
+
+                return scaled_predicted_params
+
+            if sampling_batch_size is None or sampling_batch_size >= num_samples:
+                scaled_predicted_params = draw_batch_of_samples(num_samples)
+            else:
+                pieces = []
+                remaining = num_samples
+                while remaining > 0:
+                    this_n = min(sampling_batch_size, remaining)
+                    pieces.append(draw_batch_of_samples(this_n))
+                    remaining -= this_n
+                    print(f'Sampled: {num_samples - remaining} / {num_samples}')
+                scaled_predicted_params = torch.cat(pieces, dim=0)
+
+        else:
+            def draw_batch_of_samples_and_logprob(n):
+                with torch.no_grad():
+                    if isinstance(self.trainer, NFlowTrainer):
+                        scaled_predicted_params, scaled_log_prob = self.trainer.model.sample_and_log_prob(
+                            num_samples=n,
+                            curves=scaled_curve, 
+                            bounds=(scaled_prior_bounds if self.trainer.train_with_bounds else None), 
+                            q_values=scaled_q_values,
+                            sigmas = scaled_sigmas,
+                            conditioning_params = scaled_conditioning_params,
+                            key_padding_mask = key_padding_mask,
+                            unscaled_q_values = q_values,
+                            ) #shapes [1, n, dim_theta], [1, n]
+                        scaled_predicted_params = scaled_predicted_params.squeeze(0)
+                        scaled_log_prob = scaled_log_prob.squeeze(0)
+
+                return scaled_predicted_params, scaled_log_prob #shapes [n, dim_theta], [n]
+
+            scaled_predicted_params, scaled_log_prob = draw_batch_of_samples_and_logprob(num_samples)
+                        
+        predicted_params = self.trainer.loader.prior_sampler.restore_params(
+            torch.cat([scaled_predicted_params, scaled_prior_bounds.repeat(num_samples, 1)], dim=-1)
+            )
+
+        if clip_prediction:
+            predicted_params = self.trainer.loader.prior_sampler.clamp_params(predicted_params)
+        
+        prediction_dict = {
+            "predicted_params_object": predicted_params,
+            "predicted_params_array": predicted_params.parameters.squeeze().cpu().numpy(),
+            "param_names" : self.trainer.loader.prior_sampler.param_model.get_param_labels(**kwargs_param_labels),
+        }
+
+        key_padding_mask = None if key_padding_mask is None else key_padding_mask.squeeze().cpu().numpy()
+
+        if enable_importance_sampling:
+            calc_sampled_curves = True
+            calc_log_likelihoods = True
+
+        if calc_sampled_curves:
+            if q_resolution_tensor is not None and q_resolution_tensor.shape[0] == 1:
+                q_resolution_tensor = q_resolution_tensor.expand(num_samples, -1)
+
+            predicted_curves = self._batched_reflectivity( #predicted_curves = predicted_params.reflectivity(q=q_values, dq=q_resolution_tensor).cpu().numpy()
+                predicted_params,
+                q_values,
+                q_resolution_tensor,
+                max_batch=maximum_sim_batch_size
+            )
+            
+            prediction_dict["sampled_curves"] = predicted_curves if key_padding_mask is None else predicted_curves[:, key_padding_mask]
+            prediction_dict['q_plot_pred'] = q_values.squeeze().cpu().numpy() if key_padding_mask is None else q_values.squeeze().cpu().numpy()[key_padding_mask]
+
+            if calc_log_likelihoods:
+                sigma_input = sigmas if sigmas is not None else reflectivity_curve * rel_err_factor + 1e-12
+                ll = LogLikelihood(
+                    torch.as_tensor(prediction_dict['q_plot_pred']),
+                    torch.as_tensor(reflectivity_curve) if key_padding_mask is None else torch.as_tensor(reflectivity_curve)[key_padding_mask],
+                    self.trainer.loader.prior_sampler,
+                    torch.as_tensor(sigma_input) if key_padding_mask is None else torch.as_tensor(sigma_input)[key_padding_mask]
+                )
+                
+                log_likelihoods = ll.calc_log_likelihood(prediction_dict["sampled_curves"])
+                prediction_dict['log_likelihoods'] = log_likelihoods
+
+                best_idx = log_likelihoods.argmax()
+                worst_idx = log_likelihoods.argmin()
+
+                print(f"Index of best sample: {best_idx}  Index of worst sample: {worst_idx}")
+
+        if enable_importance_sampling:
+            widths = torch.as_tensor(
+                prior_bounds[:, 1] - prior_bounds[:, 0],
+                device=scaled_log_prob.device,
+                dtype=scaled_log_prob.dtype
+            )
+            log_prior_const = -torch.log(widths).sum()
+            log_jac = torch.log(2.0 / widths).sum()
+            unscaled_log_prob = scaled_log_prob + log_jac
+            prediction_dict["unscaled_log_prob"] = unscaled_log_prob
+
+            log_likelihoods = log_likelihoods.to(scaled_log_prob.device)
+            log_weights = log_prior_const + log_likelihoods - unscaled_log_prob
+
+            logw = log_weights - torch.max(log_weights)
+            weights = torch.exp(logw)
+            weights = weights / torch.sum(weights)
+
+            N = weights.numel()
+            ess = float(1.0 / (weights.pow(2).sum()).item())
+            log_evidence = float(torch.logsumexp(log_weights, 0) - torch.log(torch.tensor(N, dtype=log_weights.dtype, device=log_weights.device)))
+
+            print(f'Effective sample size: {ess:.1f}')
+            print(f'Sample efficiency: {100.0 * ess / N:.2f} %')
+
+            prediction_dict.update(
+                weights=weights.cpu().numpy(),
+                ess=ess,
+                log_evidence=log_evidence,
+            )
+
+        if calc_sampled_sld_profiles:
+            ambient_sld_tensor = None
+            if ambient_sld is not None:
+                ambient_sld_tensor = torch.atleast_2d(torch.as_tensor(ambient_sld)).to(predicted_params.slds.device)
+            z_axis, sld_profiles, _ = get_density_profiles(
+                predicted_params.thicknesses,
+                torch.clamp(predicted_params.roughnesses, min=0.0),
+                predicted_params.slds + (ambient_sld_tensor or 0),
+                ambient_sld_tensor,
+                num=1024,
+                padding_left=sld_profile_padding_left,
+                padding_right=sld_profile_padding_right,
+            )
+            prediction_dict["sampled_sld_profiles"] = sld_profiles.cpu().numpy()
+            prediction_dict["sampled_sld_xaxis"] = z_axis.cpu().numpy()
+
+
+        if ambient_sld: #Note: the SLD shift will only be reflected in predicted_params_array but not in predicted_params_object
             self._restore_slds_after_ambient_shift(prediction_dict, sld_indices, ambient_sld)   
 
         return prediction_dict
@@ -623,6 +941,31 @@ class InferenceModel(object):
         return LogLikelihood(
             q, curve, self.trainer.loader.prior_sampler, curve * rel_err + abs_err
         )
+    
+    def _batched_reflectivity(self,
+                          params_obj,
+                          q_values: Tensor,
+                          q_resolution_tensor,
+                          max_batch: int = None):
+        
+        N = params_obj.parameters.shape[0]
+        if max_batch is None or max_batch >= N:
+            curves = params_obj.reflectivity(q=q_values,
+                                             dq=q_resolution_tensor).cpu().numpy()
+            return curves
+
+        pieces = []
+
+        for start in range(0, N, max_batch):
+            stop = min(start + max_batch, N)
+            sl = slice(start, stop)
+
+            q_resolution_tensor_slice = q_resolution_tensor[sl] if q_resolution_tensor is not None else None
+
+            curves_b = params_obj[sl].reflectivity(q=q_values, dq=q_resolution_tensor_slice)
+            pieces.append(curves_b.cpu())
+
+        return torch.cat(pieces, dim=0).numpy()
     
     def get_param_labels(self, **kwargs):
         return self.trainer.loader.prior_sampler.param_model.get_param_labels(**kwargs)
