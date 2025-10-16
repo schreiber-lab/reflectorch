@@ -56,16 +56,41 @@ class ReflectorchPlotlyWidget:
         ```
     """
     
-    def __init__(self, model):
+    def __init__(self,                
+                reflectivity_curve: np.ndarray,
+                q_values: np.ndarray,
+                sigmas: Optional[np.ndarray] = None,
+                q_resolution: Optional[Union[float, np.ndarray]] = None,
+                initial_prior_bounds: Optional[np.ndarray] = None,
+                ambient_sld: Optional[float] = None,
+                model: Optional["InferenceModel"] = None,
+):
         """
         Initialize the Reflectorch Plotly widget
         
         Args:
-            model: InferenceModel instance for making predictions
+            reflectivity_curve: Experimental reflectivity data
+            q_values: Momentum transfer values
+            sigmas: Experimental uncertainties (optional)
+            q_resolution: Q-resolution, float or array (optional)
+            initial_prior_bounds: Initial bounds for priors, shape (n_params, 2)
+            ambient_sld: Ambient SLD value (optional)
+            model: InferenceModel instance for making predictions (optional)
         """
         self.model = model
         self.prediction_result = None
         self.plot_manager = PlotlyPlotManager()
+
+        # Store data for prediction
+        self._data = {
+            'reflectivity_curve': reflectivity_curve,
+            'q_values': q_values,
+            'sigmas': sigmas,
+            'q_resolution': q_resolution,
+            'ambient_sld': ambient_sld
+        }
+
+        self.initial_prior_bounds = initial_prior_bounds
         
         # Widget components (initialized when display is called)
         self.parameter_table = None
@@ -76,7 +101,41 @@ class ReflectorchPlotlyWidget:
         self.model_selection = None
         self.tabs_widget = None  # Store reference to tabs for updating
         
-        self._validate_model()
+        if self.model is not None:
+            self._validate_model()
+    
+    def _create_parameter_components(self, initial_prior_bounds=None):
+        """
+        Create parameter table and additional parameters controls based on current model
+        
+        Args:
+            initial_prior_bounds: Initial bounds for priors, shape (n_params, 2)
+            
+        Returns:
+            Tuple of (parameter_table, additional_params_controls)
+        """
+        # Create additional params controls first so we can pass it to parameter table
+        additional_params_controls = AdditionalParametersControls(self.model)
+        
+        # Get model parameters info if model is available
+        if self.model is not None:
+            param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
+            min_bounds = self.model.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
+            max_bounds = self.model.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
+            max_deltas = self.model.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
+        else:
+            # Default empty parameters when no model is loaded
+            param_labels = []
+            min_bounds = np.array([])
+            max_bounds = np.array([])
+            max_deltas = np.array([])
+        
+        parameter_table = ParameterTable(
+            param_labels, min_bounds, max_bounds, max_deltas, initial_prior_bounds,
+            additional_params_controls=additional_params_controls
+        )
+        
+        return parameter_table, additional_params_controls
     
     def _validate_model(self):
         """Validate that the model has required attributes"""
@@ -86,12 +145,6 @@ class ReflectorchPlotlyWidget:
                 raise ValueError(f"Model must have '{attr}' attribute")
     
     def display(self, 
-                reflectivity_curve: np.ndarray,
-                q_values: np.ndarray,
-                sigmas: Optional[np.ndarray] = None,
-                q_resolution: Optional[Union[float, np.ndarray]] = None,
-                initial_prior_bounds: Optional[np.ndarray] = None,
-                ambient_sld: Optional[float] = None,
                 controls_width: int = 700,
                 plot_width: int = 400,
                 plot_height: int = 300
@@ -111,47 +164,35 @@ class ReflectorchPlotlyWidget:
             plot_width: Width of the plots in pixels. Default is 400px.
             plot_height: Height of the plots in pixels. Default is 300px.
         """
-        if q_values is None:
-            raise ValueError("q_values must be provided")
-        
-        # Store data for prediction
-        self._data = {
-            'reflectivity_curve': reflectivity_curve,
-            'q_values': q_values,
-            'sigmas': sigmas,
-            'q_resolution': q_resolution,
-            'ambient_sld': ambient_sld
-        }
-        
-        # Get model parameters info
-        param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
-        min_bounds = self.model.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-        max_bounds = self.model.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-        max_deltas = self.model.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
-        
+
         # Create widget components
-        # Create additional params controls first so we can pass it to parameter table
-        self.additional_params_controls = AdditionalParametersControls(self.model)
-        
-        self.parameter_table = ParameterTable(
-            param_labels, min_bounds, max_bounds, max_deltas, initial_prior_bounds,
-            additional_params_controls=self.additional_params_controls
-        )
-        self.preprocessing_controls = PreprocessingControls(len(reflectivity_curve))
+        self.parameter_table, self.additional_params_controls = self._create_parameter_components(self.initial_prior_bounds)
+        self.preprocessing_controls = PreprocessingControls(len(self._data['reflectivity_curve']))
         self.prediction_controls = PredictionControls()
         self.plotting_controls = PlottingControls()
         self.model_selection = ModelSelection()
         
         # Create tabbed interface
+        # if model is not provided, then Models tabs goes first.
         tabs = widgets.Tab()
-        tabs.children = [
-            self.parameter_table.widget,
-            self.preprocessing_controls.widget,
-            self.prediction_controls.widget,
-            self.plotting_controls.widget,
-            self.model_selection.widget
-        ]
-        tabs.titles = ['Parameters', 'Preprocessing', 'Prediction', 'Plotting', 'Models']
+        if self.model is None:
+            tabs.children = [
+                self.model_selection.widget,
+                self.parameter_table.widget,
+                self.preprocessing_controls.widget,
+                self.prediction_controls.widget,
+                self.plotting_controls.widget
+            ]
+            tabs.titles = ['Models', 'Parameters', 'Preprocessing', 'Prediction', 'Plotting']
+        else:
+            tabs.children = [
+                self.parameter_table.widget,
+                self.preprocessing_controls.widget,
+                self.prediction_controls.widget,
+                self.plotting_controls.widget,
+                self.model_selection.widget
+            ]
+            tabs.titles = ['Parameters', 'Preprocessing', 'Prediction', 'Plotting', 'Models']
         
         # Store reference to tabs for later updates
         self.tabs_widget = tabs
@@ -161,12 +202,6 @@ class ReflectorchPlotlyWidget:
             description="Predict",
             button_style='primary',
             tooltip='Run prediction with current settings',
-            layout=widgets.Layout(width='120px')
-        )
-        close_button = widgets.Button(
-            description="Close",
-            button_style='danger',
-            tooltip='Close this widget',
             layout=widgets.Layout(width='120px')
         )
         
@@ -189,7 +224,7 @@ class ReflectorchPlotlyWidget:
         controls_area = widgets.VBox([
             header,
             tabs,
-            widgets.HBox([predict_button, close_button], layout=widgets.Layout(justify_content='center')),
+            widgets.HBox([predict_button], layout=widgets.Layout(justify_content='center')),
             output
         ], layout=widgets.Layout(width=f'{controls_width}px'))
         
@@ -210,7 +245,7 @@ class ReflectorchPlotlyWidget:
         display(container)
         
         # Setup event handlers
-        self._setup_event_handlers(predict_button, close_button, output, reflectivity_plot_container, sld_plot_container, container)
+        self._setup_event_handlers(predict_button, output, reflectivity_plot_container, sld_plot_container, container)
         
         # Setup model selection integration
         self._setup_model_selection_integration(output)
@@ -280,7 +315,7 @@ class ReflectorchPlotlyWidget:
             sld_widget = self.plot_manager.get_widget("sld_plot")
             sld_container.children = [sld_widget]
     
-    def _setup_event_handlers(self, predict_button, close_button, output, reflectivity_container, sld_container, container):
+    def _setup_event_handlers(self, predict_button, output, reflectivity_container, sld_container, container):
         """Setup button event handlers"""
         
         @output.capture(clear_output=True)
@@ -289,6 +324,10 @@ class ReflectorchPlotlyWidget:
             output.clear_output(wait=True)
             
             try:
+                # Check if model is loaded
+                if self.model is None:
+                    print("❌ No model loaded. Please load a model from the Models tab first.")
+                    return
                 # Extract settings from all components with data fallback
                 settings = WidgetSettingsExtractor.extract_settings(
                     self.parameter_table,
@@ -318,17 +357,9 @@ class ReflectorchPlotlyWidget:
                 print(f"❌ Prediction error: {str(e)}")
                 import traceback
                 traceback.print_exc()
-        
-        def on_close(_):
-            """Handle close button click"""
-            self.plot_manager.close_figure("reflectivity_plot")
-            self.plot_manager.close_figure("sld_plot")
-            container.close()
-            print("✅ Reflectorch Plotly widget closed")
-        
+                
         # Connect event handlers
         predict_button.on_click(on_predict)
-        close_button.on_click(on_close)
     
     def _setup_model_selection_integration(self, output):
         """Setup integration with model selection tab"""
@@ -348,11 +379,10 @@ class ReflectorchPlotlyWidget:
                 
                 print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
                 
-                # Import EasyInferenceModel here to avoid circular imports
-                from reflectorch.inference.inference_model import EasyInferenceModel
+                from reflectorch.inference.inference_model import InferenceModel
                 
                 # Create new model instance
-                new_model = EasyInferenceModel(
+                new_model = InferenceModel(
                     config_name=selected_model_info['config_name'],
                     repo_id=selected_model_info['repo_id'],
                     device=self.model.device if hasattr(self.model, 'device') else 'cuda'
@@ -363,16 +393,8 @@ class ReflectorchPlotlyWidget:
                 # Replace current model
                 self.model = new_model
                 
-                # Update parameter table with new model parameters
-                param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
-                min_bounds = self.model.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-                max_bounds = self.model.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-                max_deltas = self.model.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
-                
-                # Create new parameter table
-                new_parameter_table = ParameterTable(
-                    param_labels, min_bounds, max_bounds, max_deltas, None
-                )
+                # Create new parameter components for the new model
+                new_parameter_table, new_additional_params_controls = self._create_parameter_components()
                 
                 # Update the parameter table in the tabs (index 0 is Parameters tab)
                 if self.tabs_widget and hasattr(self.tabs_widget, 'children'):
@@ -380,14 +402,19 @@ class ReflectorchPlotlyWidget:
                     children_list[0] = new_parameter_table.widget
                     self.tabs_widget.children = children_list
                     
-                    # Update our reference to the parameter table
+                    # Update our references to the components
                     self.parameter_table = new_parameter_table
+                    self.additional_params_controls = new_additional_params_controls
                 
                 # Clear previous prediction results
                 self.prediction_result = None
                 
+                # Get parameter info for success message
+                param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
+                max_layers = self.model.trainer.loader.prior_sampler.max_num_layers
+                
                 print(f"✅ Model loaded successfully: {selected_model_info['config_name']}")
-                print(f"Parameters: {len(param_labels)} parameters, {self.model.trainer.loader.prior_sampler.max_num_layers} max layers")
+                print(f"Parameters: {len(param_labels)} parameters, {max_layers} max layers")
                 print("💡 Tip: Go to the Parameters tab to see the updated parameter ranges for the new model")
                 
             except Exception as e:

@@ -9,16 +9,17 @@ from typing import Optional, Union
 from reflectorch.extensions.jupyter.widget import ReflectorchPlotlyWidget
 
 
-def create_widget(model, 
+def create_widget(
                  reflectivity_curve: np.ndarray,
                  q_values: np.ndarray,
+                 model: Optional["InferenceModel"] = None,
                  sigmas: Optional[np.ndarray] = None,
                  q_resolution: Optional[Union[float, np.ndarray]] = None,
                  initial_prior_bounds: Optional[np.ndarray] = None,
                  ambient_sld: Optional[float] = None,
                  controls_width: int = 700,
                  plot_width: int = 400,
-                 plot_height: int = 300
+                 plot_height: int = 300,
                  ) -> ReflectorchPlotlyWidget:
     """
     Create and display a Reflectorch analysis widget
@@ -28,9 +29,9 @@ def create_widget(model,
     
     Parameters:
     ----------
-        model: EasyInferenceModel instance for making predictions
         reflectivity_curve: Experimental reflectivity data
         q_values: Momentum transfer values
+        model: InferenceModel instance for making predictions (optional)
         sigmas: Experimental uncertainties (optional)
         q_resolution: Q-resolution, float or array (optional)
         initial_prior_bounds: Initial bounds for priors, shape (n_params, 2) (optional)
@@ -49,16 +50,18 @@ def create_widget(model,
         ReflectorchWidget instance with the widget displayed
     """
     # Create widget instance
-    widget = ReflectorchPlotlyWidget(model)
-    
-    # Display the widget interface
-    widget.display(
+    widget = ReflectorchPlotlyWidget(
         reflectivity_curve=reflectivity_curve,
         q_values=q_values,
         sigmas=sigmas,
         q_resolution=q_resolution,
         initial_prior_bounds=initial_prior_bounds,
         ambient_sld=ambient_sld,
+        model=model,
+    )
+    
+    # Display the widget interface
+    widget.display(
         controls_width=controls_width,
         plot_width=plot_width,
         plot_height=plot_height

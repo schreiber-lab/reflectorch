@@ -68,6 +68,14 @@ class ParameterTable:
         # Create parameter rows
         parameter_rows = []
         
+        if not self.param_labels:
+            # No parameters available - show message
+            no_params_message = widgets.HTML(
+                value="<i>No model loaded. Please load a model from the Models tab to see parameters.</i>",
+                layout=widgets.Layout(margin='20px 5px')
+            )
+            parameter_rows.append(no_params_message)
+        
         for i, label in enumerate(self.param_labels):
             init_min = float(init_pb[i, 0]) if init_pb is not None else float(self.min_bounds[i])
             init_max = float(init_pb[i, 1]) if init_pb is not None else float(min(self.min_bounds[i] + self.max_deltas[i], self.max_bounds[i]))
@@ -156,6 +164,8 @@ class ParameterTable:
     
     def get_prior_bounds(self) -> np.ndarray:
         """Get current prior bounds from sliders"""
+        if not self.sliders:
+            return np.array([], dtype=np.float32).reshape(0, 2)
         return np.array([s.value for s in self.sliders], dtype=np.float32)
     
     def update_results(self, prediction_result: Dict[str, Any]):
@@ -282,12 +292,12 @@ class AdditionalParametersControls:
     separately to the inference model.
     """
     
-    def __init__(self, inference_model):
+    def __init__(self, inference_model=None):
         """
         Initialize additional parameters controls
         
         Args:
-            inference_model: The inference model to check for additional parameters
+            inference_model: The inference model to check for additional parameters (optional)
         """
         self.inference_model = inference_model
         self.additional_sliders = {}
@@ -295,10 +305,11 @@ class AdditionalParametersControls:
     
     def _create_controls(self) -> widgets.VBox:
         """Create additional parameters controls widget"""
-        controls = [widgets.HTML("<h4>Additional Parameters</h4>")]
+        controls = []
         
         # Check if model has smearing (Q resolution)
-        if (hasattr(self.inference_model, 'trainer') and 
+        if (self.inference_model is not None and
+            hasattr(self.inference_model, 'trainer') and 
             hasattr(self.inference_model.trainer, 'loader') and
             hasattr(self.inference_model.trainer.loader, 'smearing') and
             self.inference_model.trainer.loader.smearing is not None):
@@ -306,12 +317,9 @@ class AdditionalParametersControls:
             q_res_min = float(self.inference_model.trainer.loader.smearing.sigma_min)
             q_res_max = float(self.inference_model.trainer.loader.smearing.sigma_max)
             
-            controls.append(widgets.HTML("<h5>Q Resolution</h5>"))
-            controls.append(widgets.HTML("<i>Q resolution parameter for smearing</i>"))
-            
             # Q resolution slider
             q_res_slider = widgets.FloatSlider(
-                description='Q resolution:',
+                description='Q resolution (dq/q):',
                 min=q_res_min,
                 max=q_res_max,
                 step=(q_res_max - q_res_min) / 100,
@@ -324,11 +332,7 @@ class AdditionalParametersControls:
             self.additional_sliders['q_resolution'] = q_res_slider
             controls.append(q_res_slider)
             controls.append(widgets.HTML("<br>"))
-        
-        # If no additional parameters, show a message
-        if not self.additional_sliders:
-            controls.append(widgets.HTML("<i>No additional parameters for this model</i>"))
-        
+                
         return widgets.VBox(controls)
     
     def get_additional_params(self) -> Dict[str, float]:
