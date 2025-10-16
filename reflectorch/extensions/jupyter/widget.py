@@ -100,16 +100,18 @@ class ReflectorchPlotlyWidget:
         self.additional_params_controls = None
         self.model_selection = None
         self.tabs_widget = None  # Store reference to tabs for updating
+        self.predict_button = None  # Store reference to predict button
         
         if self.model is not None:
             self._validate_model()
     
-    def _create_parameter_components(self, initial_prior_bounds=None):
+    def _create_parameter_components(self, initial_prior_bounds=None, predict_button=None):
         """
         Create parameter table and additional parameters controls based on current model
         
         Args:
             initial_prior_bounds: Initial bounds for priors, shape (n_params, 2)
+            predict_button: Optional predict button to include in parameter table
             
         Returns:
             Tuple of (parameter_table, additional_params_controls)
@@ -132,7 +134,8 @@ class ReflectorchPlotlyWidget:
         
         parameter_table = ParameterTable(
             param_labels, min_bounds, max_bounds, max_deltas, initial_prior_bounds,
-            additional_params_controls=additional_params_controls
+            additional_params_controls=additional_params_controls,
+            predict_button=predict_button
         )
         
         return parameter_table, additional_params_controls
@@ -165,8 +168,19 @@ class ReflectorchPlotlyWidget:
             plot_height: Height of the plots in pixels. Default is 300px.
         """
 
+        # Create predict button (disabled by default if no model)
+        self.predict_button = widgets.Button(
+            description="Predict",
+            button_style='primary',
+            tooltip='Run prediction with current settings' if self.model else 'Load a model first',
+            layout=widgets.Layout(width='120px'),
+            disabled=(self.model is None)
+        )
+        
         # Create widget components
-        self.parameter_table, self.additional_params_controls = self._create_parameter_components(self.initial_prior_bounds)
+        self.parameter_table, self.additional_params_controls = self._create_parameter_components(
+            self.initial_prior_bounds, self.predict_button
+        )
         self.preprocessing_controls = PreprocessingControls(len(self._data['reflectivity_curve']))
         self.prediction_controls = PredictionControls()
         self.plotting_controls = PlottingControls()
@@ -193,17 +207,10 @@ class ReflectorchPlotlyWidget:
                 self.model_selection.widget
             ]
             tabs.titles = ['Parameters', 'Preprocessing', 'Prediction', 'Plotting', 'Models']
-        
+
+        self.tab_indices = dict(zip(tabs.titles, range(len(tabs.titles))))
         # Store reference to tabs for later updates
         self.tabs_widget = tabs
-        
-        # Control buttons
-        predict_button = widgets.Button(
-            description="Predict",
-            button_style='primary',
-            tooltip='Run prediction with current settings',
-            layout=widgets.Layout(width='120px')
-        )
         
         # Output areas
         output = widgets.Output()
@@ -224,7 +231,6 @@ class ReflectorchPlotlyWidget:
         controls_area = widgets.VBox([
             header,
             tabs,
-            widgets.HBox([predict_button], layout=widgets.Layout(justify_content='center')),
             output
         ], layout=widgets.Layout(width=f'{controls_width}px'))
         
@@ -245,7 +251,7 @@ class ReflectorchPlotlyWidget:
         display(container)
         
         # Setup event handlers
-        self._setup_event_handlers(predict_button, output, reflectivity_plot_container, sld_plot_container, container)
+        self._setup_event_handlers(self.predict_button, output, reflectivity_plot_container, sld_plot_container, container)
         
         # Setup model selection integration
         self._setup_model_selection_integration(output)
@@ -323,11 +329,20 @@ class ReflectorchPlotlyWidget:
             """Handle predict button click"""
             output.clear_output(wait=True)
             
+            # Store original button state
+            original_description = predict_button.description
+            original_disabled = predict_button.disabled
+            
             try:
                 # Check if model is loaded
                 if self.model is None:
                     print("❌ No model loaded. Please load a model from the Models tab first.")
                     return
+                
+                # Disable button and show "Predicting..." 
+                predict_button.disabled = True
+                predict_button.description = "Predicting..."
+                
                 # Extract settings from all components with data fallback
                 settings = WidgetSettingsExtractor.extract_settings(
                     self.parameter_table,
@@ -357,6 +372,10 @@ class ReflectorchPlotlyWidget:
                 print(f"❌ Prediction error: {str(e)}")
                 import traceback
                 traceback.print_exc()
+            finally:
+                # Always restore button state, even if there was an error
+                predict_button.description = original_description
+                predict_button.disabled = original_disabled
                 
         # Connect event handlers
         predict_button.on_click(on_predict)
@@ -371,11 +390,19 @@ class ReflectorchPlotlyWidget:
         @output.capture(clear_output=False)
         def on_load_model(_):
             """Handle load model button click"""
+            # Store original button state
+            original_description = load_button.description
+            original_disabled = load_button.disabled
+            
             try:
                 selected_model_info = self.model_selection.get_selected_model_info()
                 if selected_model_info is None:
                     print("❌ No model selected")
                     return
+                
+                # Disable button and show "Downloading..."
+                load_button.disabled = True
+                load_button.description = "Downloading..."
                 
                 print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
                 
@@ -393,18 +420,29 @@ class ReflectorchPlotlyWidget:
                 # Replace current model
                 self.model = new_model
                 
-                # Create new parameter components for the new model
-                new_parameter_table, new_additional_params_controls = self._create_parameter_components()
+                # Enable the predict button since we now have a model
+                if self.predict_button:
+                    self.predict_button.disabled = False
+                    self.predict_button.tooltip = 'Run prediction with current settings'
                 
-                # Update the parameter table in the tabs (index 0 is Parameters tab)
+                # Create new parameter components for the new model (reuse the same predict button)
+                new_parameter_table, new_additional_params_controls = self._create_parameter_components(predict_button=self.predict_button)
+                
+                # Update the parameter table title with the new model name
+                new_parameter_table.param_title.value = f"<h4>Parameter Configuration for {selected_model_info['model_name']}</h4>"
+                
+                # Update the parameter table in the tabs
                 if self.tabs_widget and hasattr(self.tabs_widget, 'children'):
                     children_list = list(self.tabs_widget.children)
-                    children_list[0] = new_parameter_table.widget
+                    children_list[self.tab_indices['Parameters']] = new_parameter_table.widget
                     self.tabs_widget.children = children_list
                     
                     # Update our references to the components
                     self.parameter_table = new_parameter_table
                     self.additional_params_controls = new_additional_params_controls
+                    
+                    # Switch to Parameters tab automatically
+                    self.tabs_widget.selected_index = self.tab_indices['Parameters']
                 
                 # Clear previous prediction results
                 self.prediction_result = None
@@ -421,6 +459,10 @@ class ReflectorchPlotlyWidget:
                 print(f"❌ Error loading model: {str(e)}")
                 import traceback
                 traceback.print_exc()
+            finally:
+                # Always restore button state, even if there was an error
+                load_button.description = original_description
+                load_button.disabled = original_disabled
         
         # Connect the load button
         load_button.on_click(on_load_model)

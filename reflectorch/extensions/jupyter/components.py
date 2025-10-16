@@ -31,7 +31,8 @@ class ParameterTable:
     def __init__(self, param_labels: List[str], min_bounds: np.ndarray, 
                  max_bounds: np.ndarray, max_deltas: np.ndarray, 
                  initial_bounds: Optional[np.ndarray] = None,
-                 additional_params_controls: Optional['AdditionalParametersControls'] = None):
+                 additional_params_controls: Optional['AdditionalParametersControls'] = None,
+                 predict_button: Optional[widgets.Button] = None):
         """
         Initialize parameter table
         
@@ -42,6 +43,7 @@ class ParameterTable:
             max_deltas: Maximum allowed range for each parameter
             initial_bounds: Initial bounds, shape (n_params, 2)
             additional_params_controls: Optional additional parameters component
+            predict_button: Optional predict button to include in the table header
         """
         self.param_labels = param_labels
         self.min_bounds = min_bounds
@@ -50,6 +52,7 @@ class ParameterTable:
         self.sliders = []
         self.result_displays = {}
         self.additional_params_controls = additional_params_controls
+        self.predict_button = predict_button
         
         self.widget = self._create_table(initial_bounds)
     
@@ -126,10 +129,21 @@ class ParameterTable:
             ], layout=widgets.Layout(margin='2px 0px'))
             
             parameter_rows.append(row)
+
+        self.param_title = widgets.HTML("<h4>Parameter Configuration</h4>")
+        
+        # Create title row with optional predict button
+        if self.predict_button is not None:
+            title_row = widgets.HBox([
+                self.param_title,
+                self.predict_button
+            ], layout=widgets.Layout(justify_content='space-between', align_items='center'))
+        else:
+            title_row = self.param_title
         
         # Create the main parameter table
         main_table = widgets.VBox([
-            widgets.HTML("<h4>Parameter Configuration</h4>"),
+            title_row,
             header,
             widgets.HTML("<hr style='margin: 5px 0px;'>"),
             *parameter_rows
@@ -213,16 +227,14 @@ class PreprocessingControls:
             # Truncation section
             widgets.HTML("<h5>Data Truncation</h5>"),
             widgets.HTML("<i>Specify which data points to include in the analysis</i>"),
-            widgets.HBox([
+            widgets.VBox([
                 widgets.IntSlider(
                     description='Left index:', min=0, max=max(0, self.n_datapoints-1), 
-                    step=1, value=0, style={'description_width': '100px'},
-                    layout=widgets.Layout(width='300px')
+                    step=1, value=0,
                 ),
                 widgets.IntSlider(
                     description='Right index:', min=1, max=self.n_datapoints, 
-                    step=1, value=self.n_datapoints, style={'description_width': '100px'},
-                    layout=widgets.Layout(width='300px')
+                    step=1, value=self.n_datapoints,
                 )
             ]),
             
@@ -231,23 +243,20 @@ class PreprocessingControls:
             # Error bar filtering section  
             widgets.HTML("<h5>Error Bar Filtering</h5>"),
             widgets.HTML("<i>Filter out unreliable data points based on error bars</i>"),
-            widgets.HBox([
-                widgets.Checkbox(description='Enable filtering', value=True, style={'description_width': '120px'}),
-                widgets.Checkbox(description='Remove singles', value=True, style={'description_width': '120px'}),
-                widgets.Checkbox(description='Remove consecutives', value=True, style={'description_width': '140px'})
+            widgets.VBox([
+                widgets.Checkbox(description='Enable filtering', value=True),
+                widgets.Checkbox(description='Remove singles', value=True),
+                widgets.Checkbox(description='Remove consecutives', value=True)
             ]),
-            widgets.HBox([
+            widgets.VBox([
                 widgets.FloatSlider(
                     description='Threshold:', min=0.0, max=1.0, step=0.01, value=0.3,
-                    style={'description_width': '100px'}, layout=widgets.Layout(width='250px')
                 ),
                 widgets.IntSlider(
                     description='Consecutive:', min=1, max=10, step=1, value=3,
-                    style={'description_width': '100px'}, layout=widgets.Layout(width='200px')
                 ),
                 widgets.FloatSlider(
                     description='Q start trunc:', min=0.0, max=1.0, step=0.01, value=0.1,
-                    style={'description_width': '100px'}, layout=widgets.Layout(width='250px')
                 )
             ])
         ])
@@ -266,9 +275,9 @@ class PredictionControls:
             
             # Prediction settings
             widgets.HTML("<h5>Prediction Options</h5>"),
-            widgets.HBox([
-                widgets.Checkbox(description='Polish prediction', value=True, style={'description_width': '140px'}),
-                widgets.Checkbox(description='Use sigmas for polishing', value=True, style={'description_width': '170px'})
+            widgets.VBox([
+                widgets.Checkbox(description='Polish prediction', value=True),
+                widgets.Checkbox(description='Use sigmas for polishing', value=True)
             ]),
             
             widgets.HTML("<br>"),
@@ -276,10 +285,10 @@ class PredictionControls:
             # Computation settings
             widgets.HTML("<h5>Computation Settings</h5>"),
             widgets.HTML("<i>Choose what to calculate during prediction</i>"),
-            widgets.HBox([
-                widgets.Checkbox(description='Calculate curve', value=True, style={'description_width': '120px'}),
-                widgets.Checkbox(description='Calculate pred SLD', value=True, style={'description_width': '140px'}),
-                widgets.Checkbox(description='Calculate polished SLD', value=True, style={'description_width': '160px'})
+            widgets.VBox([
+                widgets.Checkbox(description='Calculate curve', value=True),
+                widgets.Checkbox(description='Calculate pred SLD', value=True),
+                widgets.Checkbox(description='Calculate polished SLD', value=True)
             ])
         ])
 
@@ -322,7 +331,7 @@ class AdditionalParametersControls:
                 description='Q resolution (dq/q):',
                 min=q_res_min,
                 max=q_res_max,
-                step=(q_res_max - q_res_min) / 100,
+                step=0.001,
                 value=(q_res_min + q_res_max) / 2,  # Default to middle value
                 readout_format='.4f',
                 style={'description_width': '120px'},
@@ -353,11 +362,15 @@ class PlottingControls:
             
             # Display options
             widgets.HTML("<h5>Display Options</h5>"),
-            widgets.HBox([
-                widgets.Checkbox(description='Show error bars', value=True, style={'description_width': '120px'}),
-                widgets.Checkbox(description='Show q-resolution', value=False, style={'description_width': '130px'}),
-                widgets.Checkbox(description='Log x-axis', value=False, style={'description_width': '100px'}),
-                widgets.Checkbox(description='Plot SLD profile', value=True, style={'description_width': '130px'})
+            widgets.VBox([
+                widgets.HBox([
+                    widgets.Checkbox(description='Show error bars', value=True),
+                    widgets.Checkbox(description='Show q-resolution', value=False),
+                ]),
+                widgets.HBox([
+                    widgets.Checkbox(description='Log x-axis', value=False),
+                    widgets.Checkbox(description='Plot SLD profile', value=True)
+                ])
             ]),
             
             # SLD padding
@@ -377,22 +390,19 @@ class PlottingControls:
             
             # Color customization
             widgets.HTML("<h5>Color Customization</h5>"),
-            widgets.HTML("<i>Experimental data colors</i>"),
-            widgets.HBox([
-                widgets.ColorPicker(description='Data color:', value='#0000FF', style={'description_width': '100px'}),
-                widgets.ColorPicker(description='Error bars:', value='#800080', style={'description_width': '100px'})
+            widgets.VBox([
+                widgets.ColorPicker(description='Data color:', value='#0000FF'),
+                widgets.ColorPicker(description='Error bars:', value='#800080')
             ]),
             
-            widgets.HTML("<i>Prediction colors</i>"),
-            widgets.HBox([
-                widgets.ColorPicker(description='Prediction:', value='#FF0000', style={'description_width': '100px'}),
-                widgets.ColorPicker(description='Polished:', value='#FFA500', style={'description_width': '100px'})
+            widgets.VBox([
+                widgets.ColorPicker(description='Prediction:', value='#FF0000'),
+                widgets.ColorPicker(description='Polished:', value='#FFA500')
             ]),
             
-            widgets.HTML("<i>SLD profile colors</i>"),
-            widgets.HBox([
-                widgets.ColorPicker(description='SLD pred:', value='#FF0000', style={'description_width': '100px'}),
-                widgets.ColorPicker(description='SLD polish:', value='#FFA500', style={'description_width': '100px'})
+            widgets.VBox([
+                widgets.ColorPicker(description='SLD pred:', value='#FF0000'),
+                widgets.ColorPicker(description='SLD polish:', value='#FFA500')
             ])
         ])
 

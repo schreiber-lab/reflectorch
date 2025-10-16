@@ -62,20 +62,6 @@ class ModelSelection:
                     {bound_width_ranges_table}
                 </div>
             </div>
-            
-            <div style="margin-bottom: 12px;">
-                <h5 style="margin: 0 0 6px 0; color: #495057; font-size: 14px;">Misalignment Support</h5>
-                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; font-size: 12px;">
-                    {misalignment_info}
-                </div>
-            </div>
-            
-            <div>
-                <h5 style="margin: 0 0 6px 0; color: #495057; font-size: 14px;">Additional Info</h5>
-                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px; font-size: 12px;">
-                    {additional_metadata}
-                </div>
-            </div>
         </div>
         """
         
