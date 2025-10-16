@@ -3,7 +3,10 @@ Reflectorch Jupyter Widget
 """
 
 import numpy as np
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from reflectorch.inference.inference_model import InferenceModel
 import ipywidgets as widgets
 from IPython.display import display
 
@@ -21,6 +24,7 @@ from reflectorch.extensions.jupyter.components import (
     WidgetSettingsExtractor,
 )
 from reflectorch.extensions.jupyter.model_selection import ModelSelection
+from reflectorch.extensions.jupyter.log_widget import LogWidget
 
 
 class ReflectorchPlotlyWidget:
@@ -101,6 +105,7 @@ class ReflectorchPlotlyWidget:
         self.model_selection = None
         self.tabs_widget = None  # Store reference to tabs for updating
         self.predict_button = None  # Store reference to predict button
+        self.log_widget = None  # Store reference to log widget
         
         if self.model is not None:
             self._validate_model()
@@ -147,6 +152,7 @@ class ReflectorchPlotlyWidget:
             if not hasattr(self.model, attr):
                 raise ValueError(f"Model must have '{attr}' attribute")
     
+    
     def display(self, 
                 controls_width: int = 700,
                 plot_width: int = 400,
@@ -186,6 +192,9 @@ class ReflectorchPlotlyWidget:
         self.plotting_controls = PlottingControls()
         self.model_selection = ModelSelection()
         
+        # Create log widget
+        self.log_widget = LogWidget()
+        
         # Create tabbed interface
         # if model is not provided, then Models tabs goes first.
         tabs = widgets.Tab()
@@ -212,9 +221,6 @@ class ReflectorchPlotlyWidget:
         # Store reference to tabs for later updates
         self.tabs_widget = tabs
         
-        # Output areas
-        output = widgets.Output()
-        
         # Create plot containers (initially empty)
         reflectivity_plot_container = widgets.VBox([])
         sld_plot_container = widgets.VBox([])
@@ -230,14 +236,19 @@ class ReflectorchPlotlyWidget:
         
         controls_area = widgets.VBox([
             header,
-            tabs,
-            output
+            tabs
         ], layout=widgets.Layout(width=f'{controls_width}px'))
         
         # Horizontal layout: controls on left, plots on right
-        main_layout = widgets.HBox([
+        main_content = widgets.HBox([
             controls_area,
             plot_area
+        ])
+        
+        # Complete layout with log at the bottom
+        main_layout = widgets.VBox([
+            main_content,
+            self.log_widget.widget
         ])
         
         # Add border around the entire widget
@@ -251,10 +262,10 @@ class ReflectorchPlotlyWidget:
         display(container)
         
         # Setup event handlers
-        self._setup_event_handlers(self.predict_button, output, reflectivity_plot_container, sld_plot_container, container)
+        self._setup_event_handlers(self.predict_button, reflectivity_plot_container, sld_plot_container, container)
         
         # Setup model selection integration
-        self._setup_model_selection_integration(output)
+        self._setup_model_selection_integration()
         
         # Setup truncation synchronization
         self._setup_truncation_sync()
@@ -282,7 +293,10 @@ class ReflectorchPlotlyWidget:
             self._plot_initial_data(settings, reflectivity_container, sld_container, plot_width, plot_height)
             
         except Exception as e:
-            print(f"⚠️  Could not create initial plots: {str(e)}")
+            if self.log_widget:
+                self.log_widget.log(f"⚠️  Could not create initial plots: {str(e)}")
+            else:
+                print(f"⚠️  Could not create initial plots: {str(e)}")
     
     def _plot_initial_data(self, settings, reflectivity_container, sld_container, plot_width, plot_height):
         """Plot only experimental data before any prediction"""
@@ -321,148 +335,146 @@ class ReflectorchPlotlyWidget:
             sld_widget = self.plot_manager.get_widget("sld_plot")
             sld_container.children = [sld_widget]
     
-    def _setup_event_handlers(self, predict_button, output, reflectivity_container, sld_container, container):
+    def _setup_event_handlers(self, predict_button, reflectivity_container, sld_container, container):
         """Setup button event handlers"""
         
-        @output.capture(clear_output=True)
         def on_predict(_):
             """Handle predict button click"""
-            output.clear_output(wait=True)
-            
-            # Store original button state
-            original_description = predict_button.description
-            original_disabled = predict_button.disabled
-            
-            try:
-                # Check if model is loaded
-                if self.model is None:
-                    print("❌ No model loaded. Please load a model from the Models tab first.")
-                    return
+            with self.log_widget.capture_prints():
+                # Store original button state
+                original_description = predict_button.description
+                original_disabled = predict_button.disabled
                 
-                # Disable button and show "Predicting..." 
-                predict_button.disabled = True
-                predict_button.description = "Predicting..."
-                
-                # Extract settings from all components with data fallback
-                settings = WidgetSettingsExtractor.extract_settings(
-                    self.parameter_table,
-                    self.preprocessing_controls,
-                    self.prediction_controls,
-                    self.plotting_controls,
-                    self.additional_params_controls,
-                    data=self._data
-                )
-                
-                # Separate prediction and plotting parameters
-                prediction_params, plotting_params = WidgetSettingsExtractor.separate_settings(settings)
-                
-                # Run prediction with all parameters
-                prediction_result = self.model.preprocess_and_predict(**prediction_params)
-                
-                # Update parameter table with results
-                self.parameter_table.update_results(prediction_result)
-                
-                # Plot results
-                self._plot_results(prediction_result, plotting_params, reflectivity_container, sld_container)
-                
-                # Store results
-                self.prediction_result = prediction_result
-                
-            except Exception as e:
-                print(f"❌ Prediction error: {str(e)}")
-                import traceback
-                traceback.print_exc()
-            finally:
-                # Always restore button state, even if there was an error
-                predict_button.description = original_description
-                predict_button.disabled = original_disabled
+                try:
+                    # Check if model is loaded
+                    if self.model is None:
+                        print("❌ No model loaded. Please load a model from the Models tab first.")
+                        return
+                    
+                    # Disable button and show "Predicting..." 
+                    predict_button.disabled = True
+                    predict_button.description = "Predicting..."
+                    
+                    # Extract settings from all components with data fallback
+                    settings = WidgetSettingsExtractor.extract_settings(
+                        self.parameter_table,
+                        self.preprocessing_controls,
+                        self.prediction_controls,
+                        self.plotting_controls,
+                        self.additional_params_controls,
+                        data=self._data
+                    )
+                    
+                    # Separate prediction and plotting parameters
+                    prediction_params, plotting_params = WidgetSettingsExtractor.separate_settings(settings)
+                    
+                    # Run prediction with all parameters
+                    prediction_result = self.model.preprocess_and_predict(**prediction_params)
+                    
+                    # Update parameter table with results
+                    self.parameter_table.update_results(prediction_result)
+                    
+                    # Plot results
+                    self._plot_results(prediction_result, plotting_params, reflectivity_container, sld_container)
+                    
+                    # Store results
+                    self.prediction_result = prediction_result
+                    
+                except Exception as e:
+                    print(f"❌ Prediction error: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                finally:
+                    # Always restore button state, even if there was an error
+                    predict_button.description = original_description
+                    predict_button.disabled = original_disabled
                 
         # Connect event handlers
         predict_button.on_click(on_predict)
     
-    def _setup_model_selection_integration(self, output):
+    def _setup_model_selection_integration(self):
         """Setup integration with model selection tab"""
         if not self.model_selection:
             return
         
         load_button = self.model_selection._widgets['download_button']
         
-        @output.capture(clear_output=False)
         def on_load_model(_):
             """Handle load model button click"""
-            # Store original button state
-            original_description = load_button.description
-            original_disabled = load_button.disabled
-            
-            try:
-                selected_model_info = self.model_selection.get_selected_model_info()
-                if selected_model_info is None:
-                    print("❌ No model selected")
-                    return
+            with self.log_widget.capture_prints():
+                # Store original button state
+                original_description = load_button.description
+                original_disabled = load_button.disabled
                 
-                # Disable button and show "Downloading..."
-                load_button.disabled = True
-                load_button.description = "Downloading..."
-                
-                print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
-                
-                from reflectorch.inference.inference_model import InferenceModel
-                
-                # Create new model instance
-                new_model = InferenceModel(
-                    config_name=selected_model_info['config_name'],
-                    repo_id=selected_model_info['repo_id'],
-                    device=self.model.device if hasattr(self.model, 'device') else 'cuda'
-                )
-                
-                print(f"📥 Model downloaded and initialized successfully")
-                
-                # Replace current model
-                self.model = new_model
-                
-                # Enable the predict button since we now have a model
-                if self.predict_button:
-                    self.predict_button.disabled = False
-                    self.predict_button.tooltip = 'Run prediction with current settings'
-                
-                # Create new parameter components for the new model (reuse the same predict button)
-                new_parameter_table, new_additional_params_controls = self._create_parameter_components(predict_button=self.predict_button)
-                
-                # Update the parameter table title with the new model name
-                new_parameter_table.param_title.value = f"<h4>Parameter Configuration for {selected_model_info['model_name']}</h4>"
-                
-                # Update the parameter table in the tabs
-                if self.tabs_widget and hasattr(self.tabs_widget, 'children'):
-                    children_list = list(self.tabs_widget.children)
-                    children_list[self.tab_indices['Parameters']] = new_parameter_table.widget
-                    self.tabs_widget.children = children_list
+                try:
+                    selected_model_info = self.model_selection.get_selected_model_info()
+                    if selected_model_info is None:
+                        print("❌ No model selected")
+                        return
                     
-                    # Update our references to the components
-                    self.parameter_table = new_parameter_table
-                    self.additional_params_controls = new_additional_params_controls
+                    # Disable button and show "Downloading..."
+                    load_button.disabled = True
+                    load_button.description = "Downloading..."
                     
-                    # Switch to Parameters tab automatically
-                    self.tabs_widget.selected_index = self.tab_indices['Parameters']
-                
-                # Clear previous prediction results
-                self.prediction_result = None
-                
-                # Get parameter info for success message
-                param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
-                max_layers = self.model.trainer.loader.prior_sampler.max_num_layers
-                
-                print(f"✅ Model loaded successfully: {selected_model_info['config_name']}")
-                print(f"Parameters: {len(param_labels)} parameters, {max_layers} max layers")
-                print("💡 Tip: Go to the Parameters tab to see the updated parameter ranges for the new model")
-                
-            except Exception as e:
-                print(f"❌ Error loading model: {str(e)}")
-                import traceback
-                traceback.print_exc()
-            finally:
-                # Always restore button state, even if there was an error
-                load_button.description = original_description
-                load_button.disabled = original_disabled
+                    print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
+                    
+                    from reflectorch.inference.inference_model import InferenceModel
+                    
+                    # Create new model instance
+                    new_model = InferenceModel(
+                        config_name=selected_model_info['config_name'],
+                        repo_id=selected_model_info['repo_id'],
+                        device=self.model.device if hasattr(self.model, 'device') else 'cuda'
+                    )
+                    
+                    print(f"📥 Model downloaded and initialized successfully")
+                    
+                    # Replace current model
+                    self.model = new_model
+                    
+                    # Enable the predict button since we now have a model
+                    if self.predict_button:
+                        self.predict_button.disabled = False
+                        self.predict_button.tooltip = 'Run prediction with current settings'
+                    
+                    # Create new parameter components for the new model (reuse the same predict button)
+                    new_parameter_table, new_additional_params_controls = self._create_parameter_components(predict_button=self.predict_button)
+                    
+                    # Update the parameter table title with the new model name
+                    new_parameter_table.param_title.value = f"<h4>Parameter Configuration for {selected_model_info['model_name']}</h4>"
+                    
+                    # Update the parameter table in the tabs
+                    if self.tabs_widget and hasattr(self.tabs_widget, 'children'):
+                        children_list = list(self.tabs_widget.children)
+                        children_list[self.tab_indices['Parameters']] = new_parameter_table.widget
+                        self.tabs_widget.children = children_list
+                        
+                        # Update our references to the components
+                        self.parameter_table = new_parameter_table
+                        self.additional_params_controls = new_additional_params_controls
+                        
+                        # Switch to Parameters tab automatically
+                        self.tabs_widget.selected_index = self.tab_indices['Parameters']
+                    
+                    # Clear previous prediction results
+                    self.prediction_result = None
+                    
+                    # Get parameter info for success message
+                    param_labels = self.model.trainer.loader.prior_sampler.param_model.get_param_labels()
+                    max_layers = self.model.trainer.loader.prior_sampler.max_num_layers
+                    
+                    print(f"✅ Model loaded successfully: {selected_model_info['config_name']}")
+                    print(f"Parameters: {len(param_labels)} parameters, {max_layers} max layers")
+                    print("💡 Tip: Go to the Parameters tab to see the updated parameter ranges for the new model")
+                    
+                except Exception as e:
+                    print(f"❌ Error loading model: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                finally:
+                    # Always restore button state, even if there was an error
+                    load_button.description = original_description
+                    load_button.disabled = original_disabled
         
         # Connect the load button
         load_button.on_click(on_load_model)
@@ -563,13 +575,19 @@ class ReflectorchPlotlyWidget:
                     self._plot_results(self.prediction_result, settings, reflectivity_container, sld_container)
                     
                 except Exception as e:
-                    print(f"⚠️  Error updating plot: {str(e)}")
+                    if self.log_widget:
+                        self.log_widget.log(f"⚠️  Error updating plot: {str(e)}")
+                    else:
+                        print(f"⚠️  Error updating plot: {str(e)}")
             else:
                 # If no prediction results yet, just update the initial plot
                 try:
                     self._update_initial_plot_style(reflectivity_container, sld_container)
                 except Exception as e:
-                    print(f"⚠️  Error updating initial plot: {str(e)}")
+                    if self.log_widget:
+                        self.log_widget.log(f"⚠️  Error updating initial plot: {str(e)}")
+                    else:
+                        print(f"⚠️  Error updating initial plot: {str(e)}")
         
         # Setup observers for all reactive controls
         for control in reactive_controls:
@@ -594,4 +612,7 @@ class ReflectorchPlotlyWidget:
             self._plot_initial_data(settings, reflectivity_container, sld_container)
             
         except Exception as e:
-            print(f"⚠️  Error updating initial plot style: {str(e)}")
+            if self.log_widget:
+                self.log_widget.log(f"⚠️  Error updating initial plot style: {str(e)}")
+            else:
+                print(f"⚠️  Error updating initial plot style: {str(e)}")

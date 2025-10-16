@@ -4,7 +4,10 @@ Reflectorch widgets and plots in Jupyter notebooks.
 """
 
 import numpy as np
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from reflectorch.inference.inference_model import InferenceModel
 
 from reflectorch.extensions.jupyter.widget import ReflectorchPlotlyWidget
 

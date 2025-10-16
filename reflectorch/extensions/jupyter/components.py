@@ -194,14 +194,14 @@ class ParameterTable:
             # Update predicted value
             if i < len(predicted_params):
                 pred_val = predicted_params[i]
-                displays['predicted'].value = f"<b>{pred_val:.3f}</b>"
+                displays['predicted'].value = f"{pred_val:.3f}"
             else:
                 displays['predicted'].value = "<i>-</i>"
             
             # Update polished value
             if polished_params is not None and i < len(polished_params):
                 pol_val = polished_params[i]
-                displays['polished'].value = f"<b>{pol_val:.3f}</b>"
+                displays['polished'].value = f"{pol_val:.3f}"
             else:
                 displays['polished'].value = "<i>-</i>"
 
