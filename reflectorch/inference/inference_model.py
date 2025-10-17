@@ -1,34 +1,25 @@
-import asyncio
-import logging
 from pathlib import Path
-import time
 
 import numpy as np
 import torch
 from torch import Tensor
 from typing import List, Tuple, Union
-import ipywidgets as widgets
-from IPython.display import display
 from huggingface_hub import hf_hub_download
 
-from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
+from reflectorch.data_generation.priors import BasicParams
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ, MaskedVariableQ
-from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.data_generation.utils import get_density_profiles
 from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
-from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
+from reflectorch.paths import CONFIG_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
-    get_trainer_by_name, train_from_config
+    get_trainer_by_name
 )
-from reflectorch.runs.config import load_config
 from reflectorch.ml.trainers import PointEstimatorTrainer
 from reflectorch.data_generation.likelihoods import LogLikelihood
 
-from reflectorch.inference.preprocess_exp import StandardPreprocessing
-from reflectorch.inference.scipy_fitter import standard_refl_fit, refl_fit, get_fit_with_growth
-from reflectorch.inference.sampler_solution import simple_sampler_solution, get_best_mse_param
-from reflectorch.inference.record_time import print_time
-from reflectorch.inference.plotting import plot_reflectivity, plot_prediction_results, print_prediction_results
+from reflectorch.inference.scipy_fitter import refl_fit, get_fit_with_growth
+from reflectorch.inference.sampler_solution import get_best_mse_param
 from reflectorch.utils import get_filtering_mask, to_t
 
 class InferenceModel(object):
@@ -821,287 +812,7 @@ class InferenceModel(object):
             )
             return best_param
 
-    def predict_using_widget(self, reflectivity_curve, **kwargs):
-        """
-        """
 
-        NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
-        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
-
-        print(f'Adjust the sliders for each parameter and press "Predict". Repeat as desired. Press "Close Widget" to finish.')
-
-        interval_widgets = []
-        for i in range(NUM_INTERVALS):
-            label = widgets.Label(value=f'{param_labels[i]}')
-            initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
-            slider = widgets.FloatRangeSlider(
-                value=[min_bounds[i], initial_max],
-                min=min_bounds[i],
-                max=max_bounds[i],
-                step=0.01,
-                layout=widgets.Layout(width='400px'),
-                style={'description_width': '60px'}
-            )
-
-            def validate_range(change, slider=slider, max_width=max_deltas[i]):
-                min_val, max_val = change['new']
-                if max_val - min_val > max_width:
-                    old_min_val, old_max_val = change['old']
-                    if abs(old_min_val - min_val) > abs(old_max_val - max_val):
-                        max_val = min_val + max_width
-                    else:
-                        min_val = max_val - max_width
-                    slider.value = [min_val, max_val]
-
-            slider.observe(validate_range, names='value')
-            interval_widgets.append((slider, widgets.HBox([label, slider])))
-
-        sliders_box = widgets.VBox([iw[1] for iw in interval_widgets])
-
-        output = widgets.Output()
-        predict_button = widgets.Button(description="Predict")
-        close_button = widgets.Button(description="Close Widget")
-
-        container = widgets.VBox([sliders_box, widgets.HBox([predict_button, close_button]), output])
-        display(container)
-
-        @output.capture(clear_output=True)
-        def on_predict_click(_):
-            if 'prior_bounds' in kwargs:
-                array_values = kwargs.pop('prior_bounds')
-                for i, (s, _) in enumerate(interval_widgets):
-                    s.value = tuple(array_values[i])
-            else:
-                values = [(s.value[0], s.value[1]) for s, _ in interval_widgets]
-                array_values = np.array(values)
-
-            prediction_result = self.predict(reflectivity_curve=reflectivity_curve,
-                                            prior_bounds=array_values,
-                                            **kwargs)
-            param_names = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-            print_prediction_results(prediction_result)
-
-            plot_prediction_results(
-                prediction_result,
-                q_exp=kwargs['q_values'],
-                curve_exp=reflectivity_curve,
-            )
-            self.widget_prediction_result = prediction_result
-
-        def on_close_click(_):
-            container.close()
-            print("Widget closed.")
-
-        predict_button.on_click(on_predict_click)
-        close_button.on_click(on_close_click)
-
-    def preprocess_and_predict_using_widget(self,
-                                            reflectivity_curve,
-                                            q_values=None,
-                                            sigmas=None,
-                                            q_resolution=None,
-                                            prior_bounds=None,
-                                            ambient_sld=None,
-                                            ):
-        """
-        Interactive widget around `preprocess_and_predict`
-        Results are stored in `self.widget_prediction_result`
-        """
-
-        if q_values is None:
-            raise ValueError("q_values must be provided for this widget.")
-
-        N = len(reflectivity_curve)
-
-        # ---------- Priors sliders ----------
-        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
-        NUM = len(param_labels)
-
-        sliders, rows = [], []
-        init_pb = np.array(prior_bounds) if prior_bounds is not None else None
-        for i in range(NUM):
-            init_min = float(init_pb[i, 0]) if init_pb is not None else float(min_bounds[i])
-            init_max = float(init_pb[i, 1]) if init_pb is not None else float(min(min_bounds[i] + max_deltas[i], max_bounds[i]))
-            lab = widgets.Label(value=param_labels[i])
-            s = widgets.FloatRangeSlider(
-                value=[init_min, init_max],
-                min=float(min_bounds[i]),
-                max=float(max_bounds[i]),
-                step=0.01,
-                layout=widgets.Layout(width='420px'),
-                readout_format='.3f'
-            )
-            # Constrain slider widths
-            def _mk_validator(slider, max_width=float(max_deltas[i])):
-                def _validate(change):
-                    a, b = change['new']
-                    if b - a > max_width:
-                        oa, ob = change['old']
-                        if abs(oa - a) > abs(ob - b):
-                            b = a + max_width
-                        else:
-                            a = b - max_width
-                        slider.value = (a, b)
-                return _validate
-            s.observe(_mk_validator(s), names='value')
-            sliders.append(s)
-            rows.append(widgets.HBox([lab, s]))
-        priors_box = widgets.VBox([widgets.HTML("<b>Priors</b>")] + rows)
-
-        # ---------- Preprocess & Predict controls ----------
-        # Preprocessing
-        trunc_L = widgets.IntSlider(description='truncate left',  min=0, max=max(0, N-1), step=1, value=0)
-        trunc_R = widgets.IntSlider(description='truncate right', min=1, max=N,           step=1, value=N)
-        enable_filt = widgets.Checkbox(description='filter error bars', value=True)
-        thr = widgets.FloatSlider(description='filtering threshold', min=0.0, max=1.0, step=0.01, value=0.3)
-        rem_single = widgets.Checkbox(description='remove singles', value=True)
-        rem_cons = widgets.Checkbox(description='remove consecutives', value=True)
-        consec = widgets.IntSlider(description='num. consecutive', min=1, max=10, step=1, value=3)
-        qstart = widgets.FloatSlider(description='q_start_trunc', min=0.0, max=1.0, step=0.01, value=0.1)
-
-        # Polishing
-        polish = widgets.Checkbox(description='polish prediction', value=True)
-        use_sigmas_polish = widgets.Checkbox(description='use sigmas during polishing', value=True)
-
-        # Plotting
-        pred_show_yerr = widgets.Checkbox(description='show error bars', value=True)
-        pred_show_xerr = widgets.Checkbox(description='show q-resolution', value=False)
-        pred_logx = widgets.Checkbox(description='log x-axis', value=False)
-        plot_sld = widgets.Checkbox(description='plot SLD profile', value=True)
-        sld_pad_left = widgets.FloatText(description='SLD pad left',  value=0.2, step=0.1)
-        sld_pad_right = widgets.FloatText(description='SLD pad right', value=1.1, step=0.1)
-
-        # Color pickers
-        exp_color_picker = widgets.ColorPicker(description='exp color',       value='#0000FF')  # blue
-        exp_errcolor_picker = widgets.ColorPicker(description='errbar color',    value='#800080')  # purple
-        pred_color_picker = widgets.ColorPicker(description='pred color',      value='#FF0000')  # red
-        pol_color_picker = widgets.ColorPicker(description='polished color',  value='#FFA500')  # orange
-        sld_pred_color_picker = widgets.ColorPicker(description='SLD pred color',  value='#FF0000')  # red
-        sld_pol_color_picker = widgets.ColorPicker(description='SLD pol color',   value='#FFA500')  # orange
-
-        # Compute toggles
-        calc_curve = widgets.Checkbox(description='calc curve', value=True)
-        calc_sld_pred = widgets.Checkbox(description='calc predicted SLD', value=True)
-        calc_sld_pol = widgets.Checkbox(description='calc polished SLD', value=True)
-
-        btn_predict = widgets.Button(description='Predict')
-        btn_close = widgets.Button(description='Close')
-
-        controls_box = widgets.VBox([
-            widgets.HTML("<b>Preprocess & Predict</b>"),
-            widgets.HTML("<i>Preprocessing</i>"),
-            widgets.HBox([trunc_L, trunc_R]),
-            widgets.HBox([enable_filt, rem_single, rem_cons]),
-            widgets.HBox([thr, consec, qstart]),
-            widgets.HTML("<i>Polishing</i>"),
-            widgets.HBox([polish, use_sigmas_polish]),
-            widgets.HTML("<i>Plotting</i>"),
-            widgets.HBox([pred_show_yerr, pred_show_xerr, pred_logx, plot_sld]),
-            widgets.HBox([sld_pad_left, sld_pad_right]),
-            widgets.HTML("<i>Colors</i>"),
-            widgets.HBox([exp_color_picker, exp_errcolor_picker]),
-            widgets.HBox([pred_color_picker, pol_color_picker]),
-            widgets.HBox([sld_pred_color_picker, sld_pol_color_picker]),
-            widgets.HTML("<i>Compute</i>"),
-            widgets.HBox([calc_curve, calc_sld_pred, calc_sld_pol]),
-            widgets.HBox([btn_predict, btn_close]),
-        ])
-
-        out_predict = widgets.Output()
-        container = widgets.VBox([priors_box, controls_box, out_predict])
-        display(container)
-
-        def _sync_trunc(_):
-            if trunc_L.value >= trunc_R.value:
-                trunc_L.value = max(0, trunc_R.value - 1)
-        trunc_L.observe(_sync_trunc, names='value')
-        trunc_R.observe(_sync_trunc, names='value')
-
-        def _current_priors():
-            return np.array([s.value for s in sliders], dtype=np.float32)  # (param_dim, 2)
-
-        @out_predict.capture(clear_output=True)
-        def _on_predict(_):
-            out_predict.clear_output(wait=True)
-
-            res = self.preprocess_and_predict(
-                reflectivity_curve=reflectivity_curve,
-                q_values=q_values,
-                prior_bounds=_current_priors(),
-                sigmas=sigmas,
-                q_resolution=q_resolution,
-                ambient_sld=ambient_sld,
-                clip_prediction=True,
-                polish_prediction=polish.value,
-                use_sigmas_for_polishing=use_sigmas_polish.value,
-                calc_pred_curve=calc_curve.value,
-                calc_pred_sld_profile=(calc_sld_pred.value or plot_sld.value),
-                calc_polished_sld_profile=(calc_sld_pol.value or plot_sld.value),
-                sld_profile_padding_left=float(sld_pad_left.value),
-                sld_profile_padding_right=float(sld_pad_right.value),
-
-                truncate_index_left=trunc_L.value,
-                truncate_index_right=trunc_R.value,
-                enable_error_bars_filtering=enable_filt.value,
-                filter_threshold=thr.value,
-                filter_remove_singles=rem_single.value,
-                filter_remove_consecutives=rem_cons.value,
-                filter_consecutive=consec.value,
-                filter_q_start_trunc=qstart.value,
-            )
-
-            # Full experimental data as scatter
-            q_exp_plot = q_values
-            r_exp_plot = reflectivity_curve
-            yerr_plot = (sigmas if pred_show_yerr.value else None)
-            xerr_plot = (q_resolution if pred_show_xerr.value else None)
-
-            # Predicted curve only on the model region
-            q_pred = res.get('q_plot_pred', None)
-            r_pred = res.get('predicted_curve', None)
-
-            # Polished curve on the full experimental grid
-            q_pol = q_values if ('polished_curve' in res) else None
-            r_pol = res.get('polished_curve', None)
-
-            # SLD profiles
-            z_sld = res.get('predicted_sld_xaxis', None)
-            sld_pred = res.get('predicted_sld_profile', None)
-            sld_pol = res.get('sld_profile_polished', None)
-
-            print_prediction_results(res)
-
-            plot_reflectivity(
-                q_exp=q_exp_plot, r_exp=r_exp_plot,
-                yerr=yerr_plot, xerr=xerr_plot,
-                exp_style=('errorbar' if pred_show_yerr.value or pred_show_xerr.value else 'scatter'),
-                exp_color=exp_color_picker.value,
-                exp_errcolor=exp_errcolor_picker.value,
-                q_pred=q_pred, r_pred=r_pred, pred_color=pred_color_picker.value,
-                q_pol=q_pol, r_pol=r_pol, pol_color=pol_color_picker.value,
-                z_sld=z_sld, sld_pred=sld_pred, sld_pol=sld_pol,
-                sld_pred_color=sld_pred_color_picker.value,
-                sld_pol_color=sld_pol_color_picker.value,
-                plot_sld_profile=plot_sld.value,
-                logx=pred_logx.value, logy=True,
-                figsize=(12,6),
-                legend=True
-            )
-
-            self.widget_prediction_result = res
-
-        def _on_close(_):
-            container.close()
-            print("Widget closed.")
-
-        btn_predict.on_click(_on_predict)
-        btn_close.on_click(_on_close)
 
 EasyInferenceModel = InferenceModel
 
