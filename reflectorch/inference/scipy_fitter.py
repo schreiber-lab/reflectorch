@@ -64,7 +64,7 @@ def refl_fit(
         error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
         method: str = 'trf', #'lm', 'trf'
-        polishing_max_nfev: int = None,
+        max_steps: int = None,
         reflectivity_kwargs: dict = None,
         **kwargs
 ):
@@ -96,6 +96,11 @@ def refl_fit(
         scaled_error_bars = error_bars / (curve * np.log(10))
     else:
         scaled_error_bars = None  
+    if max_steps is not None:
+        if method == 'lm':
+            kwargs['maxfev'] = max_steps
+        else:
+            kwargs['max_nfev'] = max_steps
 
     res = curve_fit(
         f=get_scaled_curve_func(
@@ -109,7 +114,6 @@ def refl_fit(
         sigma=scaled_error_bars,
         absolute_sigma=True,
         method=method,
-        max_nfev=polishing_max_nfev,
         **kwargs
     )
 
