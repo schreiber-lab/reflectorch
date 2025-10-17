@@ -39,7 +39,8 @@ dependencies = [
     "plotly",
     "huggingface_hub",
     "safetensors",
-    "tensorboard"
+    "tensorboard",
+    "anywidget",
 ]
 
 [project.optional-dependencies]
