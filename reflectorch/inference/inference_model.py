@@ -516,7 +516,7 @@ class InferenceModel(object):
                     self.trainer.loader.prior_sampler.param_model
                     )
             else:
-                polished_params_arr, curve_polished = refl_fit(
+                polished_params_arr, polished_params_err, curve_polished = refl_fit(
                     q = q, 
                     curve = curve, 
                     init_params = params, 
@@ -540,6 +540,12 @@ class InferenceModel(object):
             curve_polished = np.zeros_like(q)
 
         polished_params_dict['polished_params_array'] = polished_params_arr
+        
+        polished_params_dict['polished_params_error_array'] = (
+            np.array(polished_params_err) 
+            if polished_params_err is not None 
+            else np.full_like(polished_params, np.nan, dtype=np.float64)
+            )
         if calc_polished_curve:
             polished_params_dict['polished_curve'] = curve_polished
 
