@@ -161,7 +161,7 @@ class InferenceModel(object):
                             polishing_method: str = 'trf',
                             polishing_kwargs_reflectivity: dict = None,
                             use_sigmas_for_polishing: bool = False,
-                            polishing_max_nfev: int = None,
+                            polishing_max_steps: int = None,
                             fit_growth: bool = False, 
                             max_d_change: float = 5.,
                             calc_pred_curve: bool = True,
@@ -193,7 +193,7 @@ class InferenceModel(object):
             polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
             polishing_method (str): {'trf', 'dogbox', 'lm'} SciPy least-squares method used for polishing.
             use_sigmas_for_polishing (bool): If ``True``, weigh residuals by `sigmas` during polishing.
-            polishing_max_nfev (int, optional): Maximum number of function evaluations for the SciPy optimizer.
+            polishing_max_steps (int, optional): Maximum number of function evaluations for the SciPy optimizer.
             fit_growth (bool, optional): (Deprecated) If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
             max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
@@ -294,7 +294,7 @@ class InferenceModel(object):
                 polishing_kwargs_reflectivity = polishing_kwargs,
                 error_bars=sigmas_original if use_sigmas_for_polishing else None,
                 polishing_method=polishing_method,
-                polishing_max_nfev=polishing_max_nfev,
+                polishing_max_steps=polishing_max_steps,
                 fit_growth=fit_growth,
                 max_d_change=max_d_change,
             )
@@ -322,7 +322,7 @@ class InferenceModel(object):
                 polish_prediction: bool = False,
                 polishing_method: str = 'trf',
                 polishing_kwargs_reflectivity: dict = None,
-                polishing_max_nfev: int = None,
+                polishing_max_steps: int = None,
                 fit_growth: bool = False, 
                 max_d_change: float = 5.,
                 use_q_shift: bool = False, 
@@ -347,7 +347,7 @@ class InferenceModel(object):
             clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to True.
             polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
             polishing_method (str): Type of scipy method used for polishing.
-            polishing_max_nfev (int, optional): Sets the maximum number of steps for the polishing algorithm.
+            polishing_max_steps (int, optional): Sets the maximum number of steps for the polishing algorithm.
             fit_growth (bool, optional): (Deprecated) If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
             max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
             use_q_shift: (Deprecated) If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
@@ -465,7 +465,7 @@ class InferenceModel(object):
                 ambient_sld_tensor=ambient_sld_tensor,
                 sld_x_axis = predicted_sld_xaxis,
                 polishing_method=polishing_method,
-                polishing_max_nfev=polishing_max_nfev,
+                polishing_max_steps=polishing_max_steps,
                 polishing_kwargs_reflectivity=polishing_kwargs_reflectivity,
             )
             prediction_dict.update(polished_dict)
@@ -491,7 +491,7 @@ class InferenceModel(object):
                            calc_polished_sld_profile: bool = False,
                            error_bars: np.ndarray = None,
                            polishing_method: str = 'trf',
-                           polishing_max_nfev: int = None,
+                           polishing_max_steps: int = None,
                            polishing_kwargs_reflectivity: dict = None,
                            ) -> dict:
         params = predicted_params.parameters.squeeze().cpu().numpy()
@@ -524,7 +524,7 @@ class InferenceModel(object):
                     prior_sampler=self.trainer.loader.prior_sampler,
                     error_bars=error_bars,
                     method=polishing_method,
-                    polishing_max_nfev=polishing_max_nfev,
+                    polishing_max_steps=polishing_max_steps,
                     reflectivity_kwargs=polishing_kwargs_reflectivity,
                 )
                 polished_params = BasicParams(
