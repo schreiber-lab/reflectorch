@@ -34,6 +34,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+figures/
 
 #Documentation
 documentation/_build/*
