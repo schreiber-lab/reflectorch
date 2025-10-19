@@ -10,7 +10,6 @@ Components:
 
 from typing import Optional, Dict, Any, Callable
 import ipywidgets as widgets
-import threading
 from huggingface_hub import HfApi
 
 from reflectorch.extensions.jupyter.custom_select import CustomSelect
@@ -109,18 +108,10 @@ class ModelSelection:
             download_model_button,
         ], layout=widgets.Layout(justify_content='flex-start', margin='0px 0px 15px 0px'))
         
-        # Status and progress
+        # Status
         status_label = widgets.HTML(
             "Click 'Refresh' to load models",
             layout=widgets.Layout(margin='5px 0px')
-        )
-        
-        progress_bar = widgets.IntProgress(
-            value=0,
-            min=0,
-            max=100,
-            bar_style='info',
-            layout=widgets.Layout(width='400px', display='none')
         )
         
         
@@ -150,7 +141,6 @@ class ModelSelection:
             'download_button': download_model_button,
             'org_dropdown': org_dropdown,
             'status_label': status_label,
-            'progress_bar': progress_bar,
             'model_selector': model_selector,
             'selection_status': selection_status
         }
@@ -164,7 +154,6 @@ class ModelSelection:
             description,
             controls_row,
             status_label,
-            progress_bar,
             model_selector.container,
             selection_status,
         ])
@@ -175,12 +164,12 @@ class ModelSelection:
         
         def on_refresh_click(b):
             """Handle refresh button click"""
-            self._load_models_async()
+            self._load_models()
                 
         def on_org_change(change):
             """Handle organization dropdown change"""
             self.organization = change['new']
-            self._load_models_async()
+            self._load_models()
             # Clear selection when organization changes
             self._clear_selection()
                 
@@ -228,76 +217,64 @@ class ModelSelection:
             self._widgets['selection_status'].value = f"<i style='color: red;'>Invalid index: {index}</i>"
             self._clear_selection()
     
-    def _load_models_async(self):
-        """Load models asynchronously"""
-        def load_models_thread():
-            try:
-                self._widgets['status_label'].value = "🔄 Loading models..."
-                self._widgets['progress_bar'].layout.display = 'block'
-                self._widgets['progress_bar'].value = 20
+    def _load_models(self):
+        """Load models synchronously"""
+        try:
+            self._widgets['status_label'].value = "🔄 Loading models..."
+            
+            # Get models from specific organization using HF API
+            if self.organization in self._model_cache:
+                self._widgets['status_label'].value = "🔄 Loading cached models..."
+                models = self._model_cache[self.organization]
+            else:
+                self._widgets['status_label'].value = f"🔄 Loading models from {self.organization}..."
                 
-                # Get models from specific organization using HF API
-                if self.organization in self._model_cache:
-                    self._widgets['status_label'].value = "🔄 Loading cached models..."
-                    models = self._model_cache[self.organization]
-                else:
-                    self._widgets['status_label'].value = f"🔄 Loading models from {self.organization}..."
-                    
-                    # List all models from the organization
-                    hf_models = list(self.hf_api.list_models(author=self.organization, cardData=True))
-                    self._widgets['progress_bar'].value = 50
-                    
-                    # Convert HF model objects to our format and try to get config info
-                    models = []
-                    for i, hf_model in enumerate(hf_models):
-                        try:
-                            metadata = hf_model.card_data.get("metadata", {})
-                            parameterization = metadata.get("parameterization", "slab")
-                            num_layers = metadata.get("number_of_layers", 0)
-                            param_ranges = metadata.get("param_ranges", {})
-                            bound_width_ranges = metadata.get("bound_width_ranges", {})
-                            misalignment_included = metadata.get("shift_param_config", {})
+                # List all models from the organization
+                hf_models = list(self.hf_api.list_models(author=self.organization, cardData=True))
+                
+                # Convert HF model objects to our format and try to get config info
+                models = []
+                for i, hf_model in enumerate(hf_models):
+                    try:
+                        metadata = hf_model.card_data.get("metadata", {})
+                        parameterization = metadata.get("parameterization", "slab")
+                        num_layers = metadata.get("number_of_layers", 0)
+                        param_ranges = metadata.get("param_ranges", {})
+                        bound_width_ranges = metadata.get("bound_width_ranges", {})
+                        misalignment_included = metadata.get("shift_param_config", {})
+                        
+                        # Create model info
+                        model_info = {
+                            'index': i,
+                            'modelId': hf_model.id,
+                            'author': self.organization,
+                            'hf_model': hf_model,
+                            'metadata': hf_model.card_data.get("metadata", {}),
+                            'num_layers': num_layers,
+                            'param_ranges': param_ranges,
+                            'bound_width_ranges': bound_width_ranges,
+                            'misalignment_included': misalignment_included,
+                            'parameterization': parameterization,
+                        }
+                        models.append(model_info)
+                        
+                    except Exception as e:
+                        print(f"Warning: Could not process model {hf_model.id}: {e}")
+                        continue
+                
+                # Cache the results
+                self._model_cache[self.organization] = models
                             
-                            # Create model info
-                            model_info = {
-                                'index': i,
-                                'modelId': hf_model.id,
-                                'author': self.organization,
-                                'hf_model': hf_model,
-                                'metadata': hf_model.card_data.get("metadata", {}),
-                                'num_layers': num_layers,
-                                'param_ranges': param_ranges,
-                                'bound_width_ranges': bound_width_ranges,
-                                'misalignment_included': misalignment_included,
-                                'parameterization': parameterization,
-                            }
-                            models.append(model_info)
-                            
-                        except Exception as e:
-                            print(f"Warning: Could not process model {hf_model.id}: {e}")
-                            continue
-                    
-                    # Cache the results
-                    self._model_cache[self.organization] = models
-                                
-                self.models_data = models
-                self._widgets['progress_bar'].value = 100
-                
-                # Update UI
-                self._display_models(models)
-                
-                self._widgets['status_label'].value = f"✅ Loaded {len(models)} models"
-                self._widgets['progress_bar'].layout.display = 'none'
-                
-            except Exception as e:
-                self._widgets['status_label'].value = f"❌ Error loading models: {str(e)}"
-                self._widgets['progress_bar'].layout.display = 'none'
-                print(f"Error loading models: {e}")
-        
-        # Run in thread to avoid blocking UI
-        thread = threading.Thread(target=load_models_thread)
-        thread.daemon = True
-        thread.start()
+            self.models_data = models
+            
+            # Update UI
+            self._display_models(models)
+            
+            self._widgets['status_label'].value = f"✅ Loaded {len(models)} models"
+            
+        except Exception as e:
+            self._widgets['status_label'].value = f"❌ Error loading models: {str(e)}"
+            print(f"Error loading models: {e}")
     
     
     def _display_models(self, models):
