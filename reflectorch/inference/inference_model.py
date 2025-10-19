@@ -538,6 +538,7 @@ class InferenceModel(object):
             polished_params = predicted_params
             polished_params_arr = get_prediction_array(polished_params)
             curve_polished = np.zeros_like(q)
+            polished_params_err = None
 
         polished_params_dict['polished_params_array'] = polished_params_arr
         
