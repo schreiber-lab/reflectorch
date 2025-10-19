@@ -1,6 +1,16 @@
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 
 class Layer():
+    """Defines a single slab layer with prior bounds for thickness, roughness and SLD.
+
+    The bounds can be given for both real and imaginary parts of the SLD (the latter only if the model supports absorption).
+
+    Args:
+        thickness_bounds (Tuple[float, float]): Minimum and maximum thickness of the layer (in Å).
+        roughness_bounds (Tuple[float, float]): Minimum and maximum interfacial roughness at the top of this layer (in Å).
+        sld_bounds (Tuple[float, float]): Minimum and maximum real SLD of this layer (in 10⁻⁶ Å⁻²).
+        imag_sld_bounds (Tuple[float, float], optional): Minimum and maximum imaginary SLD (in 10⁻⁶ Å⁻²) of this layer. Defaults to None.
+    """
     def __init__(self, thickness_bounds, roughness_bounds, sld_bounds, imag_sld_bounds=None):
         self.thickness_bounds = thickness_bounds
         self.roughness_bounds = roughness_bounds
@@ -8,6 +18,16 @@ class Layer():
         self.imag_sld_bounds = imag_sld_bounds
 
 class Backing():
+    """Defines the backing medium (substrate) for the multilayer structure.
+
+    The backing is assumed to be semi-infinite and has no thickness parameter. 
+    This class ensures compatibility with the layer-based structure definition.
+
+    Args:
+        roughness_bounds (Tuple[float, float]): Minimum and maximum interfacial roughness at the top of the backing medium (in Å).
+        sld_bounds (Tuple[float, float]): Minimum and maximum real SLD of the backing medium (in 10⁻⁶ Å⁻²).
+        imag_sld_bounds (Tuple[float, float], optional): Minimum and maximum imaginary SLD (in 10⁻⁶ Å⁻²) of the backing. Defaults to None.
+    """
     def __init__(self, roughness_bounds, sld_bounds, imag_sld_bounds=None):
         self.thickness_bounds = None
         self.roughness_bounds = roughness_bounds
@@ -15,6 +35,33 @@ class Backing():
         self.imag_sld_bounds = imag_sld_bounds
 
 class Structure():
+    """Defines a multilayer structure and its parameter bounds in a layer-wise manner.
+
+    This class allows the user to define the prior bounds for the full structure (film + backing) in a layer-wise format. It automatically constructs the
+    flattened list of parameter bounds compatible with the inference model’s expected input format.
+
+    Args:
+        layers (List[Union[Layer, Backing]]): Ordered list of layers defining the structure, from the ambient side to the backing. The last element
+            must be a :class:`Backing` instance. Note that the fronting medium (ambient) is not part of this list (since it is not a predicted parameter), 
+            and is treated by default as being 0 (air). For different fronting media one can use the ``ambient_sld`` argument of the prediction method.
+        q_shift_bounds (Tuple[float, float], optional): Bounds for the global ``q_shift`` nuisance parameter. Defaults to None.
+        r_scale_bounds (Tuple[float, float], optional): Bounds for the global reflectivity scale factor ``r_scale``. Defaults to None.
+        log10_background_bounds (Tuple[float, float], optional): Bounds for the background term expressed as log10(background). Defaults to None.
+
+    Attributes:
+        thicknesses_bounds (List[Tuple[float, float]]): Bounds for all thicknesses (excluding backing).
+        roughnesses_bounds (List[Tuple[float, float]]): Bounds for all roughnesses (including backing).
+        slds_bounds (List[Tuple[float, float]]): Bounds for all real SLDs (including backing).
+        imag_slds_bounds (List[Tuple[float, float]]): Bounds for all imaginary SLDs (if provided).
+        prior_bounds (List[Tuple[float, float]]): Flattened list of all parameter bounds in the order expected by the model: thicknesses, 
+            roughnesses, real SLDs, imaginary SLDs (if present), followed by nuisance parameters.
+
+    Example:
+        >>> layer1 = Layer(thickness_bounds=[1, 100], roughness_bounds=[0, 10], sld_bounds=[-2, 2])
+        >>> backing = Backing(roughness_bounds=[0, 15], sld_bounds=[0, 3])
+        >>> structure = Structure(layers=[layer1, backing], r_scale_bounds=[0.9, 1.1])
+        >>> structure.prior_bounds
+    """
     def __init__(self, layers, q_shift_bounds=None, r_scale_bounds=None, log10_background_bounds=None):
         self.layers=layers
         self.q_shift_bounds=q_shift_bounds
@@ -43,6 +90,22 @@ class Structure():
             self.prior_bounds += [log10_background_bounds]
     
     def validate_parameters_and_ranges(self, inference_model):
+        """Validate that all layer bounds and nuisance parameters match the model's configuration.
+
+        This method checks that:
+            * The number of layers matches the model’s expected number.
+            * Each layer’s thickness, roughness, and SLD bounds are within the
+              model’s training ranges.
+            * The SLD bound width does not exceed the maximum training width.
+            * Any nuisance parameters expected by the model (e.g. q_shift, r_scale,
+              log10_background) are provided and within training bounds.
+
+        Args:
+            inference_model (InferenceModel): A loaded instance of :class:`InferenceModel` used to access the model’s metadata.
+
+        Raises:
+            ValueError: If the number of layers, parameter ranges, or nuisance configurations are inconsistent with the model.
+        """
         if len(self.layers) - 1 != inference_model.trainer.loader.prior_sampler.max_num_layers:
             raise ValueError(f'Number of layers mismatch: this model expects {inference_model.trainer.loader.prior_sampler.max_num_layers} layers (backing not included) but you provided {len(self.layers) - 1}')
         
@@ -108,6 +171,19 @@ class Structure():
         print("All checks passed.")
 
     def get_huggingface_filtering_query(self):
+        """Constructs a metadata query for selecting compatible pretrained models from Huggingface. Currently it only supports the older (research style) 
+        layout of Huggingface repositories (such as 'valentinsingularity/reflectivity'), but not the newer layout (such as `reflectorch-ILL`).
+
+        Returns:
+            dict: A dictionary describing the structure and parameter bounds, suitable for filtering available model configurations 
+            in a Huggingface repository using :class:`HuggingfaceQueryMatcher`.
+
+        Example:
+            >>> structure = Structure([...])
+            >>> query = structure.get_huggingface_filtering_query()
+            >>> matcher = HuggingfaceQueryMatcher(repo_id='valentinsingularity/reflectivity')
+            >>> configs = matcher.get_matching_configs(query)
+        """
         query = {'dset.prior_sampler.kwargs.max_num_layers': len(self.layers) - 1}
         
         query['dset.prior_sampler.kwargs.param_ranges.thicknesses'] = [min(sl[0] for sl in self.thicknesses_bounds), max(sl[1] for sl in self.thicknesses_bounds)]
