@@ -1,37 +1,28 @@
-import asyncio
-import logging
 from pathlib import Path
-import time
 
 import numpy as np
 import torch
 from torch import Tensor
 from typing import List, Tuple, Union
-import ipywidgets as widgets
-from IPython.display import display
 from huggingface_hub import hf_hub_download
 
-from reflectorch.data_generation.priors import Params, BasicParams, ExpUniformSubPriorSampler, UniformSubPriorParams
+from reflectorch.data_generation.priors import BasicParams
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ, MaskedVariableQ
-from reflectorch.data_generation.utils import get_density_profiles, get_param_labels
+from reflectorch.data_generation.utils import get_density_profiles
 from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
-from reflectorch.paths import CONFIG_DIR, ROOT_DIR, SAVED_MODELS_DIR
+from reflectorch.paths import CONFIG_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import (
-    get_trainer_by_name, train_from_config
+    get_trainer_by_name
 )
-from reflectorch.runs.config import load_config
 from reflectorch.ml.trainers import PointEstimatorTrainer
 from reflectorch.data_generation.likelihoods import LogLikelihood
 
-from reflectorch.inference.preprocess_exp import StandardPreprocessing
-from reflectorch.inference.scipy_fitter import standard_refl_fit, refl_fit, get_fit_with_growth
-from reflectorch.inference.sampler_solution import simple_sampler_solution, get_best_mse_param
-from reflectorch.inference.record_time import print_time
-from reflectorch.inference.plotting import plot_reflectivity, plot_prediction_results, print_prediction_results
+from reflectorch.inference.scipy_fitter import refl_fit, get_fit_with_growth
+from reflectorch.inference.sampler_solution import get_best_mse_param
 from reflectorch.utils import get_filtering_mask, to_t
 
-class EasyInferenceModel(object):
+class InferenceModel(object):
     """Facilitates the inference process using pretrained models
     
     Args:
@@ -159,18 +150,18 @@ class EasyInferenceModel(object):
             print(f"The following quantities are additional inputs to the network: {inputs_str}.")
 
     def preprocess_and_predict(self, 
-                            reflectivity_curve: Union[np.ndarray, Tensor], 
-                            q_values: Union[np.ndarray, Tensor] = None, 
+                            reflectivity_curve: np.ndarray, 
+                            q_values: np.ndarray = None, 
                             prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
-                            sigmas: Union[np.ndarray, Tensor] = None,
-                            q_resolution: float = None,
+                            sigmas: np.ndarray = None,
+                            q_resolution: Union[float, np.ndarray] = None,
                             ambient_sld: float = None,
                             clip_prediction: bool = True, 
                             polish_prediction: bool = False,
                             polishing_method: str = 'trf',
                             polishing_kwargs_reflectivity: dict = None,
                             use_sigmas_for_polishing: bool = False,
-                            polishing_max_nfev: int = None,
+                            polishing_max_steps: int = None,
                             fit_growth: bool = False, 
                             max_d_change: float = 5.,
                             calc_pred_curve: bool = True,
@@ -189,6 +180,37 @@ class EasyInferenceModel(object):
                             filter_consecutive=3,
                             filter_q_start_trunc=0.1,
                             ):
+        """Preprocess experimental data (clean, truncate, filter, interpolate) and run prediction. This wrapper prepares inputs according to the model's Q generator calls `predict(...)` on the interpolated/padded data, and (optionally) performs a polishing step on the original data (pre-interpolation) 
+
+        Args:
+            reflectivity_curve (Union[np.ndarray, Tensor]): 1D array of experimental reflectivity values.
+            q_values (Union[np.ndarray, Tensor]): 1D array of momentum transfer values for the reflectivity curve (in units of inverse angstroms).
+            prior_bounds (Union[np.ndarray, List[Tuple]]): Prior bounds for all parameters, shape ``(num_params, 2)`` as ``[(min, max), …]``.
+            sigmas (Union[np.ndarray, Tensor], optional): 1D array of experimental uncertainties (same length as `reflectivity_curve`). Used for error-bar filtering (if enabled) and for polishing (if requested).
+            q_resolution (Union[float, np.ndarray], optional): The q resolution for neutron reflectometry models. Can be either a float (dq/q) for linear resolution smearing (e.g. 0.05 meaning 5% reolution smearing) or an array of dq values for pointwise resolution smearing. 
+            ambient_sld (float, optional): The SLD of the fronting (i.e. ambient) medium for structure with fronting medium different than air.
+            clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to True.
+            polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
+            polishing_method (str): {'trf', 'dogbox', 'lm'} SciPy least-squares method used for polishing.
+            use_sigmas_for_polishing (bool): If ``True``, weigh residuals by `sigmas` during polishing.
+            polishing_max_steps (int, optional): Maximum number of function evaluations for the SciPy optimizer.
+            fit_growth (bool, optional): (Deprecated) If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
+            max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
+            calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
+            calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
+            calc_polished_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the polished parameters. Defaults to False.
+            sld_profile_padding_left (float, optional): Controls the amount of padding applied to the left side of the computed SLD profiles.
+            sld_profile_padding_right (float, optional): Controls the amount of padding applied to the right side of the computed SLD profiles.
+            truncate_index_left (int, optional): The data provided as input to the neural network will be truncated between the indices [truncate_index_left, truncate_index_right].
+            truncate_index_right (int, optional): The data provided as input to the neural network will be truncated between the indices [truncate_index_left, truncate_index_right].
+            enable_error_bars_filtering (bool, optional). If ``True``, the data points with high error bars (above a threshold) will be removed before constructing the input to the neural network (they are still used in the polishing step). Default to True.
+            filter_threshold (float, optional). The relative threshold (dR/R) for error bar filtering. Defaults to 0.3.
+            filter_remove_singles (float, optional). If ``True``, all isolated points exceeding the filtering threshold will be eliminated. Default to True.
+            filter_remove_consecutives (float, optional). If ``True``, in the situation when a number of ``filter_consecutive`` consecutive points exceeding the filtering threshold are detected at a position higher than ``filter_q_start_trunc``, all the subsequent points in the curve are eliminated.
+            
+        Returns:
+            dict: dictionary containing the predictions
+        """
         
         ## Preprocess the data for inference (remove negative intensities, truncation, filer out points with high error bars)
         (q_values, reflectivity_curve, sigmas, q_resolution, 
@@ -272,7 +294,7 @@ class EasyInferenceModel(object):
                 polishing_kwargs_reflectivity = polishing_kwargs,
                 error_bars=sigmas_original if use_sigmas_for_polishing else None,
                 polishing_method=polishing_method,
-                polishing_max_nfev=polishing_max_nfev,
+                polishing_max_steps=polishing_max_steps,
                 fit_growth=fit_growth,
                 max_d_change=max_d_change,
             )
@@ -294,13 +316,13 @@ class EasyInferenceModel(object):
                 prior_bounds: Union[np.ndarray, List[Tuple]] = None, 
                 sigmas: Union[np.ndarray, Tensor] = None,
                 key_padding_mask: Union[np.ndarray, Tensor] = None,
-                q_resolution: float = None,
+                q_resolution: Union[float, np.ndarray] = None,
                 ambient_sld: float = None,
                 clip_prediction: bool = True, 
                 polish_prediction: bool = False,
                 polishing_method: str = 'trf',
                 polishing_kwargs_reflectivity: dict = None,
-                polishing_max_nfev: int = None,
+                polishing_max_steps: int = None,
                 fit_growth: bool = False, 
                 max_d_change: float = 5.,
                 use_q_shift: bool = False, 
@@ -317,20 +339,31 @@ class EasyInferenceModel(object):
         Args:
             reflectivity_curve (Union[np.ndarray, Tensor]): The reflectivity curve (which has been already preprocessed, normalized and interpolated).
             q_values (Union[np.ndarray, Tensor], optional): The momentum transfer (q) values for the reflectivity curve (in units of inverse angstroms).
-            prior_bounds (Union[np.ndarray, List[Tuple]], optional): the prior bounds for the thin film parameters.
-            clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to False.
-            polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Only for the standard box-model parameterization. Defaults to False.
-            fit_growth (bool, optional): If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
+            prior_bounds (Union[np.ndarray, List[Tuple]]): The prior bounds for the predicted parameters.
+            sigmas (Union[np.ndarray, Tensor], optional): The error bars of the reflectivity curve, if available. They are used for filtering out points with high error bars if ``enable_error_bars_filtering`` is ``True``, as well as for the polishing step if ``use_sigmas_for_polishing`` is ``True``.
+            key_padding_mask (Union[np.ndarray, Tensor], optional): The key padding mask required for some embedding networks.
+            q_resolution (Union[float, np.ndarray], optional): The q resolution for neutron reflectometry models. Can be either a float dq/q for linear resolution smearing (e.g. 0.05 meaning 5% reolution smearing) or an array of dq values for pointwise resolution smearing. 
+            ambient_sld (float, optional): The SLD of the fronting (i.e. ambient) medium for structure with fronting medium different than air.
+            clip_prediction (bool, optional): If ``True``, the values of the predicted parameters are clipped to not be outside the interval set by the prior bounds. Defaults to True.
+            polish_prediction (bool, optional): If ``True``, the neural network predictions are further polished using a simple least mean squares (LMS) fit. Defaults to False.
+            polishing_method (str): Type of scipy method used for polishing.
+            polishing_max_steps (int, optional): Sets the maximum number of steps for the polishing algorithm.
+            fit_growth (bool, optional): (Deprecated) If ``True``, an additional parameters is introduced during the LMS polishing to account for the change in the thickness of the upper layer during the in-situ measurement of the reflectivity curve (a linear growth is assumed). Defaults to False.
             max_d_change (float): The maximum possible change in the thickness of the upper layer during the in-situ measurement, relevant when polish_prediction and fit_growth are True. Defaults to 5. 
-            use_q_shift: If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
+            use_q_shift: (Deprecated) If ``True``, the prediction is performed for a batch of slightly shifted versions of the input curve and the best result is returned, which is meant to mitigate the influence of imperfect sample alignment, as introduced in Greco et al. (only for models with fixed q-discretization). Defaults to False.
             calc_pred_curve (bool, optional): Whether to calculate the curve corresponding to the predicted parameters. Defaults to True.
             calc_pred_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the predicted parameters. Defaults to False.
+            calc_polished_sld_profile (bool, optional): Whether to calculate the SLD profile corresponding to the polished parameters. Defaults to False.
+            sld_profile_padding_left (float, optional): Controls the amount of padding applied to the left side of the computed SLD profiles.
+            sld_profile_padding_right (float, optional): Controls the amount of padding applied to the right side of the computed SLD profiles.
 
         Returns:
             dict: dictionary containing the predictions
         """
 
         scaled_curve = self._scale_curve(reflectivity_curve)
+        if prior_bounds is None:
+            raise ValueError(f'Prior bounds were not provided')
         prior_bounds = np.array(prior_bounds)
 
         if ambient_sld:
@@ -341,9 +374,14 @@ class EasyInferenceModel(object):
         if isinstance(self.trainer.loader.q_generator, ConstantQ):
             q_values = self.trainer.loader.q_generator.q
         else:
+            if q_values is None:
+                raise ValueError(f'The q values were not provided')
             q_values = torch.atleast_2d(to_t(q_values)).to(scaled_curve)
 
         scaled_q_values = self.trainer.loader.q_generator.scale_q(q_values).to(torch.float32) if self.trainer.train_with_q_input else None
+
+        if q_resolution is None and self.trainer.loader.smearing is not None:
+            raise ValueError(f'The q resolution must be provided for NR models')
         
         if q_resolution is not None:
             q_resolution_tensor = torch.atleast_2d(torch.as_tensor(q_resolution)).to(scaled_curve)
@@ -427,7 +465,7 @@ class EasyInferenceModel(object):
                 ambient_sld_tensor=ambient_sld_tensor,
                 sld_x_axis = predicted_sld_xaxis,
                 polishing_method=polishing_method,
-                polishing_max_nfev=polishing_max_nfev,
+                polishing_max_steps=polishing_max_steps,
                 polishing_kwargs_reflectivity=polishing_kwargs_reflectivity,
             )
             prediction_dict.update(polished_dict)
@@ -453,7 +491,7 @@ class EasyInferenceModel(object):
                            calc_polished_sld_profile: bool = False,
                            error_bars: np.ndarray = None,
                            polishing_method: str = 'trf',
-                           polishing_max_nfev: int = None,
+                           polishing_max_steps: int = None,
                            polishing_kwargs_reflectivity: dict = None,
                            ) -> dict:
         params = predicted_params.parameters.squeeze().cpu().numpy()
@@ -478,7 +516,7 @@ class EasyInferenceModel(object):
                     self.trainer.loader.prior_sampler.param_model
                     )
             else:
-                polished_params_arr, curve_polished = refl_fit(
+                polished_params_arr, polished_params_err, curve_polished = refl_fit(
                     q = q, 
                     curve = curve, 
                     init_params = params, 
@@ -486,7 +524,7 @@ class EasyInferenceModel(object):
                     prior_sampler=self.trainer.loader.prior_sampler,
                     error_bars=error_bars,
                     method=polishing_method,
-                    polishing_max_nfev=polishing_max_nfev,
+                    polishing_max_steps=polishing_max_steps,
                     reflectivity_kwargs=polishing_kwargs_reflectivity,
                 )
                 polished_params = BasicParams(
@@ -502,6 +540,12 @@ class EasyInferenceModel(object):
             curve_polished = np.zeros_like(q)
 
         polished_params_dict['polished_params_array'] = polished_params_arr
+        
+        polished_params_dict['polished_params_error_array'] = (
+            np.array(polished_params_err) 
+            if polished_params_err is not None 
+            else np.full_like(polished_params, np.nan, dtype=np.float64)
+            )
         if calc_polished_curve:
             polished_params_dict['polished_curve'] = curve_polished
 
@@ -774,596 +818,9 @@ class EasyInferenceModel(object):
             )
             return best_param
 
-    def predict_using_widget(self, reflectivity_curve, **kwargs):
-        """
-        """
 
-        NUM_INTERVALS = self.trainer.loader.prior_sampler.param_dim
-        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
 
-        print(f'Adjust the sliders for each parameter and press "Predict". Repeat as desired. Press "Close Widget" to finish.')
-
-        interval_widgets = []
-        for i in range(NUM_INTERVALS):
-            label = widgets.Label(value=f'{param_labels[i]}')
-            initial_max = min(max_bounds[i], min_bounds[i] + max_deltas[i])
-            slider = widgets.FloatRangeSlider(
-                value=[min_bounds[i], initial_max],
-                min=min_bounds[i],
-                max=max_bounds[i],
-                step=0.01,
-                layout=widgets.Layout(width='400px'),
-                style={'description_width': '60px'}
-            )
-
-            def validate_range(change, slider=slider, max_width=max_deltas[i]):
-                min_val, max_val = change['new']
-                if max_val - min_val > max_width:
-                    old_min_val, old_max_val = change['old']
-                    if abs(old_min_val - min_val) > abs(old_max_val - max_val):
-                        max_val = min_val + max_width
-                    else:
-                        min_val = max_val - max_width
-                    slider.value = [min_val, max_val]
-
-            slider.observe(validate_range, names='value')
-            interval_widgets.append((slider, widgets.HBox([label, slider])))
-
-        sliders_box = widgets.VBox([iw[1] for iw in interval_widgets])
-
-        output = widgets.Output()
-        predict_button = widgets.Button(description="Predict")
-        close_button = widgets.Button(description="Close Widget")
-
-        container = widgets.VBox([sliders_box, widgets.HBox([predict_button, close_button]), output])
-        display(container)
-
-        @output.capture(clear_output=True)
-        def on_predict_click(_):
-            if 'prior_bounds' in kwargs:
-                array_values = kwargs.pop('prior_bounds')
-                for i, (s, _) in enumerate(interval_widgets):
-                    s.value = tuple(array_values[i])
-            else:
-                values = [(s.value[0], s.value[1]) for s, _ in interval_widgets]
-                array_values = np.array(values)
-
-            prediction_result = self.predict(reflectivity_curve=reflectivity_curve,
-                                            prior_bounds=array_values,
-                                            **kwargs)
-            param_names = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-            print_prediction_results(prediction_result)
-
-            plot_prediction_results(
-                prediction_result,
-                q_exp=kwargs['q_values'],
-                curve_exp=reflectivity_curve,
-            )
-            self.widget_prediction_result = prediction_result
-
-        def on_close_click(_):
-            container.close()
-            print("Widget closed.")
-
-        predict_button.on_click(on_predict_click)
-        close_button.on_click(on_close_click)
-
-    def preprocess_and_predict_using_widget(self,
-                                            reflectivity_curve,
-                                            q_values=None,
-                                            sigmas=None,
-                                            q_resolution=None,
-                                            prior_bounds=None,
-                                            ambient_sld=None,
-                                            ):
-        """
-        Interactive widget around `preprocess_and_predict`
-        Results are stored in `self.widget_prediction_result`
-        """
-
-        if q_values is None:
-            raise ValueError("q_values must be provided for this widget.")
-
-        N = len(reflectivity_curve)
-
-        # ---------- Priors sliders ----------
-        param_labels = self.trainer.loader.prior_sampler.param_model.get_param_labels()
-        min_bounds = self.trainer.loader.prior_sampler.min_bounds.cpu().numpy().flatten()
-        max_bounds = self.trainer.loader.prior_sampler.max_bounds.cpu().numpy().flatten()
-        max_deltas = self.trainer.loader.prior_sampler.max_delta.cpu().numpy().flatten()
-        NUM = len(param_labels)
-
-        sliders, rows = [], []
-        init_pb = np.array(prior_bounds) if prior_bounds is not None else None
-        for i in range(NUM):
-            init_min = float(init_pb[i, 0]) if init_pb is not None else float(min_bounds[i])
-            init_max = float(init_pb[i, 1]) if init_pb is not None else float(min(min_bounds[i] + max_deltas[i], max_bounds[i]))
-            lab = widgets.Label(value=param_labels[i])
-            s = widgets.FloatRangeSlider(
-                value=[init_min, init_max],
-                min=float(min_bounds[i]),
-                max=float(max_bounds[i]),
-                step=0.01,
-                layout=widgets.Layout(width='420px'),
-                readout_format='.3f'
-            )
-            # Constrain slider widths
-            def _mk_validator(slider, max_width=float(max_deltas[i])):
-                def _validate(change):
-                    a, b = change['new']
-                    if b - a > max_width:
-                        oa, ob = change['old']
-                        if abs(oa - a) > abs(ob - b):
-                            b = a + max_width
-                        else:
-                            a = b - max_width
-                        slider.value = (a, b)
-                return _validate
-            s.observe(_mk_validator(s), names='value')
-            sliders.append(s)
-            rows.append(widgets.HBox([lab, s]))
-        priors_box = widgets.VBox([widgets.HTML("<b>Priors</b>")] + rows)
-
-        # ---------- Preprocess & Predict controls ----------
-        # Preprocessing
-        trunc_L = widgets.IntSlider(description='truncate left',  min=0, max=max(0, N-1), step=1, value=0)
-        trunc_R = widgets.IntSlider(description='truncate right', min=1, max=N,           step=1, value=N)
-        enable_filt = widgets.Checkbox(description='filter error bars', value=True)
-        thr = widgets.FloatSlider(description='filtering threshold', min=0.0, max=1.0, step=0.01, value=0.3)
-        rem_single = widgets.Checkbox(description='remove singles', value=True)
-        rem_cons = widgets.Checkbox(description='remove consecutives', value=True)
-        consec = widgets.IntSlider(description='num. consecutive', min=1, max=10, step=1, value=3)
-        qstart = widgets.FloatSlider(description='q_start_trunc', min=0.0, max=1.0, step=0.01, value=0.1)
-
-        # Polishing
-        polish = widgets.Checkbox(description='polish prediction', value=True)
-        use_sigmas_polish = widgets.Checkbox(description='use sigmas during polishing', value=True)
-
-        # Plotting
-        pred_show_yerr = widgets.Checkbox(description='show error bars', value=True)
-        pred_show_xerr = widgets.Checkbox(description='show q-resolution', value=False)
-        pred_logx = widgets.Checkbox(description='log x-axis', value=False)
-        plot_sld = widgets.Checkbox(description='plot SLD profile', value=True)
-        sld_pad_left = widgets.FloatText(description='SLD pad left',  value=0.2, step=0.1)
-        sld_pad_right = widgets.FloatText(description='SLD pad right', value=1.1, step=0.1)
-
-        # Color pickers
-        exp_color_picker = widgets.ColorPicker(description='exp color',       value='#0000FF')  # blue
-        exp_errcolor_picker = widgets.ColorPicker(description='errbar color',    value='#800080')  # purple
-        pred_color_picker = widgets.ColorPicker(description='pred color',      value='#FF0000')  # red
-        pol_color_picker = widgets.ColorPicker(description='polished color',  value='#FFA500')  # orange
-        sld_pred_color_picker = widgets.ColorPicker(description='SLD pred color',  value='#FF0000')  # red
-        sld_pol_color_picker = widgets.ColorPicker(description='SLD pol color',   value='#FFA500')  # orange
-
-        # Compute toggles
-        calc_curve = widgets.Checkbox(description='calc curve', value=True)
-        calc_sld_pred = widgets.Checkbox(description='calc predicted SLD', value=True)
-        calc_sld_pol = widgets.Checkbox(description='calc polished SLD', value=True)
-
-        btn_predict = widgets.Button(description='Predict')
-        btn_close = widgets.Button(description='Close')
-
-        controls_box = widgets.VBox([
-            widgets.HTML("<b>Preprocess & Predict</b>"),
-            widgets.HTML("<i>Preprocessing</i>"),
-            widgets.HBox([trunc_L, trunc_R]),
-            widgets.HBox([enable_filt, rem_single, rem_cons]),
-            widgets.HBox([thr, consec, qstart]),
-            widgets.HTML("<i>Polishing</i>"),
-            widgets.HBox([polish, use_sigmas_polish]),
-            widgets.HTML("<i>Plotting</i>"),
-            widgets.HBox([pred_show_yerr, pred_show_xerr, pred_logx, plot_sld]),
-            widgets.HBox([sld_pad_left, sld_pad_right]),
-            widgets.HTML("<i>Colors</i>"),
-            widgets.HBox([exp_color_picker, exp_errcolor_picker]),
-            widgets.HBox([pred_color_picker, pol_color_picker]),
-            widgets.HBox([sld_pred_color_picker, sld_pol_color_picker]),
-            widgets.HTML("<i>Compute</i>"),
-            widgets.HBox([calc_curve, calc_sld_pred, calc_sld_pol]),
-            widgets.HBox([btn_predict, btn_close]),
-        ])
-
-        out_predict = widgets.Output()
-        container = widgets.VBox([priors_box, controls_box, out_predict])
-        display(container)
-
-        def _sync_trunc(_):
-            if trunc_L.value >= trunc_R.value:
-                trunc_L.value = max(0, trunc_R.value - 1)
-        trunc_L.observe(_sync_trunc, names='value')
-        trunc_R.observe(_sync_trunc, names='value')
-
-        def _current_priors():
-            return np.array([s.value for s in sliders], dtype=np.float32)  # (param_dim, 2)
-
-        @out_predict.capture(clear_output=True)
-        def _on_predict(_):
-            out_predict.clear_output(wait=True)
-
-            res = self.preprocess_and_predict(
-                reflectivity_curve=reflectivity_curve,
-                q_values=q_values,
-                prior_bounds=_current_priors(),
-                sigmas=sigmas,
-                q_resolution=q_resolution,
-                ambient_sld=ambient_sld,
-                clip_prediction=True,
-                polish_prediction=polish.value,
-                use_sigmas_for_polishing=use_sigmas_polish.value,
-                calc_pred_curve=calc_curve.value,
-                calc_pred_sld_profile=(calc_sld_pred.value or plot_sld.value),
-                calc_polished_sld_profile=(calc_sld_pol.value or plot_sld.value),
-                sld_profile_padding_left=float(sld_pad_left.value),
-                sld_profile_padding_right=float(sld_pad_right.value),
-
-                truncate_index_left=trunc_L.value,
-                truncate_index_right=trunc_R.value,
-                enable_error_bars_filtering=enable_filt.value,
-                filter_threshold=thr.value,
-                filter_remove_singles=rem_single.value,
-                filter_remove_consecutives=rem_cons.value,
-                filter_consecutive=consec.value,
-                filter_q_start_trunc=qstart.value,
-            )
-
-            # Full experimental data as scatter
-            q_exp_plot = q_values
-            r_exp_plot = reflectivity_curve
-            yerr_plot = (sigmas if pred_show_yerr.value else None)
-            xerr_plot = (q_resolution if pred_show_xerr.value else None)
-
-            # Predicted curve only on the model region
-            q_pred = res.get('q_plot_pred', None)
-            r_pred = res.get('predicted_curve', None)
-
-            # Polished curve on the full experimental grid
-            q_pol = q_values if ('polished_curve' in res) else None
-            r_pol = res.get('polished_curve', None)
-
-            # SLD profiles
-            z_sld = res.get('predicted_sld_xaxis', None)
-            sld_pred = res.get('predicted_sld_profile', None)
-            sld_pol = res.get('sld_profile_polished', None)
-
-            print_prediction_results(res)
-
-            plot_reflectivity(
-                q_exp=q_exp_plot, r_exp=r_exp_plot,
-                yerr=yerr_plot, xerr=xerr_plot,
-                exp_style=('errorbar' if pred_show_yerr.value or pred_show_xerr.value else 'scatter'),
-                exp_color=exp_color_picker.value,
-                exp_errcolor=exp_errcolor_picker.value,
-                q_pred=q_pred, r_pred=r_pred, pred_color=pred_color_picker.value,
-                q_pol=q_pol, r_pol=r_pol, pol_color=pol_color_picker.value,
-                z_sld=z_sld, sld_pred=sld_pred, sld_pol=sld_pol,
-                sld_pred_color=sld_pred_color_picker.value,
-                sld_pol_color=sld_pol_color_picker.value,
-                plot_sld_profile=plot_sld.value,
-                logx=pred_logx.value, logy=True,
-                figsize=(12,6),
-                legend=True
-            )
-
-            self.widget_prediction_result = res
-
-        def _on_close(_):
-            container.close()
-            print("Widget closed.")
-
-        btn_predict.on_click(_on_predict)
-        btn_close.on_click(_on_close)
-
-class InferenceModel(object):
-    def __init__(self, name: str = None, trainer: PointEstimatorTrainer = None, preprocessing_parameters: dict = None,
-                 num_sampling: int = 2 ** 13):
-        self.log = logging.getLogger(__name__)
-        self.model_name = name
-        self.trainer = trainer
-        self.q = None
-        self.preprocessing = StandardPreprocessing(**(preprocessing_parameters or {}))
-        self._sampling_num = num_sampling
-
-        if trainer is None and self.model_name is not None:
-            self.load_model(self.model_name)
-        elif trainer is not None:
-            self._set_trainer(trainer, preprocessing_parameters)
-
-    ### API methods ###
-
-    def load_model(self, name: str) -> None:
-        self.log.debug(f"loading model {name}")
-        if self.model_name == name and self.trainer is not None:
-            return
-        self.model_name = name
-        self._set_trainer(get_trainer_by_name(name))
-        self.log.info(f"Model {name} is loaded.")
-
-    def train_model(self, name: str):
-        self.model_name = name
-        self.trainer = train_from_config(load_config(name))
-
-    def set_preprocessing_parameters(self, **kwargs) -> None:
-        self.preprocessing.set_parameters(**kwargs)
-
-    def preprocess(self,
-                   intensity: np.ndarray,
-                   scattering_angle: np.ndarray,
-                   attenuation: np.ndarray,
-                   update_params: bool = False,
-                   **kwargs) -> dict:
-        if update_params:
-            self.preprocessing.set_parameters(**kwargs)
-        preprocessed_dict = self.preprocessing(intensity, scattering_angle, attenuation, **kwargs)
-        return preprocessed_dict
-
-    def predict(self,
-                intensity: np.ndarray,
-                scattering_angle: np.ndarray,
-                attenuation: np.ndarray,
-                priors: np.ndarray,
-                preprocessing_parameters: dict = None,
-                polish: bool = True,
-                use_sampler: bool = False,
-                use_q_shift: bool = True,
-                max_d_change: float = 5.,
-                fit_growth: bool = True,
-                ) -> dict:
-
-        with print_time("everything"):
-            with print_time("preprocess"):
-                preprocessed_dict = self.preprocess(
-                    intensity, scattering_angle, attenuation, **(preprocessing_parameters or {})
-                )
-
-            preprocessed_curve = preprocessed_dict["curve_interp"]
-            raw_curve, raw_q = preprocessed_dict["curve"], preprocessed_dict["q_values"]
-            q_ratio = preprocessed_dict["q_ratio"]
-
-            with print_time("predict_from_preprocessed_curve"):
-                preprocessed_dict.update(self.predict_from_preprocessed_curve(
-                    preprocessed_curve, priors, raw_curve=raw_curve, raw_q=raw_q, polish=polish, q_ratio=q_ratio,
-                    use_sampler=use_sampler, use_q_shift=use_q_shift, max_d_change=max_d_change,
-                    fit_growth=fit_growth,
-                ))
-
-            return preprocessed_dict
-
-    def predict_from_preprocessed_curve(self,
-                                        curve: np.ndarray,
-                                        priors: np.ndarray, *,
-                                        polish: bool = True,
-                                        raw_curve: np.ndarray = None,
-                                        raw_q: np.ndarray = None,
-                                        clip_prediction: bool = True,
-                                        q_ratio: float = 1.,
-                                        use_sampler: bool = False,
-                                        use_q_shift: bool = True,
-                                        max_d_change: float = 5.,
-                                        fit_growth: bool = True,
-                                        ) -> dict:
-
-        scaled_curve = self._scale_curve(curve)
-        scaled_bounds, min_bounds, max_bounds = self._scale_priors(priors, q_ratio)
-
-        if not use_q_shift:
-            predicted_params: UniformSubPriorParams = self._simple_prediction(scaled_curve, scaled_bounds)
-        else:
-            predicted_params: UniformSubPriorParams = self._qshift_prediction(curve, scaled_bounds)
-
-        if use_sampler:
-            predicted_params: UniformSubPriorParams = self._sampler_solution(
-                curve, predicted_params,
-            )
-
-        if clip_prediction:
-            predicted_params = self._prior_sampler.clamp_params(predicted_params)
-
-        if raw_curve is None:
-            raw_curve = curve
-        if raw_q is None:
-            raw_q = self.q.squeeze().cpu().numpy()
-            raw_q_t = self.q
-        else:
-            raw_q_t = torch.from_numpy(raw_q).to(self.q)
-
-        if q_ratio != 1.:
-            predicted_params.scale_with_q(q_ratio)
-            raw_q = raw_q * q_ratio
-            raw_q_t = raw_q_t * q_ratio
-
-        prediction_dict = {
-            "params": get_prediction_array(predicted_params),
-            "param_names": get_param_labels(
-                predicted_params.max_layer_num,
-                thickness_name='d',
-                roughness_name='sigma',
-                sld_name='rho',
-            ),
-            "curve_predicted": predicted_params.reflectivity(raw_q_t).squeeze().cpu().numpy()
-        }
-
-        sld_x_axis, sld_profile, _ = get_density_profiles(
-            predicted_params.thicknesses, predicted_params.roughnesses, predicted_params.slds, num=1024,
-        )
-
-        prediction_dict['sld_profile'] = sld_profile.squeeze().cpu().numpy()
-        prediction_dict['sld_x_axis'] = sld_x_axis.squeeze().cpu().numpy()
-
-        if polish:
-            prediction_dict.update(self._polish_prediction(
-                raw_q, raw_curve, predicted_params, priors, sld_x_axis,
-                max_d_change=max_d_change, fit_growth=fit_growth,
-            ))
-
-            if fit_growth and "params_polished" in prediction_dict:
-                prediction_dict["param_names"].append("max_d_change")
-
-        return prediction_dict
-
-    ### some shortcut methods for data processing ###
-
-    def _simple_prediction(self, scaled_curve, scaled_bounds) -> UniformSubPriorParams:
-        context = torch.cat([scaled_curve, scaled_bounds], -1)
-
-        with torch.no_grad():
-            self.trainer.model.eval()
-            scaled_params = self.trainer.model(context)
-
-        predicted_params: UniformSubPriorParams = self._restore_predicted_params(scaled_params, context)
-        return predicted_params
-
-    @print_time
-    def _qshift_prediction(self, curve, scaled_bounds, num: int = 1000, dq_coef: float = 1.) -> UniformSubPriorParams:
-        q = self.q.squeeze().float()
-        curve = to_t(curve).to(q)
-        dq_max = (q[1] - q[0]) * dq_coef
-        q_shifts = torch.linspace(-dq_max, dq_max, num).to(q)
-        shifted_curves = _qshift_interp(q.squeeze(), curve, q_shifts)
-
-        assert shifted_curves.shape == (num, q.shape[0])
-
-        scaled_curves = self.trainer.loader.curves_scaler.scale(shifted_curves)
-        context = torch.cat([scaled_curves, torch.atleast_2d(scaled_bounds).expand(scaled_curves.shape[0], -1)], -1)
-
-        with torch.no_grad():
-            self.trainer.model.eval()
-            scaled_params = self.trainer.model(context)
-            restored_params = self._restore_predicted_params(scaled_params, context)
-
-            best_param = get_best_mse_param(
-                restored_params,
-                self._get_likelihood(curve),
-            )
-            return best_param
-
-    @print_time
-    def _polish_prediction(self,
-                           q: np.ndarray,
-                           curve: np.ndarray,
-                           predicted_params: Params,
-                           priors: np.ndarray,
-                           sld_x_axis,
-                           fit_growth: bool = True,
-                           max_d_change: float = 5.,
-                           ) -> dict:
-        params = torch.cat([
-            predicted_params.thicknesses.squeeze(),
-            predicted_params.roughnesses.squeeze(),
-            predicted_params.slds.squeeze()
-        ]).cpu().numpy()
-
-        polished_params_dict = {}
-
-        try:
-            if fit_growth:
-                polished_params_arr, curve_polished = get_fit_with_growth(
-                    q, curve, params, bounds=priors.T,
-                    max_d_change=max_d_change,
-                )
-                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[:-1][None]).to(self.q))
-            else:
-                polished_params_arr, curve_polished = standard_refl_fit(q, curve, params, bounds=priors.T)
-                polished_params = Params.from_tensor(torch.from_numpy(polished_params_arr[None]).to(self.q))
-        except Exception as err:
-            self.log.exception(err)
-            polished_params = predicted_params
-            polished_params_arr = get_prediction_array(polished_params)
-            curve_polished = np.zeros_like(q)
-
-        polished_params_dict['params_polished'] = polished_params_arr
-        polished_params_dict['curve_polished'] = curve_polished
-
-        sld_x_axis_polished, sld_profile_polished, _ = get_density_profiles(
-            polished_params.thicknesses, polished_params.roughnesses, polished_params.slds, z_axis=sld_x_axis,
-        )
-
-        polished_params_dict['sld_profile_polished'] = sld_profile_polished.squeeze().cpu().numpy()
-
-        return polished_params_dict
-
-    def _restore_predicted_params(self, scaled_params: Tensor, context: Tensor) -> UniformSubPriorParams:
-        predicted_params: UniformSubPriorParams = self.trainer.loader.prior_sampler.restore_params(
-            self.trainer.loader.prior_sampler.PARAM_CLS.restore_params_from_context(scaled_params, context)
-        )
-        return predicted_params
-
-    def _input2context(self, curve: np.ndarray, priors: np.ndarray, q_ratio: float = 1.):
-        scaled_curve = self._scale_curve(curve)
-        scaled_bounds, min_bounds, max_bounds = self._scale_priors(priors, q_ratio)
-        scaled_input = torch.cat([scaled_curve, scaled_bounds], -1)
-        return scaled_input, min_bounds, max_bounds
-
-    def _scale_curve(self, curve: np.ndarray or Tensor):
-        if not isinstance(curve, Tensor):
-            curve = torch.from_numpy(curve).float()
-        curve = torch.atleast_2d(curve).to(self.q)
-        scaled_curve = self.trainer.loader.curves_scaler.scale(curve)
-        return scaled_curve.float()
-
-    def _scale_priors(self, priors: np.ndarray or Tensor, q_ratio: float = 1.):
-        if not isinstance(priors, Tensor):
-            priors = torch.from_numpy(priors)
-
-        priors = priors.float().clone()
-
-        priors = priors.to(self.q).T
-        priors = self._prior_sampler.scale_bounds_with_q(priors, 1 / q_ratio)
-        priors = self._prior_sampler.clamp_bounds(priors)
-
-        min_bounds, max_bounds = priors[:, None].to(self.q)
-        prior_sampler = self._prior_sampler
-        scaled_bounds = torch.cat([
-            prior_sampler.scale_bounds(min_bounds), prior_sampler.scale_bounds(max_bounds)
-        ], -1)
-        return scaled_bounds.float(), min_bounds, max_bounds
-
-    @property
-    def _prior_sampler(self) -> ExpUniformSubPriorSampler:
-        return self.trainer.loader.prior_sampler
-
-    def _set_trainer(self, trainer, preprocessing_parameters: dict = None):
-        self.trainer = trainer
-        self.trainer.model.eval()
-        self._update_preprocessing(preprocessing_parameters)
-
-    def _update_preprocessing(self, preprocessing_parameters: dict = None):
-        self.log.debug(f"setting preprocessing_parameters {preprocessing_parameters}.")
-        self.q = self.trainer.loader.q_generator.q
-        self.preprocessing = StandardPreprocessing(
-            self.q.cpu().squeeze().numpy(),
-            **(preprocessing_parameters or {})
-        )
-        self.log.info(f"preprocessing params are set: {preprocessing_parameters}.")
-
-    @print_time
-    def _sampler_solution(
-            self,
-            curve: Tensor or np.ndarray,
-            predicted_params: UniformSubPriorParams,
-    ) -> UniformSubPriorParams:
-
-        if not isinstance(curve, Tensor):
-            curve = torch.from_numpy(curve).float()
-        curve = curve.to(self.q)
-
-        refined_params = simple_sampler_solution(
-            self._get_likelihood(curve),
-            predicted_params,
-            self._prior_sampler.min_bounds,
-            self._prior_sampler.max_bounds,
-            num=self._sampling_num, coef=0.1,
-        )
-
-        return refined_params
-
-    def _get_likelihood(self, curve, rel_err: float = 0.1, abs_err: float = 1e-12):
-        return LogLikelihood(
-            self.q, curve, self._prior_sampler, curve * rel_err + abs_err
-        )
-
+EasyInferenceModel = InferenceModel
 
 def get_prediction_array(params: BasicParams) -> np.ndarray:
     predict_arr = torch.cat([
