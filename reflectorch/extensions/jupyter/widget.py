@@ -1,9 +1,11 @@
 """
 Reflectorch Jupyter Widget
 """
-
+import torch
 import numpy as np
 from typing import Optional, Union, TYPE_CHECKING
+
+from torch.types import Device
 
 if TYPE_CHECKING:
     from reflectorch.inference.inference_model import InferenceModel
@@ -63,6 +65,7 @@ class ReflectorchPlotlyWidget:
                 initial_prior_bounds: Optional[np.ndarray] = None,
                 ambient_sld: Optional[float] = None,
                 model: Optional["InferenceModel"] = None,
+                root_dir: Optional[str] = None,
 ):
         """
         Initialize the Reflectorch Plotly widget
@@ -75,11 +78,12 @@ class ReflectorchPlotlyWidget:
             initial_prior_bounds: Initial bounds for priors, shape (n_params, 2)
             ambient_sld: Ambient SLD value (optional)
             model: InferenceModel instance for making predictions (optional)
+            root_dir: Root directory for the model (optional)
         """
         self.model = model
         self.prediction_result = None
         self.plot_manager = PlotlyPlotManager()
-
+        self.root_dir = root_dir
         # Store data for prediction
         self._data = {
             'reflectivity_curve': reflectivity_curve,
@@ -414,12 +418,15 @@ class ReflectorchPlotlyWidget:
                     print(f"🔄 Loading model: {selected_model_info['model_name']} ...")
                     
                     from reflectorch.inference.inference_model import InferenceModel
+
+                    device: Device = 'cuda' if torch.cuda.is_available() else 'cpu'
                     
                     # Create new model instance
                     new_model = InferenceModel(
                         config_name=selected_model_info['config_name'],
                         repo_id=selected_model_info['repo_id'],
-                        device=self.model.device if hasattr(self.model, 'device') else 'cuda'
+                        device=device,
+                        root_dir=self.root_dir
                     )
                     
                     print(f"📥 Model downloaded and initialized successfully")
