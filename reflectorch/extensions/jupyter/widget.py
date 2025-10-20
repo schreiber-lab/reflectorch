@@ -28,6 +28,11 @@ from reflectorch.extensions.jupyter.components import (
 from reflectorch.extensions.jupyter.model_selection import ModelSelection
 from reflectorch.extensions.jupyter.log_widget import LogWidget
 
+from huggingface_hub.utils import disable_progress_bars
+
+# that causes some Rust related errors when downloading models from Huggingface
+disable_progress_bars()
+
 
 class ReflectorchPlotlyWidget:
     """
