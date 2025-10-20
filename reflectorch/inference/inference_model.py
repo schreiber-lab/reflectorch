@@ -22,6 +22,12 @@ from reflectorch.inference.scipy_fitter import refl_fit, get_fit_with_growth
 from reflectorch.inference.sampler_solution import get_best_mse_param
 from reflectorch.utils import get_filtering_mask, to_t
 
+from huggingface_hub.utils import disable_progress_bars
+
+# that causes some Rust related errors when downloading models from Huggingface
+disable_progress_bars()
+
+
 class InferenceModel(object):
     """Facilitates the inference process using pretrained models
     
