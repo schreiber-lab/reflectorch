@@ -49,7 +49,9 @@ class ParameterTable:
         self.min_bounds = min_bounds
         self.max_bounds = max_bounds
         self.max_deltas = max_deltas
-        self.sliders = []
+        self.sliders = []  # Store range sliders
+        self.min_inputs = []  # Store min bound inputs
+        self.max_inputs = []  # Store max bound inputs
         self.result_displays = {}
         self.additional_params_controls = additional_params_controls
         self.predict_button = predict_button
@@ -60,9 +62,12 @@ class ParameterTable:
         """Create the parameter table widget"""
         init_pb = np.array(initial_bounds) if initial_bounds is not None else None
         
-        # Add custom CSS for slider styling
-        slider_style = widgets.HTML("""
+        # Add custom CSS for styling
+        custom_style = widgets.HTML("""
         <style>
+            .widget-float-text input {
+                text-align: center;
+            }
             .widget-inline-hbox .widget-readout {
                 margin-left: 20px !important;
             }
@@ -75,10 +80,12 @@ class ParameterTable:
         # Create header row
         header = widgets.HBox([
             widgets.HTML("<b>Parameter</b>", layout=widgets.Layout(width='150px')),
-            widgets.HTML("<b>Prior Bounds</b>", layout=widgets.Layout(width='400px')),
-            widgets.HTML("<b>Predicted</b>", layout=widgets.Layout(width='120px', margin='0px 0px 0px 20px')),
-            widgets.HTML("<b>Polished</b>", layout=widgets.Layout(width='120px')),
-            widgets.HTML("<b>Uncertainty</b>", layout=widgets.Layout(width='120px'))
+            widgets.HTML("<b>Prior Bounds</b>", layout=widgets.Layout(width='300px')),
+            widgets.HTML("<b></b>", layout=widgets.Layout(width='50px')),
+            widgets.HTML("<b></b>", layout=widgets.Layout(width='50px')),
+            widgets.HTML("<b>Predicted</b>", layout=widgets.Layout(width='100px')),
+            widgets.HTML("<b>Polished</b>", layout=widgets.Layout(width='100px')),
+            widgets.HTML("<b>Uncertainty</b>", layout=widgets.Layout(width='100px'))
         ], layout=widgets.Layout(margin='5px 0px', align_items='center'))
         
         # Create parameter rows
@@ -102,29 +109,46 @@ class ParameterTable:
                 layout=widgets.Layout(width='150px', display='flex', align_items='center', justify_content='flex-start')
             )
             
-            # Prior bounds slider - use container to control spacing
+            # Range slider - updates continuously
             slider = widgets.FloatRangeSlider(
                 value=[init_min, init_max],
                 min=float(self.min_bounds[i]),
                 max=float(self.max_bounds[i]),
                 step=0.01,
-                layout=widgets.Layout(width='400px'),
-                readout_format='.2f',
+                layout=widgets.Layout(width='180px'),
+                readout=False,  # Hide readout since we have input boxes
+                continuous_update=True,  # Update instantly while dragging
                 style={'description_width': '0px', 'handle_color': '#2196F3'}
+            )
+            
+            # Min bound input - updates continuously
+            min_input = widgets.FloatText(
+                value=round(init_min, 2),
+                step=0.01,
+                layout=widgets.Layout(width='65px'),
+                continuous_update=True  # Update on every keystroke
+            )
+            
+            # Max bound input - updates continuously
+            max_input = widgets.FloatText(
+                value=round(init_max, 2),
+                step=0.01,
+                layout=widgets.Layout(width='65px'),
+                continuous_update=True  # Update on every keystroke
             )
             
             # Result displays
             predicted_display = widgets.HTML(
                 value="<i>-</i>",
-                layout=widgets.Layout(width='120px', margin='0px 0px 0px 20px', display='flex', align_items='center', justify_content='flex-start')
+                layout=widgets.Layout(width='100px', display='flex', align_items='center', justify_content='flex-start')
             )
             polished_display = widgets.HTML(
                 value="<i>-</i>",
-                layout=widgets.Layout(width='120px', display='flex', align_items='center', justify_content='flex-start')
+                layout=widgets.Layout(width='100px', display='flex', align_items='center', justify_content='flex-start')
             )
             uncertainty_display = widgets.HTML(
                 value="<i>-</i>",
-                layout=widgets.Layout(width='120px', display='flex', align_items='center', justify_content='flex-start')
+                layout=widgets.Layout(width='100px', display='flex', align_items='center', justify_content='flex-start')
             )
             
             # Store references for updating results
@@ -134,14 +158,18 @@ class ParameterTable:
                 'uncertainty': uncertainty_display
             }
             
-            # Add slider validation
-            self._add_slider_validation(slider, float(self.max_deltas[i]))
+            # Add synchronization between slider and inputs
+            self._add_widget_synchronization(slider, min_input, max_input, i)
             self.sliders.append(slider)
+            self.min_inputs.append(min_input)
+            self.max_inputs.append(max_input)
             
             # Create row layout with vertical alignment
             row = widgets.HBox([
                 param_label,
                 slider,
+                min_input,
+                max_input,
                 predicted_display,
                 polished_display,
                 uncertainty_display
@@ -162,7 +190,7 @@ class ParameterTable:
         
         # Create the main parameter table
         main_table = widgets.VBox([
-            slider_style,
+            custom_style,
             title_row,
             header,
             widgets.HTML("<hr style='margin: 5px 0px;'>"),
@@ -182,25 +210,137 @@ class ParameterTable:
         
         return widgets.VBox(table_components)
     
-    def _add_slider_validation(self, slider: widgets.FloatRangeSlider, max_width: float):
-        """Add validation to constrain slider range"""
-        def validate_range(change):
-            a, b = change['new']
-            if b - a > max_width:
-                oa, ob = change['old']
-                if abs(oa - a) > abs(ob - b):
-                    b = a + max_width
-                else:
-                    a = b - max_width
-                slider.value = (a, b)
+    def _add_widget_synchronization(self, slider: widgets.FloatRangeSlider, 
+                                     min_input: widgets.FloatText, 
+                                     max_input: widgets.FloatText, 
+                                     param_idx: int):
+        """Add synchronization between slider and input boxes with validation"""
+        max_width = float(self.max_deltas[param_idx])
+        global_min = float(self.min_bounds[param_idx])
+        global_max = float(self.max_bounds[param_idx])
         
-        slider.observe(validate_range, names='value')
+        # Flag to prevent infinite update loops
+        updating = {'active': False}
+        
+        def validate_and_clamp(min_val, max_val, source='slider'):
+            """Apply all constraints and return valid (min, max) pair
+            
+            Args:
+                min_val: Minimum value
+                max_val: Maximum value
+                source: Which widget triggered the change ('slider', 'min', or 'max')
+            """
+            # Clamp to global bounds first
+            min_val = max(global_min, min(min_val, global_max))
+            max_val = max(global_min, min(max_val, global_max))
+            
+            # Ensure min < max with proper handling based on which widget changed
+            min_step = 0.01  # Minimum separation between min and max
+            
+            if min_val >= max_val:
+                if source == 'min':
+                    # User changed min, adjust min to be less than max
+                    min_val = max_val - min_step
+                    # If this pushes min below global_min, adjust max instead
+                    if min_val < global_min:
+                        min_val = global_min
+                        max_val = min_val + min_step
+                        # If max exceeds global_max, we have a problem
+                        if max_val > global_max:
+                            max_val = global_max
+                            min_val = max_val - min_step
+                elif source == 'max':
+                    # User changed max, adjust max to be greater than min
+                    max_val = min_val + min_step
+                    # If this pushes max above global_max, adjust min instead
+                    if max_val > global_max:
+                        max_val = global_max
+                        min_val = max_val - min_step
+                        # If min goes below global_min, we have a problem
+                        if min_val < global_min:
+                            min_val = global_min
+                            max_val = min_val + min_step
+                else:  # source == 'slider'
+                    # Slider changed, just ensure there's a minimum gap
+                    avg = (min_val + max_val) / 2
+                    min_val = avg - min_step / 2
+                    max_val = avg + min_step / 2
+            
+            # Ensure range doesn't exceed max_width
+            if max_val - min_val > max_width:
+                if source == 'min':
+                    # User changed min, keep max fixed and adjust min
+                    min_val = max_val - max_width
+                    if min_val < global_min:
+                        min_val = global_min
+                        max_val = min_val + max_width
+                elif source == 'max':
+                    # User changed max, keep min fixed and adjust max
+                    max_val = min_val + max_width
+                    if max_val > global_max:
+                        max_val = global_max
+                        min_val = max_val - max_width
+                else:  # source == 'slider'
+                    # Slider changed, adjust based on center
+                    center = (min_val + max_val) / 2
+                    min_val = max(global_min, center - max_width / 2)
+                    max_val = min(global_max, min_val + max_width)
+                    if max_val - min_val > max_width:
+                        max_val = min(global_max, center + max_width / 2)
+                        min_val = max(global_min, max_val - max_width)
+            
+            return min_val, max_val
+        
+        def sync_all_widgets(min_val, max_val, source='slider'):
+            """Update all three widgets if values changed"""
+            if updating['active']:
+                return
+            
+            updating['active'] = True
+            
+            # Validate values with source information
+            min_val, max_val = validate_and_clamp(min_val, max_val, source)
+            
+            # Round to 2 decimal places for display
+            min_val = round(min_val, 2)
+            max_val = round(max_val, 2)
+            
+            # Update all widgets if needed
+            if slider.value != (min_val, max_val):
+                slider.value = (min_val, max_val)
+            if min_input.value != min_val:
+                min_input.value = min_val
+            if max_input.value != max_val:
+                max_input.value = max_val
+            
+            updating['active'] = False
+        
+        def on_slider_change(change):
+            min_val, max_val = change['new']
+            sync_all_widgets(min_val, max_val, source='slider')
+        
+        def on_min_input_change(change):
+            min_val = change['new']
+            max_val = max_input.value
+            sync_all_widgets(min_val, max_val, source='min')
+        
+        def on_max_input_change(change):
+            min_val = min_input.value
+            max_val = change['new']
+            sync_all_widgets(min_val, max_val, source='max')
+        
+        # Attach observers
+        slider.observe(on_slider_change, names='value')
+        min_input.observe(on_min_input_change, names='value')
+        max_input.observe(on_max_input_change, names='value')
     
     def get_prior_bounds(self) -> np.ndarray:
-        """Get current prior bounds from sliders"""
-        if not self.sliders:
+        """Get current prior bounds from input boxes"""
+        if not self.min_inputs or not self.max_inputs:
             return np.array([], dtype=np.float32).reshape(0, 2)
-        return np.array([s.value for s in self.sliders], dtype=np.float32)
+        return np.array([[min_inp.value, max_inp.value] 
+                        for min_inp, max_inp in zip(self.min_inputs, self.max_inputs)], 
+                       dtype=np.float32)
     
     def update_results(self, prediction_result: Dict[str, Any]):
         """Update parameter result displays"""
@@ -209,7 +349,7 @@ class ParameterTable:
         
         predicted_params = prediction_result.get('predicted_params_array', [])
         polished_params = prediction_result.get('polished_params_array', None)
-        error_bars = prediction_result.get('polished_params_error_bars', None)
+        error_bars = prediction_result.get('polished_params_error_array', None)
         
         for i, displays in self.result_displays.items():
             # Update predicted value
