@@ -41,6 +41,7 @@ dependencies = [
     "safetensors",
     "tensorboard",
     "anywidget",
+    "joblib",
 ]
 
 [project.optional-dependencies]
