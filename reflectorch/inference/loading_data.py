@@ -35,3 +35,21 @@ def load_mft_data(filepath):
 
     data_array = np.array(data)
     return data_array.T
+
+
+def load_ort_data(filepath):
+    raise NotImplementedError("Loading ORT data is not implemented yet")
+
+def load_csv_data(filepath):
+    raise NotImplementedError("Loading CSV data is not implemented yet")
+
+
+def load_data(filepath):
+    if filepath.endswith('.mft'):
+        return load_mft_data(filepath)
+    elif filepath.endswith('.ort'):
+        return load_ort_data(filepath)
+    elif filepath.endswith('.csv'):
+        return load_csv_data(filepath)
+    else:
+        raise ValueError(f"Unsupported file format: {filepath}")

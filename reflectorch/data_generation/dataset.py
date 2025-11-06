@@ -26,6 +26,7 @@ class BasicDataset(object):
                                                 which scales the curves to the range [-1, 1], the minimum considered intensity being 1e-10.
         calc_denoised_curves (bool, optional): whether to add the curves without noise to the dictionary. Defaults to False.
         calc_nonsmeared_curves (bool, optional): whether to add the curves without smearing to the dictionary (only relevant when smearing is applied). Defaults to False.
+        add_noisy_curves (bool, optional): whether to add the noisy curves to the dictionary. Defaults to False.
         smearing (Smearing, optional): curve smearing generator. Defaults to None.
     """
     def __init__(self,
@@ -36,6 +37,7 @@ class BasicDataset(object):
                  curves_scaler: CurvesScaler = None,
                  calc_denoised_curves: bool = False,
                  calc_nonsmeared_curves: bool = False,
+                 add_noisy_curves: bool = False,
                  smearing: Smearing = None,
                  ):
         self.q_generator = q_generator
@@ -46,6 +48,7 @@ class BasicDataset(object):
         self.smearing = smearing
         self.calc_denoised_curves = calc_denoised_curves
         self.calc_nonsmeared_curves = calc_nonsmeared_curves
+        self.add_noisy_curves = add_noisy_curves
 
     def update_batch_data(self, batch_data: BATCH_DATA_TYPE) -> None:
         """implement in a subclass to edit batch_data dict inplace"""
@@ -94,6 +97,9 @@ class BasicDataset(object):
 
         if self.intensity_noise:
             noisy_curves = self.intensity_noise(noisy_curves, batch_data)
+        
+        if self.add_noisy_curves:
+            batch_data['noisy_curves'] = noisy_curves
 
         scaled_noisy_curves = self.curves_scaler.scale(noisy_curves)
         batch_data['scaled_noisy_curves'] = scaled_noisy_curves

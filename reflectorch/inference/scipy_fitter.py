@@ -60,14 +60,17 @@ def standard_refl_fit(
 
 
 
-def batch_standard_refl_fit(
-        q: np.ndarray,
+def batch_refl_fit(
+        q: np.ndarray, 
         curves: np.ndarray,
-        init_params_list: np.ndarray,
+        init_params: np.ndarray, # (n_curves, n_params)
+        prior_sampler: PriorSampler,
         bounds: np.ndarray = None,
-        refl_generator=abeles_np,
-        restore_params_func=standard_restore_params,
+        error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
+        method: str = 'trf', #'lm', 'trf'
+        polishing_max_nfev: int = None,
+        reflectivity_kwargs: dict = None,
         n_jobs: int = -1,
         verbose: int = 5,
         **kwargs
@@ -81,18 +84,26 @@ def batch_standard_refl_fit(
         1D array of momentum transfer values (same for all curves).
     curves : np.ndarray
         2D array of reflectivity curves with shape (n_curves, n_q).
-    init_params_list : np.ndarray
-        2D array of initial parameter guesses for each curve .
+    init_params : np.ndarray
+        2D array of initial parameter guesses (n_curves, n_params).
+    prior_sampler : PriorSampler
+        The prior sampler.
     bounds : np.ndarray, optional
-        Bounds for the parameters, shape (2, n_params). Default: None.
-    refl_generator : callable, optional
-        Function to generate reflectivity curve from parameters. Default: `abeles_np`.
-    restore_params_func : 
-    scale_curve_func :
+        Bounds for the parameters, shape (2, n_params). Shared by all the curves. Default: None.
+    error_bars : np.ndarray, optional
+        Error bars for the curves, shape (n_curves, n_q). Default: None.
+    scale_curve_func : callable, optional
+        Function to scale the curves. Default: `np.log10`.
+    method : str, optional
+        The method to use for the fitting. Default: 'trf'.
+    polishing_max_nfev : int, optional
+        The maximum number of function evaluations for the polishing step. Default: None.
+    reflectivity_kwargs : dict, optional
+        Keyword arguments for the reflectivity function. Default: None.
     n_jobs : int, optional
-        Number of parallel jobs to run. Default: -1 (all CPUs).
+        The number of jobs to run in parallel. Default: -1 (all CPUs).
     verbose : int, optional
-        Verbosity level for joblib. Default: 5.
+        The verbosity level for joblib. Default: 5.
     **kwargs : dict
         Extra keyword arguments passed to `scipy.optimize.curve_fit`.
 
@@ -103,20 +114,34 @@ def batch_standard_refl_fit(
     curves_array : np.ndarray
         Array of fitted reflectivity curves, shape (n_curves, n_q).
     """
+    if bounds is not None:
+        if bounds.ndim == 2:
+            bounds = bounds[None].repeat(curves.shape[0], 0)
+        elif bounds.ndim == 3:
+            assert bounds.shape[0] == curves.shape[0], f"Bounds must have the same number of curves as the number of curves, got {bounds.shape[0]} and {curves.shape[0]}"
+        else:
+            raise ValueError(f"Bounds must be a 2D or 3D array, got {bounds.ndim}D array")
+    else:
+        bounds = [None] * curves.shape[0]
+    
     results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-        delayed(standard_refl_fit)(
-            q, curve, init_params,
-            bounds=bounds,
-            refl_generator=refl_generator,
-            restore_params_func=restore_params_func,
+        delayed(refl_fit)(
+            q=q, curve=curve, init_params=init_params,
+            bounds=bound,
+            prior_sampler=prior_sampler,
+            error_bars=error_bars,
+            method=method,
             scale_curve_func=scale_curve_func,
+            polishing_max_nfev=polishing_max_nfev,
+            reflectivity_kwargs=reflectivity_kwargs,
             **kwargs
         )
-        for curve, init_params in zip(curves, init_params_list)
+        for curve, init_params, bound in zip(curves, init_params, bounds)
     )
 
     params_array, curves_array = zip(*results)
     return np.array(params_array), np.array(curves_array)
+
 
 def refl_fit(
         q: np.ndarray, 
@@ -132,6 +157,8 @@ def refl_fit(
         **kwargs
 ):
     if bounds is not None:
+        if bounds.ndim != 2:
+            raise ValueError(f"Bounds must be a 2D array, got {bounds.ndim}D array")
         # introduce a small perturbation for fixed bounds
         epsilon = 1e-6
         adjusted_bounds = bounds.copy()
