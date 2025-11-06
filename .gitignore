@@ -7,6 +7,7 @@ __pycache__/
 *.sh
 *.exe
 #*.ipynb
+.ipynb_checkpoints/
 
 *.pt
 *.h5
@@ -33,6 +34,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+figures/
 
 #Documentation
 documentation/_build/*

@@ -12,6 +12,8 @@ def print_prediction_results(prediction_dict, param_names=None, width=10, precis
     pred = np.asarray(prediction_dict.get("predicted_params_array", []), dtype=float)
     pol = prediction_dict.get("polished_params_array", None)
     pol = np.asarray(pol, dtype=float) if pol is not None else None
+    pol_err = prediction_dict.get('polished_params_error_array', None)
+    pol_err = np.asarray(pol_err, dtype=float) if pol_err is not None else None
 
     name_w = max(14, max((len(str(n)) for n in param_names), default=14))
 
@@ -21,6 +23,8 @@ def print_prediction_results(prediction_dict, param_names=None, width=10, precis
         hdr = f"{'Parameter'.ljust(name_w)}  {'Predicted'.rjust(width)}"
         if pol is not None:
             hdr += f"  {'Polished'.rjust(width)}"
+        if pol_err is not None:
+            hdr += f"   {'Polished err'.rjust(width)}"
         print(hdr)
         print("-" * len(hdr))
 
@@ -30,6 +34,9 @@ def print_prediction_results(prediction_dict, param_names=None, width=10, precis
         if pol is not None:
             pol_val = pol[i] if i < pol.size else float("nan")
             row += f"  {num_fmt.format(pol_val)}"
+        if pol_err is not None:
+            pol_err_val = pol_err[i] if i < pol_err.size else float('nan')
+            row += f'   {num_fmt.format(pol_err_val)}'
         print(row)
 
 
