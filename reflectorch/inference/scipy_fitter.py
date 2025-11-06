@@ -69,7 +69,7 @@ def batch_refl_fit(
         error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
         method: str = 'trf', #'lm', 'trf'
-        polishing_max_nfev: int = None,
+        polishing_max_steps: int = None,
         reflectivity_kwargs: dict = None,
         n_jobs: int = -1,
         verbose: int = 5,
@@ -96,7 +96,7 @@ def batch_refl_fit(
         Function to scale the curves. Default: `np.log10`.
     method : str, optional
         The method to use for the fitting. Default: 'trf'.
-    polishing_max_nfev : int, optional
+    polishing_max_steps : int, optional
         The maximum number of function evaluations for the polishing step. Default: None.
     reflectivity_kwargs : dict, optional
         Keyword arguments for the reflectivity function. Default: None.
@@ -111,6 +111,8 @@ def batch_refl_fit(
     -------
     params_array : np.ndarray
         Array of fitted parameter values for each curve, shape (n_curves, n_params).
+    error_bars_array : np.ndarray
+        Array of error bars for the fitted parameter values, shape (n_curves, n_params).
     curves_array : np.ndarray
         Array of fitted reflectivity curves, shape (n_curves, n_q).
     """
@@ -132,15 +134,15 @@ def batch_refl_fit(
             error_bars=error_bars,
             method=method,
             scale_curve_func=scale_curve_func,
-            polishing_max_nfev=polishing_max_nfev,
+            polishing_max_steps=polishing_max_steps,
             reflectivity_kwargs=reflectivity_kwargs,
             **kwargs
         )
         for curve, init_params, bound in zip(curves, init_params, bounds)
     )
 
-    params_array, curves_array = zip(*results)
-    return np.array(params_array), np.array(curves_array)
+    params_array, error_bars, curves_array = zip(*results)
+    return np.array(params_array), np.array(error_bars), np.array(curves_array)
 
 
 def refl_fit(
