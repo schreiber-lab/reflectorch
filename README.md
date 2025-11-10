@@ -7,7 +7,7 @@
 [![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)](https://yaml.org/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/valentinsingularity/reflectivity)
 
-[![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
+[![Python version](https://img.shields.io/badge/python-3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
 ![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
 <!-- [![CodeFactor](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch/badge)](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch) -->
