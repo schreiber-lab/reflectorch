@@ -10,6 +10,7 @@
 [![Python version](https://img.shields.io/badge/python-3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
 ![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08169/status.svg)](https://doi.org/10.21105/joss.08169)
 <!-- [![CodeFactor](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch/badge)](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch) -->
 <!-- [![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://jupyterbook.org/) -->
 [![Documentation Page](https://img.shields.io/badge/Documentation%20Page-%23FFDD33.svg?style=flat&logo=read-the-docs&logoColor=black)](https://schreiber-lab.github.io/reflectorch/)
@@ -74,6 +75,21 @@ If you'd like to contribute to the package, please see our [Contributing Guideli
 
 ## Citation
 If you find our work useful in your research, please cite as follows:
+
+```
+@Article{Munteanu2025, 
+doi = {10.21105/joss.08169}, 
+url = {https://doi.org/10.21105/joss.08169}, 
+year = {2025}, 
+publisher = {The Open Journal}, 
+volume = {10}, 
+number = {115}, 
+pages = {8169}, 
+author = {Munteanu, Valentin and Starostin, Vladimir and Hinderhofer, Alexander and Gerlach, Alexander and Lapkin, Dmitry and Schreiber, Frank}, 
+title = {reflectorch: a deep learning package for X-ray and neutron reflectometry}, 
+journal = {Journal of Open Source Software} }
+```
+
 ```
 @Article{Munteanu2024,
   author    = {Munteanu, Valentin and Starostin, Vladimir and Greco, Alessandro and Pithan, Linus and Gerlach, Alexander and Hinderhofer, Alexander and Kowarik, Stefan and Schreiber, Frank},
