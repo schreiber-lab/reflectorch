@@ -1,6 +1,8 @@
 import pytest
 import numpy as np
 
+from reflectorch.inference.loading_data import load_mft_data
+
 from reflectorch.paths import TEST_DATA_PATH
 
 @pytest.fixture(
@@ -25,3 +27,28 @@ def raw_data_with_preprocessing_params(request):
     )
 
     return raw_data, preprocessing_params
+
+
+@pytest.fixture(
+    params=["test_data.mft"],
+    scope="session"
+)
+def mft_data_filepath(request):
+    return TEST_DATA_PATH / request.param
+
+
+@pytest.fixture(scope="session")
+def mft_data(mft_data_filepath):
+    return load_mft_data(mft_data_filepath)
+
+
+@pytest.fixture(scope="session")
+def simulator():
+    prior_bounds = [
+        (1., 400.), (1., 10.),                 # thickness (L2, L1)
+        (0., 20.), (0., 15.), (0., 15.),       # roughness (Air/L2, L2/L1, L1/Sub)
+        (10., 13.), (20., 21.), (20., 21.)     # SLDs (L2, L1, Sub)
+    ]
+
+
+

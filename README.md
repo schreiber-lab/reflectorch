@@ -7,11 +7,12 @@
 [![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)](https://yaml.org/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/valentinsingularity/reflectivity)
 
-[![Python version](https://img.shields.io/badge/python-3.7%7C3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
+[![Python version](https://img.shields.io/badge/python-3.8%7C3.9%7C3.10%7C3.11%7C3.12-blue.svg)](https://www.python.org/)
 ![CI workflow status](https://github.com/schreiber-lab/reflectorch/actions/workflows/ci.yml/badge.svg)
 ![Repos size](https://img.shields.io/github/repo-size/schreiber-lab/reflectorch)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08169/status.svg)](https://doi.org/10.21105/joss.08169)
 <!-- [![CodeFactor](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch/badge)](https://www.codefactor.io/repository/github/schreiber-lab/reflectorch) -->
-[![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://jupyterbook.org/)
+<!-- [![Jupyter Book Documentation](https://jupyterbook.org/badge.svg)](https://jupyterbook.org/) -->
 [![Documentation Page](https://img.shields.io/badge/Documentation%20Page-%23FFDD33.svg?style=flat&logo=read-the-docs&logoColor=black)](https://schreiber-lab.github.io/reflectorch/)
 <!-- [![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) -->
 
@@ -59,7 +60,12 @@ Users with Nvidia **GPU**s need to additionally install **Pytorch with CUDA supp
 We provide an interactive Google Colab notebook for exploring the basic functionality of the package: [![Explore reflectorch in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rf_M8S_5kYvUoK0-9-AYal_fO3oFl7ck?usp=sharing)<br>
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-%23FFD700.svg?style=flat&logo=huggingface&logoColor=black)](https://huggingface.co/valentinsingularity/reflectivity)
-Configuration files and the corresponding pretrained model weights are hosted on Huggingface: [https://huggingface.co/valentinsingularity/reflectivity](https://huggingface.co/valentinsingularity/reflectivity).
+Pretrained models (network weights and their corresponding configuration files) are hosted on [Hugging Face](https://huggingface.co/). Two repositories are currently available:
+
+| Repository | Description |
+|-------------|--------------|
+| [**valentinsingularity/reflectivity**](https://huggingface.co/valentinsingularity/reflectivity) | Research repository containing a large variety of XRR and NR models. |
+| [**reflectorch-ILL**](https://huggingface.co/reflectorch-ILL) | Curated repository of selected, validated NR models. |
 
 <!-- [![Docker](https://img.shields.io/badge/Docker-2496ED.svg?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/)
 Docker images for reflectorch *will* be hosted on Dockerhub. -->
@@ -69,6 +75,21 @@ If you'd like to contribute to the package, please see our [Contributing Guideli
 
 ## Citation
 If you find our work useful in your research, please cite as follows:
+
+```
+@Article{Munteanu2025, 
+doi = {10.21105/joss.08169}, 
+url = {https://doi.org/10.21105/joss.08169}, 
+year = {2025}, 
+publisher = {The Open Journal}, 
+volume = {10}, 
+number = {115}, 
+pages = {8169}, 
+author = {Munteanu, Valentin and Starostin, Vladimir and Hinderhofer, Alexander and Gerlach, Alexander and Lapkin, Dmitry and Schreiber, Frank}, 
+title = {reflectorch: a deep learning package for X-ray and neutron reflectometry}, 
+journal = {Journal of Open Source Software} }
+```
+
 ```
 @Article{Munteanu2024,
   author    = {Munteanu, Valentin and Starostin, Vladimir and Greco, Alessandro and Pithan, Linus and Gerlach, Alexander and Hinderhofer, Alexander and Kowarik, Stefan and Schreiber, Frank},
