@@ -205,7 +205,7 @@ def get_param_labels(
         imag_sld_name: str = 'SLD imag',
         substrate_name: str = 'sub',
         parameterization_type: str = 'standard',
-        number_top_to_bottom: bool = False,
+        number_top_to_bottom: bool = True,
 ) -> List[str]:
     def pos(i):
         return i + 1 if number_top_to_bottom else num_layers - i
