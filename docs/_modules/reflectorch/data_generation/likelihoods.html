@@ -374,8 +374,6 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="PoissonLogLikelihood">
-<a class="viewcode-back" href="../../../api.html#reflectorch.PoissonLogLikelihood">[docs]</a>
 <span class="k">class</span> <span class="nc">PoissonLogLikelihood</span><span class="p">(</span><span class="n">LogLikelihood</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the Poisson log likelihood of the thin film parameters</span>
 
@@ -385,14 +383,10 @@ document.write(`
 <span class="sd">        priors (PriorSampler): the prior sampler</span>
 <span class="sd">        sigmas (Union[float, Tensor]): the sigmas (i.e. intensity error bars)</span>
 <span class="sd">    &quot;&quot;&quot;</span>    
-<div class="viewcode-block" id="PoissonLogLikelihood.calc_log_likelihood">
-<a class="viewcode-back" href="../../../api.html#reflectorch.PoissonLogLikelihood.calc_log_likelihood">[docs]</a>
     <span class="k">def</span> <span class="nf">calc_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;computes the Poisson log likelihood&quot;&quot;&quot;</span>
         <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_curve</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmas2</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_curve</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span> <span class="o">-</span> <span class="n">curves</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
-</div>
-
+        <span class="k">return</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
                 </article>

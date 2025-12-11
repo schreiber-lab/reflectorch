@@ -380,7 +380,7 @@ document.write(`
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-linear-resolution-smearing">4.1. Handling linear resolution smearing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-pointwise-resolution-smearing">4.2. Handling pointwise resolution smearing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structures-with-ambient-medium-fronting-different-than-air">4.3. Structures with ambient medium (fronting) different than air</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structures-with-fronting-medium-different-than-air">4.3. Structures with fronting medium different than air</a></li>
 </ul>
             </nav>
         </div>
@@ -400,7 +400,8 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">from</span> <span class="nn">reflectorch</span> <span class="kn">import</span> <span class="n">EasyInferenceModel</span><span class="p">,</span> <span class="n">interp_reflectivity</span>
+<span class="kn">from</span> <span class="nn">reflectorch</span> <span class="kn">import</span> <span class="n">InferenceModel</span><span class="p">,</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">Backing</span><span class="p">,</span> <span class="n">EXP_DATA_DIR</span>
+<span class="kn">from</span> <span class="nn">reflectorch.inference.plotting</span> <span class="kn">import</span> <span class="n">print_prediction_results</span><span class="p">,</span> <span class="n">plot_reflectivity</span>
 
 <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1"># set seed for reproducibility</span>
 </pre></div>
@@ -413,7 +414,7 @@ document.write(`
 <p>We consider the following NR data for a 1-layer stucture of Ni on Si (air as ambient), measured at a resolution dq/q = 0.1 (i.e. 10%):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/Ni500.dat&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;Ni500.dat&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
 <span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -440,82 +441,53 @@ document.write(`
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                 <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">barsabove</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">label</span><span class="o">=</span><span class="s1">&#39;experimental data&#39;</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> 
+    <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x296ee1fc9a0&gt;
-</pre></div>
-</div>
-<img alt="_images/6c2a8e741eccaeaece80f87f8449fa9ba57674cb98d8aa85388099e58fd00903.png" src="_images/6c2a8e741eccaeaece80f87f8449fa9ba57674cb98d8aa85388099e58fd00903.png" />
+<img alt="_images/92421f07aaf73206a3186b56c61bb5ef4d8063d50f99d536ebfc863253d5fdeb.png" src="_images/92421f07aaf73206a3186b56c61bb5ef4d8063d50f99d536ebfc863253d5fdeb.png" />
 </div>
 </div>
-<p>We initialize an inference object for a model trained for neutron reflectometry and a standard parameterization with 1 layer (for more details on the <code class="docutils literal notranslate"><span class="pre">EasyInferenceModel</span></code> class see the previous tutorial):</p>
+<p>We initialize an inference object for a model trained for neutron reflectometry and a standard parameterization with 1 layer (for more details on the <code class="docutils literal notranslate"><span class="pre">InferenceModel</span></code> class see the previous tutorial). Notably, the parameterization has 2 additional nuisance parameters: a scaling factor for the intensity of the reflectivity curve and the constant backround (in log10 representation). Here we load the models from the <a class="reference external" href="https://huggingface.co/reflectorch-ILL">‘reflectorch-ILL’</a> Huggingface repository which is a repository for selected NR models mainly targeting use cases relevant at the Institut Laue-Langevin (ILL), as opposed to the default research-based Huggingface repository <a class="reference external" href="https://huggingface.co/valentinsingularity/reflectivity/tree/main">‘valentinsingularity/reflectivity’</a>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s1">&#39;b_mc_point_neutron_conv_standard_L1_InputQDq&#39;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s2">&quot;NR-1layer-basic-v1&quot;</span>
 
-<span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
-                                     <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
-                                     <span class="p">)</span>
+<span class="n">inference_model</span> <span class="o">=</span> <span class="n">InferenceModel</span><span class="p">(</span>
+    <span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
+    <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;reflectorch-ILL&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\b_mc_point_neutron_conv_standard_L1_InputQDq.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_b_mc_point_neutron_conv_standard_L1_InputQDq.safetensors` found locally.
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\NR-1layer-basic-v1.yaml` found locally.
+Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_NR-1layer-basic-v1.safetensors` found locally.
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model b_mc_point_neutron_conv_standard_L1_InputQDq loaded. Number of parameters: 4.98 M
-The model corresponds to a `standard_model` parameterization with 1 layers (5 predicted parameters)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model NR-1layer-basic-v1 loaded. Number of parameters: 21.90 M
+The model corresponds to a `standard_model` parameterization with 1 layers (7 predicted parameters)
 Parameter types and total ranges:
-- thicknesses: [1.0, 1000.0]
+- thicknesses: [1.0, 1500.0]
 - roughnesses: [0.0, 60.0]
 - slds: [-8.0, 16.0]
+- r_scale: [0.9, 1.1]
+- log10_background: [-10.0, -4.0]
 Allowed widths of the prior bound intervals (max-min):
-- thicknesses: [0.01, 1000.0]
+- thicknesses: [0.01, 1500.0]
 - roughnesses: [0.01, 60.0]
 - slds: [0.01, 5.0]
-The model was trained on curves discretized at exactly 128 uniform points, between q_min in [0.001, 0.03] and q_max in [0.1, 0.4]
-The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.1]
-The following quantities are additional inputs to the network: prior bounds, q values, the resolution dq/q.
-</pre></div>
-</div>
-</div>
-</div>
-<p>We interpolate the data to a discretization suitable for this model:</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_model</span><span class="p">,</span> <span class="n">exp_curve_interp</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">interpolate_data_to_model_q</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">q_model</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_model</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_model</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_curve_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(128,) 0.01333 0.22399
-(128,)
+- r_scale: [0.001, 0.2]
+- log10_background: [0.01, 6.0]
+The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.12]
+The following quantities are additional inputs to the network: prior bounds, the resolution dq/q.
 </pre></div>
 </div>
 </div>
@@ -523,120 +495,98 @@ The following quantities are additional inputs to the network: prior bounds, q v
 <p>We set some prior bounds for the parameters:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">300.</span><span class="p">,</span> <span class="mf">900.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">9.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">),</span> <span class="p">(</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)]</span> <span class="c1">#real layer slds: Ni, glass</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">300.</span><span class="p">,</span> <span class="mf">900.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
+
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> 
+                
+    <span class="p">(</span><span class="mf">9.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">),</span> <span class="c1">#real layer slds: Ni, glass</span>
+    <span class="p">(</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">),</span>
+
+    <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1">#intensity scaling factor</span>
+    <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="c1">#log10 background</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
 <p>For performing the prediction we need to provide the <code class="docutils literal notranslate"><span class="pre">q_resolution</span></code> argument. When this argument is a <em>float</em>, its meaning is dq/q. This value is always used for simulating the reflectivity curve corresponding to the predicted parameters and as a keyword argument to the reflectivity function during polishing. Depending on the training scenario, it might also be used as an additional input to the network.</p>
+<p>Since NR data can have points with high error bars which can disturb the neural network prediction, the <code class="docutils literal notranslate"><span class="pre">preprocess_and_predict</span></code> method can filter out the points with high error bars for the purpose of the prediction (they are still used for the polishing step), if the array of error bars (<code class="docutils literal notranslate"><span class="pre">sigmas</span></code>) is provided and <code class="docutils literal notranslate"><span class="pre">enable_error_bars_filtering</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Then the points where the error bar to intensity ratio is higher than the <code class="docutils literal notranslate"><span class="pre">filter_threshold</span></code> argument will be removed before the neural network inference. One can also manually truncate the part of the data seen by the network via the <code class="docutils literal notranslate"><span class="pre">truncate_index_left</span></code> and <code class="docutils literal notranslate"><span class="pre">truncate_index_right</span></code> arguments.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">exp_curve_interp</span><span class="p">,</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
     <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-    <span class="n">q_values</span><span class="o">=</span><span class="n">q_model</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
     <span class="n">q_resolution</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">sigmas</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_sigmas_for_polishing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span>
 
+    <span class="n">enable_error_bars_filtering</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">filter_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">truncate_index_left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">truncate_index_right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
+<span class="n">polished_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">)</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys([&#39;predicted_params_object&#39;, &#39;predicted_params_array&#39;, &#39;param_names&#39;, &#39;predicted_curve&#39;, &#39;predicted_sld_profile&#39;, &#39;predicted_sld_xaxis&#39;, &#39;polished_params_array&#39;, &#39;polished_curve&#39;, &#39;sld_profile_polished&#39;])
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
-</summary>
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
-                 <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">handles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span>
-    <span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span>
-    <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span>
-    <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span>
-<span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;z [$Å$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;SLD [$10^{-6} Å^{-2}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
-
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</details>
-<div class="cell_output docutils container">
-<img alt="_images/efbd9afc5ea10301e33444049805401480cb33de34c2449cd05f81b552440f67.png" src="_images/efbd9afc5ea10301e33444049805401480cb33de34c2449cd05f81b552440f67.png" />
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">pred_param_val</span><span class="p">,</span> <span class="n">polished_param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;polished_params_array&quot;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; Predicted: </span><span class="si">{</span><span class="n">pred_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">       Polished: </span><span class="si">{</span><span class="n">polished_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thickness L1   -&gt; Predicted: 498.53       Polished: 497.37
-Roughness L1   -&gt; Predicted: 6.45       Polished: 5.65
-Roughness sub  -&gt; Predicted: 7.68       Polished: 9.39
-SLD L1         -&gt; Predicted: 10.24       Polished: 10.24
-SLD sub        -&gt; Predicted: 3.92       Polished: 3.87
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter          Predicted    Polished
+----------------------------------------
+Thickness L1         498.954     497.006
+Roughness L1           6.429       6.504
+Roughness sub          6.793       7.226
+SLD L1                 9.939      10.232
+SLD sub                3.138       3.415
+r_scale                0.944       0.977
+log10_background      -7.238      -6.277
 </pre></div>
 </div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span> <span class="n">exp_style</span><span class="o">=</span><span class="s1">&#39;errorbar&#39;</span><span class="p">,</span> <span class="n">exp_marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">exp_ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="n">exp_color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_facecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">exp_zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exp_errcolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">exp_elinewidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_capsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">exp_capthick</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span> <span class="n">pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">pred_lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">pred_label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">,</span> <span class="n">pred_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">q_pol</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_pol</span><span class="o">=</span><span class="n">polished_curve</span><span class="p">,</span> <span class="n">pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">pol_label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">,</span> <span class="n">pol_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pol_zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">sld_pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">sld_pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">sld_pred_label</span><span class="o">=</span><span class="s1">&#39;pred. SLD&#39;</span><span class="p">,</span>
+    <span class="n">sld_pol</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">sld_pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">sld_pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">sld_pol_label</span><span class="o">=</span><span class="s1">&#39;polished SLD&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/a506796ba2a27320502486791312486dedf463366c418b7fe41bc48adc0a1e34.png" src="_images/a506796ba2a27320502486791312486dedf463366c418b7fe41bc48adc0a1e34.png" />
 </div>
 </div>
 <p>Next, we load data for a different measurement of a similar structure (also Ni on Si). The differences are that the Ni layer is thicker, the resolution is dq/q = 0.015 (i.e. 1.5 %) and the data has a constant background.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/Ni_on_glass.dat&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;Ni_on_glass.dat&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
 <span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -653,215 +603,153 @@ SLD sub        -&gt; Predicted: 3.92       Polished: 3.87
 </div>
 </div>
 </div>
-<p>We load a model which has the background as an additional predicted parameter:</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s1">&#39;e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024&#39;</span>
-
-
-<span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
-                                     <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
-                                     <span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024.safetensors` found locally.
-Model e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024 loaded. Number of parameters: 20.24 M
-The model corresponds to a `standard_model` parameterization with 1 layers (7 predicted parameters)
-Parameter types and total ranges:
-- thicknesses: [1.0, 1500.0]
-- roughnesses: [0.0, 60.0]
-- slds: [-8.0, 16.0]
-- r_scale: [0.9, 1.1]
-- log10_background: [-10.0, -4.0]
-Allowed widths of the prior bound intervals (max-min):
-- thicknesses: [0.01, 1500.0]
-- roughnesses: [0.01, 60.0]
-- slds: [0.01, 5.0]
-- r_scale: [0.01, 0.2]
-- log10_background: [0.01, 6.0]
-The model was trained on curves discretized at exactly 256 uniform points, between q_min in [0.001, 0.02] and q_max in [0.05, 0.4]
-The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.12]
-The following quantities are additional inputs to the network: prior bounds, q values, the resolution dq/q.
-</pre></div>
-</div>
-</div>
-</div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="mf">300.</span><span class="p">,</span> <span class="mf">900.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
-    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
-    <span class="p">(</span><span class="mf">9.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">),</span> <span class="p">(</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">),</span> <span class="c1">#layer slds: Ni, glass</span>
+
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> 
+
+    <span class="p">(</span><span class="mf">9.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">),</span> <span class="c1">#layer slds: Ni, glass</span>
+    <span class="p">(</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">),</span> 
+
     <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1">#intensity scaling factor</span>
     <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="c1">#log10 background</span>
-<span class="p">]</span> 
+<span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_model</span><span class="p">,</span> <span class="n">exp_curve_interp</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">interpolate_data_to_model_q</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">)</span>
+<div class="dropdown admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Alternatively, one can define the prior bounds in the following manner:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Ni_layer</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">thickness_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">900</span><span class="p">),</span> <span class="n">roughness_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">sld_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+<span class="n">backing</span> <span class="o">=</span> <span class="n">Backing</span><span class="p">(</span><span class="n">roughness_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">sld_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">q_model</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_model</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_model</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_curve_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span>
+    <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">Ni_layer</span><span class="p">,</span> <span class="n">backing</span><span class="p">],</span>
+    <span class="n">r_scale_bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span>
+    <span class="n">log10_background_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">prior_bounds</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">prior_bounds</span>
 </pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(256,) 0.00508981 0.175655
-(256,)
-</pre></div>
-</div>
 </div>
 </div>
 <p>Now we provide the new value of dq/q as argument:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">exp_curve_interp</span><span class="p">,</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
     <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-    <span class="n">q_values</span><span class="o">=</span><span class="n">q_model</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
     <span class="n">q_resolution</span><span class="o">=</span><span class="mf">0.015</span><span class="p">,</span>
+    <span class="n">sigmas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span>
 
+    <span class="n">truncate_index_left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">truncate_index_right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys([&#39;predicted_params_object&#39;, &#39;predicted_params_array&#39;, &#39;param_names&#39;, &#39;predicted_curve&#39;, &#39;predicted_sld_profile&#39;, &#39;predicted_sld_xaxis&#39;, &#39;polished_params_array&#39;, &#39;polished_curve&#39;, &#39;sld_profile_polished&#39;])
+<span class="n">polished_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">)</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">pred_param_val</span><span class="p">,</span> <span class="n">polished_param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;polished_params_array&quot;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; Predicted: </span><span class="si">{</span><span class="n">pred_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">       Polished: </span><span class="si">{</span><span class="n">polished_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thickness L1   -&gt; Predicted: 812.66       Polished: 826.98
-Roughness L1   -&gt; Predicted: 8.42       Polished: 8.14
-Roughness sub  -&gt; Predicted: 1.35       Polished: 0.00
-SLD L1         -&gt; Predicted: 9.05       Polished: 9.17
-SLD sub        -&gt; Predicted: 3.85       Polished: 4.00
-r_scale        -&gt; Predicted: 0.97       Polished: 0.91
-log10_background -&gt; Predicted: -4.17       Polished: -4.00
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter          Predicted    Polished
+----------------------------------------
+Thickness L1          831.42      827.32
+Roughness L1           10.53        8.52
+Roughness sub           1.55        0.00
+SLD L1                  9.05        9.19
+SLD sub                 4.39        3.91
+r_scale                 0.98        0.91
+log10_background       -4.00       -4.00
 </pre></div>
 </div>
 </div>
 </div>
-<div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
-</summary>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span> <span class="n">exp_style</span><span class="o">=</span><span class="s1">&#39;scatter&#39;</span><span class="p">,</span> <span class="n">exp_marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">exp_ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="n">exp_color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">exp_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">exp_zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span> <span class="n">pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">pred_label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">,</span> <span class="n">pred_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">q_pol</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_pol</span><span class="o">=</span><span class="n">polished_curve</span><span class="p">,</span> <span class="n">pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">pol_label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">,</span> <span class="n">pol_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pol_zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
-                 <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">handles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span>
-    <span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span>
-    <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span>
-    <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">sld_pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">sld_pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">sld_pred_label</span><span class="o">=</span><span class="s1">&#39;pred. SLD&#39;</span><span class="p">,</span>
+    <span class="n">sld_pol</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">sld_pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">sld_pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">sld_pol_label</span><span class="o">=</span><span class="s1">&#39;polished SLD&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;z [$Å$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;SLD [$10^{-6} Å^{-2}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
-
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-</details>
 <div class="cell_output docutils container">
-<img alt="_images/d61c8068aa3e0cd77a28f50eeae151fdc042db38d985294c139185a3bdf74c7e.png" src="_images/d61c8068aa3e0cd77a28f50eeae151fdc042db38d985294c139185a3bdf74c7e.png" />
+<img alt="_images/b773c164a59bb6a080107648178dfb46ab7b7b2ede73295232396543eef443ff.png" src="_images/b773c164a59bb6a080107648178dfb46ab7b7b2ede73295232396543eef443ff.png" />
 </div>
 </div>
 </section>
 <section id="handling-pointwise-resolution-smearing">
 <h2><span class="section-number">4.2. </span>Handling pointwise resolution smearing<a class="headerlink" href="#handling-pointwise-resolution-smearing" title="Link to this heading">#</a></h2>
-<p>We load NR data of a thick silicon oxide layer on top of a silicon substrate. Notably the data is in 4 colums format [q, R, dR, dQ], the last column being the pointwise resolution smearing. We remove the last part of the curve which has high error bars.</p>
+<p>We load NR data of a thick silicon oxide layer on top of a silicon substrate. Notably the data is in 4 colums format [q, R, dR, dQ], the last column being the pointwise resolution smearing.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/D17_SiO.dat&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;D17_SiO.dat&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-<span class="n">max_point_no</span> <span class="o">=</span> <span class="mi">2050</span>
-
-<span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-<span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-<span class="n">sigmas_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-<span class="n">q_res_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">sigmas_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">q_res_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">curve_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">sigmas_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">sigmas_exp</span> <span class="o">/</span> <span class="n">curve_exp</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sigmas_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">q_res_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">q_res_exp</span> <span class="o">/</span> <span class="n">q_exp</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">q_res_exp</span> <span class="o">/</span> <span class="n">q_exp</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(2166, 4)
-(2050,) (2050,) 0.00610735 0.114432
-(2050,) 1.39997 1.14757e-06 10.44030349303302
-(2050,) 0.01295813163759255 0.019083468130430558
+(2166,) (2166,) 0.00610735 0.277902
+(2166,) 1.39997 4.75674e-07
+(2166,) 0.01295813163759255 0.020793481155227386
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#conf_name = &#39;e_mc_point_neutron_conv_standard_L1_InputQDq_n128_size1024&#39;</span>
-<span class="n">conf_name</span> <span class="o">=</span> <span class="s1">&#39;e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024&#39;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s2">&quot;NR-1layer-basic-v1&quot;</span>
 
-<span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">conf_name</span><span class="p">,</span>
-                                     <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
-                                     <span class="p">)</span>
+<span class="n">inference_model</span> <span class="o">=</span> <span class="n">InferenceModel</span><span class="p">(</span>
+    <span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
+    <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;reflectorch-ILL&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024.safetensors` found locally.
-Model e_mc_point_neutron_conv_standard_L1_InputQDq_n256_size1024 loaded. Number of parameters: 20.24 M
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\NR-1layer-basic-v1.yaml` found locally.
+Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_NR-1layer-basic-v1.safetensors` found locally.
+Model NR-1layer-basic-v1 loaded. Number of parameters: 21.90 M
 The model corresponds to a `standard_model` parameterization with 1 layers (7 predicted parameters)
 Parameter types and total ranges:
 - thicknesses: [1.0, 1500.0]
@@ -873,11 +761,10 @@ Allowed widths of the prior bound intervals (max-min):
 - thicknesses: [0.01, 1500.0]
 - roughnesses: [0.01, 60.0]
 - slds: [0.01, 5.0]
-- r_scale: [0.01, 0.2]
+- r_scale: [0.001, 0.2]
 - log10_background: [0.01, 6.0]
-The model was trained on curves discretized at exactly 256 uniform points, between q_min in [0.001, 0.02] and q_max in [0.05, 0.4]
 The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.12]
-The following quantities are additional inputs to the network: prior bounds, q values, the resolution dq/q.
+The following quantities are additional inputs to the network: prior bounds, the resolution dq/q.
 </pre></div>
 </div>
 </div>
@@ -889,43 +776,31 @@ The following quantities are additional inputs to the network: prior bounds, q v
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                 <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">barsabove</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">label</span><span class="o">=</span><span class="s1">&#39;experimental data&#39;</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> 
+    <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+    <span class="n">logx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x2968075dac0&gt;
-</pre></div>
-</div>
-<img alt="_images/e5f5f014629839da03526060c4d54a2877ddfa273e3c5d32e0939dd7495ff5c9.png" src="_images/e5f5f014629839da03526060c4d54a2877ddfa273e3c5d32e0939dd7495ff5c9.png" />
+<img alt="_images/039e544a3a4b1aad1960a7bfbb764d235f5b99b3f23d97f9311e220d9c649188.png" src="_images/039e544a3a4b1aad1960a7bfbb764d235f5b99b3f23d97f9311e220d9c649188.png" />
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="mf">500.</span><span class="p">,</span> <span class="mf">1500.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
-    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">30.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">30.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
-    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.7</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="c1">#layer slds (top to bottom)</span>
+
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">30.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">30.</span><span class="p">),</span>
+    
+    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="c1">#layer slds (top to bottom)</span>
+    <span class="p">(</span><span class="mf">1.7</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> 
+    
     <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1">#intensity scaling factor</span>
     <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="c1">#log10 background</span>
 <span class="p">]</span> 
@@ -935,76 +810,49 @@ The following quantities are additional inputs to the network: prior bounds, q v
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_model</span><span class="p">,</span> <span class="n">exp_curve_interp</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">interpolate_data_to_model_q</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
+    <span class="n">q_resolution</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span>
+    <span class="n">sigmas</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_sigmas_for_polishing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">q_model</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_model</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_model</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_curve_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(256,) 0.00610735 0.114432
-(256,)
-</pre></div>
-</div>
-</div>
-</div>
-<p>Notably, here we have to also manually interpolate the q resolution array to the model grid. This will be provided as the <code class="docutils literal notranslate"><span class="pre">q_resolution</span></code> argument of the <code class="docutils literal notranslate"><span class="pre">predict</span></code> method.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_res_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">q_exp</span><span class="p">,</span> <span class="n">q_res_exp</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">q_res_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_res_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_res_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">q_res_interp</span> <span class="o">/</span> <span class="n">q_model</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">q_res_interp</span> <span class="o">/</span> <span class="n">q_model</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(2050,) (256,) (2050,) 0.012970237769559695 0.018944584008420546
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">exp_curve_interp</span><span class="p">,</span>
-                                          <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-                                          <span class="n">q_values</span><span class="o">=</span><span class="n">q_model</span><span class="p">,</span>
-                                          <span class="n">q_resolution</span><span class="o">=</span><span class="n">q_res_interp</span><span class="p">,</span>
-                                          <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
+    <span class="n">enable_error_bars_filtering</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">filter_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys([&#39;predicted_params_object&#39;, &#39;predicted_params_array&#39;, &#39;param_names&#39;, &#39;predicted_curve&#39;, &#39;predicted_sld_profile&#39;, &#39;predicted_sld_xaxis&#39;, &#39;polished_params_array&#39;, &#39;polished_curve&#39;, &#39;sld_profile_polished&#39;])
+<span class="n">polished_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">)</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">pred_param_val</span><span class="p">,</span> <span class="n">polished_param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;polished_params_array&quot;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; Predicted: </span><span class="si">{</span><span class="n">pred_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">       Polished: </span><span class="si">{</span><span class="n">polished_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thickness L1   -&gt; Predicted: 1209.83       Polished: 1245.83
-Roughness L1   -&gt; Predicted: 4.23       Polished: 5.94
-Roughness sub  -&gt; Predicted: 1.38       Polished: 9.35
-SLD L1         -&gt; Predicted: 3.39       Polished: 3.45
-SLD sub        -&gt; Predicted: 1.78       Polished: 2.09
-r_scale        -&gt; Predicted: 0.90       Polished: 1.02
-log10_background -&gt; Predicted: -10.00       Polished: -10.00
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter          Predicted    Polished
+----------------------------------------
+Thickness L1        1246.756    1244.731
+Roughness L1           5.675       3.070
+Roughness sub          4.594       0.007
+SLD L1                 3.536       3.473
+SLD sub                2.207       2.198
+r_scale                0.903       0.934
+log10_background      -5.929      -6.561
 </pre></div>
 </div>
 </div>
@@ -1016,68 +864,39 @@ log10_background -&gt; Predicted: -10.00       Polished: -10.00
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span> <span class="n">exp_style</span><span class="o">=</span><span class="s1">&#39;errorbar&#39;</span><span class="p">,</span> <span class="n">exp_marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">exp_ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="n">exp_color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">exp_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">exp_zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exp_errcolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">exp_elinewidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_capsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">exp_capthick</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span> <span class="n">pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">pred_label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">,</span> <span class="n">pred_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">q_pol</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_pol</span><span class="o">=</span><span class="n">polished_curve</span><span class="p">,</span> <span class="n">pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">pol_label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">,</span> <span class="n">pol_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pol_zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">sld_pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">sld_pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">sld_pred_label</span><span class="o">=</span><span class="s1">&#39;pred. SLD&#39;</span><span class="p">,</span>
+    <span class="n">sld_pol</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">sld_pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">sld_pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">sld_pol_label</span><span class="o">=</span><span class="s1">&#39;polished SLD&#39;</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
-                 <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
-
-<span class="c1">#ax.plot(q_model, pred_curve, c=&#39;red&#39;, lw=2, label=&#39;pred. curve&#39;, zorder=2)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="n">handles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span> <span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-
-
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;z [$Å$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;SLD [$10^{-6} Å^{-2}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+    <span class="n">logx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&lt;matplotlib.lines.Line2D at 0x296817b9070&gt;]
-</pre></div>
-</div>
-<img alt="_images/865ea6ef16eb2bd7ff19d41abeb7212f51d13b8a10aea6dd0142a45cf698c1b7.png" src="_images/865ea6ef16eb2bd7ff19d41abeb7212f51d13b8a10aea6dd0142a45cf698c1b7.png" />
-<img alt="_images/0b6b097d26bfd23e4ee01c28efc2c05c0e3db35deeb2f81c15f331c02d8e49df.png" src="_images/0b6b097d26bfd23e4ee01c28efc2c05c0e3db35deeb2f81c15f331c02d8e49df.png" />
+<img alt="_images/0b36746d4bde0e4ca6b4a51af06e7cfb6d398d779ff67e46dcda8492e715834e.png" src="_images/0b36746d4bde0e4ca6b4a51af06e7cfb6d398d779ff67e46dcda8492e715834e.png" />
 </div>
 </div>
 </section>
-<section id="structures-with-ambient-medium-fronting-different-than-air">
-<h2><span class="section-number">4.3. </span>Structures with ambient medium (fronting) different than air<a class="headerlink" href="#structures-with-ambient-medium-fronting-different-than-air" title="Link to this heading">#</a></h2>
-<p>We load neutron reflectometry (NR) data for a multilayer structure composed of silicon/silicon oxide/polymer/D₂O. Notably, the ambient medium in this case is not air, meaning the ambient SLD is non-zero. Although all models in Reflectorch are trained assuming an ambient SLD of zero, inference on data with non-zero ambient SLD is still valid. This is due to the invariance property of reflectivity under uniform SLD shifts, where R(SLD(z)) = R(SLD(z)+A) for any constant A.</p>
+<section id="structures-with-fronting-medium-different-than-air">
+<h2><span class="section-number">4.3. </span>Structures with fronting medium different than air<a class="headerlink" href="#structures-with-fronting-medium-different-than-air" title="Link to this heading">#</a></h2>
+<p>We load neutron reflectometry (NR) data for a multilayer structure composed of silicon/silicon oxide/polymer/D₂O. Notably, the fronting medium in this case is not air, meaning the fronting SLD is non-zero. Although all models in Reflectorch are trained assuming a fronting SLD of zero, inference on data with non-zero fronting SLD is still valid. This is due to the invariance property of reflectivity under uniform SLD shifts, where R(SLD(z)) = R(SLD(z)+A) for any constant A.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/ORSO_example.ort&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;ORSO_example.ort&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-<span class="n">max_point_no</span> <span class="o">=</span> <span class="mi">350</span> <span class="c1">#remove part of the data with high error bars</span>
-
-<span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-<span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-<span class="n">sigmas_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-<span class="n">q_res_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_point_no</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">sigmas_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">q_res_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">curve_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sigmas_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">sigmas_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">sigmas_exp</span> <span class="o">/</span> <span class="n">curve_exp</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
@@ -1087,9 +906,9 @@ log10_background -&gt; Predicted: -10.00       Polished: -10.00
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(408, 4)
-(350,) (350,) 0.00806022 0.26145
-(350,) 0.125959 1.19257e-07 0.2542693029005862
-(350,) 0.017461305621930916 0.018550916324345
+(408,) (408,) 0.00806022 0.465555
+(408,) 0.125959 1.19257e-07 1.784325740151806
+(408,) 0.017461305621930916 0.020605159300190096
 </pre></div>
 </div>
 </div>
@@ -1101,201 +920,148 @@ log10_background -&gt; Predicted: -10.00       Polished: -10.00
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                 <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">barsabove</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">label</span><span class="o">=</span><span class="s1">&#39;experimental data&#39;</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> 
+    <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x29682dd4d00&gt;
-</pre></div>
-</div>
-<img alt="_images/3569b153f6fd031a05098c06117c21c87c3a82f90114e1979c0e9ddfe54bfc5d.png" src="_images/3569b153f6fd031a05098c06117c21c87c3a82f90114e1979c0e9ddfe54bfc5d.png" />
+<img alt="_images/64188b03107fee57cfea50cc39a5feadc0589ca68c525a6aac3fe7eab121bc2e.png" src="_images/64188b03107fee57cfea50cc39a5feadc0589ca68c525a6aac3fe7eab121bc2e.png" />
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s2">&quot;b_mc_point_neutron_conv_standard_L2_InputQDq&quot;</span>
-<span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
-                                     <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
-                                     <span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">config_name</span> <span class="o">=</span> <span class="s2">&quot;NR-2layers-basic-v1&quot;</span>
+
+<span class="n">inference_model</span> <span class="o">=</span> <span class="n">InferenceModel</span><span class="p">(</span>
+    <span class="n">config_name</span><span class="o">=</span><span class="n">config_name</span><span class="p">,</span>
+    <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;reflectorch-ILL&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\b_mc_point_neutron_conv_standard_L2_InputQDq.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_b_mc_point_neutron_conv_standard_L2_InputQDq.safetensors` found locally.
-Model b_mc_point_neutron_conv_standard_L2_InputQDq loaded. Number of parameters: 5.04 M
-The model corresponds to a `standard_model` parameterization with 2 layers (8 predicted parameters)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\NR-2layers-basic-v1.yaml` found locally.
+Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_NR-2layers-basic-v1.safetensors` found locally.
+Model NR-2layers-basic-v1 loaded. Number of parameters: 22.00 M
+The model corresponds to a `standard_model` parameterization with 2 layers (10 predicted parameters)
 Parameter types and total ranges:
-- thicknesses: [1.0, 500.0]
+- thicknesses: [1.0, 1500.0]
 - roughnesses: [0.0, 60.0]
 - slds: [-8.0, 16.0]
+- r_scale: [0.9, 1.1]
+- log10_background: [-10.0, -4.0]
 Allowed widths of the prior bound intervals (max-min):
-- thicknesses: [0.01, 500.0]
+- thicknesses: [0.01, 1500.0]
 - roughnesses: [0.01, 60.0]
 - slds: [0.01, 5.0]
-The model was trained on curves discretized at exactly 128 uniform points, between q_min in [0.001, 0.03] and q_max in [0.1, 0.4]
-The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.1]
-The following quantities are additional inputs to the network: prior bounds, q values, the resolution dq/q.
+- r_scale: [0.001, 0.2]
+- log10_background: [0.01, 6.0]
+The model was trained with linear resolution smearing (dq/q) in the range [0.01, 0.12]
+The following quantities are additional inputs to the network: prior bounds, the resolution dq/q.
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">40.</span><span class="p">),</span> <span class="p">(</span><span class="mf">50.</span><span class="p">,</span> <span class="mf">500.</span><span class="p">),</span> <span class="c1">#layer thicknesses: SiOx, polymer</span>
-                <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> <span class="c1">#interlayer roughnesses: Si/SiOx, SiOx/polymer, polymer/D2O</span>
-                <span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">),</span> <span class="p">(</span><span class="mf">6.3</span><span class="p">,</span> <span class="mf">6.4</span><span class="p">)]</span> <span class="c1">#layer slds: SiOx, polymer, D2O</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_model</span><span class="p">,</span> <span class="n">exp_curve_interp</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">interpolate_data_to_model_q</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">40.</span><span class="p">),</span> <span class="c1">#layer thicknesses: SiOx, polymer</span>
+    <span class="p">(</span><span class="mf">50.</span><span class="p">,</span> <span class="mf">500.</span><span class="p">),</span> 
+    
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> <span class="c1">#interlayer roughnesses: Si/SiOx, SiOx/polymer, polymer/D2O</span>
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">q_model</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_model</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_model</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">exp_curve_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(128,) 0.00806022 0.26145
-(128,)
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_res_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">q_exp</span><span class="p">,</span> <span class="n">q_res_exp</span><span class="p">)</span> <span class="c1">#pointwise resolution smearing</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">q_res_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_res_interp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_res_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">q_res_interp</span> <span class="o">/</span> <span class="n">q_model</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">q_res_interp</span> <span class="o">/</span> <span class="n">q_model</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(350,) (128,) (350,) 0.017461305621930916 0.018550916324345
-</pre></div>
-</div>
-</div>
-</div>
-<p>For inference we need to additionally provide the SLD of the ambient medium (here silicon) as the <code class="docutils literal notranslate"><span class="pre">ambient_sld</span></code> argument of the <code class="docutils literal notranslate"><span class="pre">predict</span></code> method:</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">exp_curve_interp</span><span class="p">,</span>
-                                          <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-                                          <span class="n">q_values</span><span class="o">=</span><span class="n">q_model</span><span class="p">,</span>
-                                          <span class="n">q_resolution</span><span class="o">=</span><span class="n">q_res_interp</span><span class="p">,</span>
-                                          <span class="n">ambient_sld</span><span class="o">=</span><span class="mf">2.07</span><span class="p">,</span> <span class="c1">#Si</span>
-                                          <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                          <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span>
-                                          <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">),</span> <span class="c1">#layer slds: SiOx, polymer, D2O</span>
+    <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">6.3</span><span class="p">,</span> <span class="mf">6.4</span><span class="p">),</span>
 
+    <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1">#intensity scaling factor</span>
+    <span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="c1">#log10 background</span>
+<span class="p">]</span> 
+</pre></div>
+</div>
+</div>
+</div>
+<p>For inference we need to additionally provide the SLD of the fronting medium (here silicon) as the <code class="docutils literal notranslate"><span class="pre">ambient_sld</span></code> argument of the <code class="docutils literal notranslate"><span class="pre">preprocess_and_predict</span></code> method:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
+    <span class="n">q_resolution</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span>
+    <span class="n">sigmas</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span>
+    <span class="n">ambient_sld</span><span class="o">=</span><span class="mf">2.07</span><span class="p">,</span> <span class="c1">#Si</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_sigmas_for_polishing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span>
+
+    <span class="n">enable_error_bars_filtering</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">filter_threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">truncate_index_left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">truncate_index_right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys([&#39;predicted_params_object&#39;, &#39;predicted_params_array&#39;, &#39;param_names&#39;, &#39;predicted_curve&#39;, &#39;predicted_sld_profile&#39;, &#39;predicted_sld_xaxis&#39;, &#39;polished_params_array&#39;, &#39;polished_curve&#39;, &#39;sld_profile_polished&#39;])
+<span class="n">polished_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">)</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">pred_param_val</span><span class="p">,</span> <span class="n">polished_param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;polished_params_array&quot;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; Predicted: </span><span class="si">{</span><span class="n">pred_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">       Polished: </span><span class="si">{</span><span class="n">polished_param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thickness L2   -&gt; Predicted: 38.21       Polished: 37.31
-Thickness L1   -&gt; Predicted: 255.88       Polished: 259.63
-Roughness L2   -&gt; Predicted: 7.65       Polished: 8.07
-Roughness L1   -&gt; Predicted: 12.62       Polished: 9.83
-Roughness sub  -&gt; Predicted: 3.17       Polished: 1.00
-SLD L2         -&gt; Predicted: 3.57       Polished: 3.56
-SLD L1         -&gt; Predicted: 2.34       Polished: 2.61
-SLD sub        -&gt; Predicted: 6.36       Polished: 6.30
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter          Predicted    Polished
+----------------------------------------
+Thickness L1          33.264      37.770
+Thickness L2         261.801     259.244
+Roughness L1           6.719       7.671
+Roughness L2           6.727      10.235
+Roughness sub          3.454       3.143
+SLD L1                 3.402       3.521
+SLD L2                 2.367       2.438
+SLD sub                6.320       6.342
+r_scale                0.900       0.900
+log10_background      -6.424      -6.471
 </pre></div>
 </div>
 </div>
 </div>
-<div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
-</summary>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span> <span class="n">exp_style</span><span class="o">=</span><span class="s1">&#39;errorbar&#39;</span><span class="p">,</span> <span class="n">exp_marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">exp_ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="n">exp_color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_facecolor</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">exp_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">exp_zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exp_errcolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">exp_elinewidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">exp_capsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">exp_capthick</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span> <span class="n">pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">pred_lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">pred_label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">,</span> <span class="n">pred_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pred_zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">q_pol</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_pol</span><span class="o">=</span><span class="n">polished_curve</span><span class="p">,</span> <span class="n">pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">pol_label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">,</span> <span class="n">pol_alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pol_zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-
-<span class="n">el</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">sigmas_exp</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">q_res_exp</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">ecolor</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">elinewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
-                 <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">elines</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
-<span class="n">elines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">pred_curve</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="n">handles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span> <span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;z [$Å$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;SLD [$10^{-6} Å^{-2}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
-
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span> <span class="n">sld_pred_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">sld_pred_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pred_ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">sld_pred_label</span><span class="o">=</span><span class="s1">&#39;pred. SLD&#39;</span><span class="p">,</span>
+    <span class="n">sld_pol</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span> <span class="n">sld_pol_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">sld_pol_lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">sld_pol_ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">sld_pol_label</span><span class="o">=</span><span class="s1">&#39;polished SLD&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
-</details>
 <div class="cell_output docutils container">
-<img alt="_images/41c875eb53c2da4f8afb19cf26621a78b62ab49b2a7ca7aef916d8c6ee37aebf.png" src="_images/41c875eb53c2da4f8afb19cf26621a78b62ab49b2a7ca7aef916d8c6ee37aebf.png" />
+<img alt="_images/e66858f974f137411b4ff0a53240efaab55fe3f728a90225a7d23cb0303f0b40.png" src="_images/e66858f974f137411b4ff0a53240efaab55fe3f728a90225a7d23cb0303f0b40.png" />
 </div>
 </div>
 </section>
@@ -1367,7 +1133,7 @@ SLD sub        -&gt; Predicted: 6.36       Polished: 6.30
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-linear-resolution-smearing">4.1. Handling linear resolution smearing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-pointwise-resolution-smearing">4.2. Handling pointwise resolution smearing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structures-with-ambient-medium-fronting-different-than-air">4.3. Structures with ambient medium (fronting) different than air</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structures-with-fronting-medium-different-than-air">4.3. Structures with fronting medium different than air</a></li>
 </ul>
   </nav></div>
 

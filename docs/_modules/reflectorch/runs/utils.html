@@ -31,7 +31,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
   
@@ -596,7 +596,7 @@ document.write(`
         <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;File </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span><span class="si">}</span><span class="s1"> does not exist.&#39;</span><span class="p">)</span>
     
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">pretrained</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="n">pretrained</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not load model from </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
     
@@ -613,6 +613,8 @@ document.write(`
 <span class="k">def</span> <span class="nf">init_dset</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the dataset / dataloader object&quot;&quot;&quot;</span>
     <span class="n">dset_cls</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;cls&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;cls&#39;</span> <span class="ow">in</span> <span class="n">config</span> <span class="k">else</span> <span class="n">ReflectivityDataLoader</span>
+    <span class="n">dset_kwargs</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kwargs&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
     <span class="n">prior_sampler</span> <span class="o">=</span> <span class="n">init_from_conf</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;prior_sampler&#39;</span><span class="p">])</span>
     <span class="n">intensity_noise</span> <span class="o">=</span> <span class="n">init_from_conf</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;intensity_noise&#39;</span><span class="p">])</span>
     <span class="n">q_generator</span> <span class="o">=</span> <span class="n">init_from_conf</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;q_generator&#39;</span><span class="p">])</span>
@@ -627,6 +629,7 @@ document.write(`
         <span class="n">curves_scaler</span><span class="o">=</span><span class="n">curves_scaler</span><span class="p">,</span>
         <span class="n">smearing</span><span class="o">=</span><span class="n">smearing</span><span class="p">,</span>
         <span class="n">q_noise</span><span class="o">=</span><span class="n">q_noise</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">dset_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">dset</span>
@@ -678,7 +681,7 @@ document.write(`
                 <span class="k">continue</span>
 
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converting </span><span class="si">{</span><span class="n">pt_file_path</span><span class="si">}</span><span class="s2"> to .safetensors format.&quot;</span><span class="p">)</span>
-            <span class="n">data_pt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pt_file_path</span><span class="p">)</span>
+            <span class="n">data_pt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pt_file_path</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">data_pt</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
             <span class="n">model_state_dict</span> <span class="o">=</span> <span class="n">split_complex_tensors</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">)</span> <span class="c1">#handle tensors with complex dtype which are not natively supported by safetensors</span>
 

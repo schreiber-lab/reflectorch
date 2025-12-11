@@ -414,10 +414,9 @@ document.write(`
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">interact</span>
 
 <span class="kn">from</span> <span class="nn">reflectorch</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">reflectorch.extensions.jupyter</span> <span class="kn">import</span> <span class="n">JPlotLoss</span>
+<span class="kn">from</span> <span class="nn">reflectorch.inference.plotting</span> <span class="kn">import</span> <span class="n">print_prediction_results</span><span class="p">,</span> <span class="n">plot_reflectivity</span>
 
 <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1"># set seed for reproducibility</span>
 </pre></div>
@@ -514,8 +513,8 @@ document.write(`
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(&#39;model_with_absorption&#39;,
- &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x29236d87c70&gt;,
- &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x29236d87f70&gt;)
+ &lt;reflectorch.data_generation.priors.parametric_models.ModelWithAbsorption at 0x27077b0b1c0&gt;,
+ &lt;reflectorch.data_generation.priors.sampler_strategies.ConstrainedRoughnessAndImgSldSamplerStrategy at 0x27077b0b280&gt;)
 </pre></div>
 </div>
 </div>
@@ -831,17 +830,21 @@ Embedding Networks
 </section>
 <section id="inference">
 <h4><span class="section-number">6.1.2.2. </span>Inference<a class="headerlink" href="#inference" title="Link to this heading">#</a></h4>
+<p>Here, we perform inference on experimental data using a pretrained model.</p>
 <div class="cell tag_scroll-output docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="s1">&#39;c_repeating_multilayer_trained1&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">InferenceModel</span><span class="p">(</span>
+    <span class="n">config_name</span><span class="o">=</span><span class="s1">&#39;g_mc_point_xray_conv_repeating_n256_size1024&#39;</span><span class="p">,</span> 
+    <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\c_repeating_multilayer_trained1.yaml` found locally.
-Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_c_repeating_multilayer_trained1.safetensors` found locally.
-Model c_repeating_multilayer_trained1 loaded. Number of parameters: 3.85 M
-The model corresponds to a `repeating_multilayer_v3` parameterization with 30 layers (17 predicted parameters)
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Configuration file `D:\Github Projects\reflectorch\reflectorch\configs\g_mc_point_xray_conv_repeating_n256_size1024.yaml` found locally.
+Weights file `D:\Github Projects\reflectorch\reflectorch\saved_models\model_g_mc_point_xray_conv_repeating_n256_size1024.safetensors` found locally.
+Model g_mc_point_xray_conv_repeating_n256_size1024 loaded. Number of parameters: 20.63 M
+The model corresponds to a `repeating_multilayer_v3` parameterization with 30 layers (19 predicted parameters)
 Parameter types and total ranges:
 - d_full_rel: [0, 25]
 - rel_sigmas: [0, 5]
@@ -860,6 +863,8 @@ Parameter types and total ranges:
 - s_si: [0.0, 10]
 - r_sio2: [17.0, 19.0]
 - r_si: [19.0, 21.0]
+- q_shift: [-0.002, 0.002]
+- r_scale: [0.9, 1.1]
 Allowed widths of the prior bound intervals (max-min):
 - d_full_rel: [0.1, 25]
 - rel_sigmas: [0.1, 5]
@@ -878,6 +883,8 @@ Allowed widths of the prior bound intervals (max-min):
 - s_si: [0.01, 10]
 - r_sio2: [0.01, 2]
 - r_si: [0.01, 2]
+- q_shift: [0.01, 0.004]
+- r_scale: [0.01, 0.2]
 The model was trained on curves discretized at 256 uniform points between q_min=0.02 and q_max=0.5
 The following quantities are additional inputs to the network: prior bounds.
 </pre></div>
@@ -885,30 +892,13 @@ The following quantities are additional inputs to the network: prior bounds.
 </div>
 </div>
 <p>We load an experimental curve and make a prediction:</p>
-<div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
-</summary>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">multilayer_data_path</span> <span class="o">=</span> <span class="s1">&#39;.././exp_data/DIP-nSi_34a.dat&#39;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">multilayer_data_path</span> <span class="o">=</span> <span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;DIP-nSi_34a.dat&#39;</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">multilayer_data_path</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skip_header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">q_vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">intensity_vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
-
-<span class="n">interp_range</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
-<span class="n">interp_points</span> <span class="o">=</span> <span class="mi">256</span>
-<span class="n">q_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">interp_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">interp_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">interp_points</span><span class="p">)</span>
-
-<span class="n">min_q_idx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q_vals</span> <span class="o">-</span> <span class="n">interp_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
-<span class="n">max_q_idx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q_vals</span> <span class="o">-</span> <span class="n">interp_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
-<span class="n">q</span> <span class="o">=</span> <span class="n">q_vals</span><span class="p">[</span><span class="n">min_q_idx</span><span class="p">:</span><span class="n">max_q_idx</span><span class="p">]</span>
-<span class="n">curve</span> <span class="o">=</span> <span class="n">intensity_vals</span><span class="p">[</span><span class="n">min_q_idx</span><span class="p">:</span><span class="n">max_q_idx</span><span class="p">]</span>
-<span class="n">exp_curve_interp</span> <span class="o">=</span> <span class="n">interp_reflectivity</span><span class="p">(</span><span class="n">q_interp</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">curve</span><span class="p">)</span>
-
-<span class="n">q_model</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="mi">344</span><span class="p">]</span>
+<span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">344</span><span class="p">]</span> 
 
 <span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="mf">5.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#relative sigmoid center</span>
@@ -928,87 +918,78 @@ The following quantities are additional inputs to the network: prior bounds.
     <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="c1">#roughness Si</span>
     <span class="p">(</span><span class="mf">17.</span><span class="p">,</span> <span class="mf">18.</span><span class="p">),</span> <span class="c1">#SLD SiO2</span>
     <span class="p">(</span><span class="mf">19.5</span><span class="p">,</span> <span class="mf">20.5</span><span class="p">),</span> <span class="c1">#SLD Si</span>
+
+    <span class="c1">###Additional nuisance parameters:</span>
+    <span class="p">(</span><span class="o">-</span><span class="mf">0.002</span><span class="p">,</span> <span class="mf">0.002</span><span class="p">),</span> <span class="c1">#q_shift</span>
+    <span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1">#r_scale</span>
 <span class="p">]</span>
-
-<span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">exp_curve_interp</span><span class="p">,</span>
-                                          <span class="n">q_values</span><span class="o">=</span><span class="n">q_model</span><span class="p">,</span>
-                                          <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-                                          <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                          <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="p">)</span>
-
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+        <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+        <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
+        <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
+        <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="c1">#polish_prediction=True,</span>
+        <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
+<span class="c1">#polished_curve = prediction_dict[&#39;polished_curve&#39;]</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 
-<span class="n">pred_sld_xaxis</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">]</span>
-<span class="n">pred_sld_profile</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">]</span>
+<span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">)</span>
 
-<span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="si">}</span><span class="s1"> : </span><span class="si">{</span><span class="n">param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span>
+    <span class="c1">#q_pol=q_exp, r_pol=polished_curve,</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.5e-10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-    
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">exp_curve_interp</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;interp exp. curve&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_model</span><span class="p">,</span> <span class="n">pred_curve</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">);</span>
-
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pred_sld_xaxis</span><span class="p">,</span> <span class="n">pred_sld_profile</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;prediction&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;z [$Å$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;SLD [$10^{-6} Å^{-2}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">);</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span>
+    <span class="c1">#sld_pol=prediction_dict[&#39;sld_profile_polished&#39;],</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>d_full_rel           : 12.20
-rel_sigmas           : 1.75
-dr_sigmoid_rel_pos   : -2.32
-dr_sigmoid_rel_width : 16.05
-d_block1_rel         : 0.74
-d_block              : 16.80
-s_block_rel          : 0.06
-r_block              : 14.76
-dr                   : -8.55
-d3_rel               : 0.18
-s3_rel               : 0.41
-r3                   : 9.58
-d_sio2               : 7.33
-s_sio2               : 1.83
-s_si                 : 4.82
-r_sio2               : 17.52
-r_si                 : 20.19
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter              Predicted
+--------------------------------
+d_full_rel                12.083
+rel_sigmas                 1.056
+dr_sigmoid_rel_pos        -1.314
+dr_sigmoid_rel_width      15.209
+d_block1_rel               0.744
+d_block                   16.505
+s_block_rel                0.052
+r_block                   11.986
+dr                        -9.824
+d3_rel                     0.057
+s3_rel                     0.521
+r3                         9.638
+d_sio2                     6.701
+s_sio2                     1.551
+s_si                       2.344
+r_sio2                    17.523
+r_si                      20.251
+q_shift                   -0.000
+r_scale                    0.900
 </pre></div>
 </div>
-<img alt="_images/a06bc9066baa2472b88a1416614d5ee28a1efaed047af3659d49fcd2d7d088c3.png" src="_images/a06bc9066baa2472b88a1416614d5ee28a1efaed047af3659d49fcd2d7d088c3.png" />
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys([&#39;predicted_params_object&#39;, &#39;predicted_params_array&#39;, &#39;param_names&#39;, &#39;predicted_curve&#39;, &#39;predicted_sld_profile&#39;, &#39;predicted_sld_xaxis&#39;])
-</pre></div>
-</div>
+<img alt="_images/5fc76eb44a123f4c8231230bde8baefa21ba7346843331d18f191d077900ad28.png" src="_images/5fc76eb44a123f4c8231230bde8baefa21ba7346843331d18f191d077900ad28.png" />
 </div>
 </div>
 </section>
@@ -1145,7 +1126,7 @@ r_si                 : 20.19
 <p>We perform inference on the two curves previously shown in the <em>Using reflectorch</em> tutorial:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="s1">&#39;mc-o4&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">InferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="s1">&#39;mc-o4&#39;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1170,31 +1151,57 @@ The following quantities are additional inputs to the network: prior bounds, q v
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/data_PTCDI-C3.txt&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;data_PTCDI-C3.txt&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 <span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">curve_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 
-<span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">400.</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">13.</span><span class="p">),</span> <span class="p">(</span><span class="mf">20.</span><span class="p">,</span><span class="mf">21.</span><span class="p">),</span> <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">)]</span> <span class="c1">#real layer slds (top to bottom)</span>
+<span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">400.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">),</span> 
 
-<span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
-                                          <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
-                                          <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-                                          <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                          <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                          <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="p">)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> 
+
+    <span class="p">(</span><span class="mf">10.</span><span class="p">,</span> <span class="mf">13.</span><span class="p">),</span>  <span class="c1">#real layer slds (top to bottom)</span>
+    <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
+    <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(141,) (141,) 0.0142368058 0.213456644
+predicted_params_object
+predicted_params_array
+param_names
+predicted_curve
+predicted_sld_profile
+predicted_sld_xaxis
+q_plot_pred
+q_model
+reflectivity_curve_interp
 </pre></div>
 </div>
 </div>
@@ -1206,67 +1213,76 @@ The following quantities are additional inputs to the network: prior bounds, q v
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_layers</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span>
-<span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s2">&quot;param_names&quot;</span><span class="p">],</span> <span class="n">pred_params</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span><span class="si">}</span><span class="s1"> : </span><span class="si">{</span><span class="n">param_val</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_prediction_results</span><span class="p">(</span><span class="n">prediction_dict</span><span class="p">)</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.5e-10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
-    
-<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">facecolors</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">)</span>
-<span class="c1">#ax.scatter(q_exp, curve_exp, c=&#39;b&#39;, s=2, label=&#39;exp. curve&#39;)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">pred_curve</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">)</span>
-<span class="c1">#ax.plot(q_exp, prediction_dict[&#39;polished_curve&#39;], c=&#39;orange&#39;, lw=1, label=&#39;polished pred. curve&#39;)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">);</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Thickness L2   : 186.60
-Thickness L1   : 8.87
-Roughness L2   : 19.92
-Roughness L1   : 3.64
-Roughness sub  : 5.71
-SLD L2         : 11.17
-SLD L1         : 20.33
-SLD sub        : 20.53
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Parameter        Predicted
+--------------------------
+Thickness L1       186.598
+Thickness L2         8.875
+Roughness L1        19.921
+Roughness L2         3.643
+Roughness sub        5.712
+SLD L1              11.169
+SLD L2              20.330
+SLD sub             20.533
 </pre></div>
 </div>
-<img alt="_images/ff50fac1a8c51b0206aae7d5ce338a51f2955a8af836c4b581c6e99ffc4f616a.png" src="_images/ff50fac1a8c51b0206aae7d5ce338a51f2955a8af836c4b581c6e99ffc4f616a.png" />
+<img alt="_images/3bd28322f72bbebe617716a3df5fc899aeac481d7eee399cf24e5ffe299236d3.png" src="_images/3bd28322f72bbebe617716a3df5fc899aeac481d7eee399cf24e5ffe299236d3.png" />
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="s1">&#39;../exp_data/data_C60.txt&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">EXP_DATA_DIR</span> <span class="o">/</span> <span class="s1">&#39;data_C60.txt&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">q_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 <span class="n">curve_exp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">curve_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">q_exp</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 
-<span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">400.</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
-                <span class="p">(</span><span class="mf">13.</span><span class="p">,</span> <span class="mf">18.</span><span class="p">),</span> <span class="p">(</span><span class="mf">20.</span><span class="p">,</span><span class="mf">21.</span><span class="p">),</span> <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">)]</span> <span class="c1">#real layer slds (top to bottom)</span>
+<span class="n">prior_bounds</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">400.</span><span class="p">),</span> <span class="c1">#layer thicknesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">),</span> 
 
-<span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
-                                          <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
-                                          <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
-                                          <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                          <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                          <span class="p">)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">20.</span><span class="p">),</span> <span class="c1">#interlayer roughnesses (top to bottom)</span>
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">15.</span><span class="p">),</span> 
+                
+    <span class="p">(</span><span class="mf">13.</span><span class="p">,</span> <span class="mf">18.</span><span class="p">),</span> <span class="c1">#real layer slds (top to bottom)</span>
+    <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">),</span> 
+    <span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">21.</span><span class="p">)</span>
+<span class="p">]</span> 
 
+<span class="n">prediction_dict</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">preprocess_and_predict</span><span class="p">(</span>
+    <span class="n">reflectivity_curve</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">q_values</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span>
+    <span class="n">prior_bounds</span><span class="o">=</span><span class="n">prior_bounds</span><span class="p">,</span>
+    <span class="n">clip_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">polish_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_pred_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">calc_polished_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_left</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+    <span class="n">sld_profile_padding_right</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prediction_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
 <span class="n">pred_params</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_params_array&#39;</span><span class="p">]</span>
 <span class="n">pred_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_curve&#39;</span><span class="p">]</span>
+<span class="n">polished_curve</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">]</span>
+<span class="n">q_plot</span> <span class="o">=</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;q_plot_pred&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -1274,6 +1290,21 @@ SLD sub        : 20.53
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(91,) (91,) 0.0142368058 0.142432068
 </pre></div>
 </div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>predicted_params_object
+predicted_params_array
+param_names
+predicted_curve
+predicted_sld_profile
+predicted_sld_xaxis
+q_plot_pred
+q_model
+reflectivity_curve_interp
+polished_params_array
+polished_params_error_array
+polished_curve
+sld_profile_polished
+</pre></div>
+</div>
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
@@ -1283,28 +1314,21 @@ SLD sub        : 20.53
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.5e-10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;q [$Å^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;R(q)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="n">y_tick_locations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">FixedLocator</span><span class="p">(</span><span class="n">y_tick_locations</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_reflectivity</span><span class="p">(</span>
+    <span class="n">q_exp</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_exp</span><span class="o">=</span><span class="n">curve_exp</span><span class="p">,</span>
+    <span class="n">q_pred</span><span class="o">=</span><span class="n">q_plot</span><span class="p">,</span> <span class="n">r_pred</span><span class="o">=</span><span class="n">pred_curve</span><span class="p">,</span>
+    <span class="n">q_pol</span><span class="o">=</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">r_pol</span><span class="o">=</span><span class="n">polished_curve</span><span class="p">,</span>
 
-<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">curve_exp</span><span class="p">,</span> <span class="n">facecolors</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;exp. curve&#39;</span><span class="p">)</span>   
-<span class="c1">#ax.scatter(q_exp, curve_exp, c=&#39;b&#39;, s=2, label=&#39;exp. curve&#39;)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">pred_curve</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;pred. curve&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">q_exp</span><span class="p">,</span> <span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;polished_curve&#39;</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;polished pred. curve&#39;</span><span class="p">)</span>
-
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">);</span>
+    <span class="n">plot_sld_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">z_sld</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_xaxis&#39;</span><span class="p">],</span>
+    <span class="n">sld_pred</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;predicted_sld_profile&#39;</span><span class="p">],</span>
+    <span class="n">sld_pol</span><span class="o">=</span><span class="n">prediction_dict</span><span class="p">[</span><span class="s1">&#39;sld_profile_polished&#39;</span><span class="p">],</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="_images/e3f5d0d5ba1e5fd8ad65eab4cd51cc959e20282edf3737f1b115eb5cf826b501.png" src="_images/e3f5d0d5ba1e5fd8ad65eab4cd51cc959e20282edf3737f1b115eb5cf826b501.png" />
+<img alt="_images/bc638b93538537041d2539c273263fa078c2cf8ac2ec63dab76ff09d2c309caf.png" src="_images/bc638b93538537041d2539c273263fa078c2cf8ac2ec63dab76ff09d2c309caf.png" />
 </div>
 </div>
 </section>
@@ -1343,7 +1367,7 @@ SLD sub        : 20.53
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model c_ae loaded. Number of parameters: 1.22 M
-&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x00000292923A7640&gt;
+&lt;reflectorch.ml.trainers.DenoisingAETrainer object at 0x000002709114E160&gt;
 </pre></div>
 </div>
 </div>
