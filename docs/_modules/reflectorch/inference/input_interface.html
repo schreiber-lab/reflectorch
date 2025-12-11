@@ -1,0 +1,628 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reflectorch.inference.input_interface &#8212; Reflectorch Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/reflectorch/inference/input_interface';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/reflectorch_logo.png" class="logo__image only-light" alt="Reflectorch Documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/reflectorch_logo.png" class="logo__image only-dark" alt="Reflectorch Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../intro.html">
+                    Reflectorch
+                </a>
+            </li>
+        </ul>
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">1. Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulations.html">2. Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch.html">3. Using a trained reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../using_reflectorch_neutron.html">4. Neutron reflectometry use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training_reflectorch.html">5. Training a reflectorch model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced_functionality.html">6. Advanced functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">7. API Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/schreiber-lab/reflectorch" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for reflectorch.inference.input_interface</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">reflectorch.data_generation.priors.parametric_models</span> <span class="kn">import</span> <span class="n">NuisanceParamsWrapper</span>
+
+<div class="viewcode-block" id="Layer">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Layer">[docs]</a>
+<span class="k">class</span> <span class="nc">Layer</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines a single slab layer with prior bounds for thickness, roughness and SLD.</span>
+
+<span class="sd">    The bounds can be given for both real and imaginary parts of the SLD (the latter only if the model supports absorption).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        thickness_bounds (Tuple[float, float]): Minimum and maximum thickness of the layer (in Å).</span>
+<span class="sd">        roughness_bounds (Tuple[float, float]): Minimum and maximum interfacial roughness at the top of this layer (in Å).</span>
+<span class="sd">        sld_bounds (Tuple[float, float]): Minimum and maximum real SLD of this layer (in 10⁻⁶ Å⁻²).</span>
+<span class="sd">        imag_sld_bounds (Tuple[float, float], optional): Minimum and maximum imaginary SLD (in 10⁻⁶ Å⁻²) of this layer. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thickness_bounds</span><span class="p">,</span> <span class="n">roughness_bounds</span><span class="p">,</span> <span class="n">sld_bounds</span><span class="p">,</span> <span class="n">imag_sld_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thickness_bounds</span> <span class="o">=</span> <span class="n">thickness_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roughness_bounds</span> <span class="o">=</span> <span class="n">roughness_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sld_bounds</span> <span class="o">=</span> <span class="n">sld_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imag_sld_bounds</span> <span class="o">=</span> <span class="n">imag_sld_bounds</span></div>
+
+
+<div class="viewcode-block" id="Backing">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Backing">[docs]</a>
+<span class="k">class</span> <span class="nc">Backing</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines the backing medium (substrate) for the multilayer structure.</span>
+
+<span class="sd">    The backing is assumed to be semi-infinite and has no thickness parameter. </span>
+<span class="sd">    This class ensures compatibility with the layer-based structure definition.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        roughness_bounds (Tuple[float, float]): Minimum and maximum interfacial roughness at the top of the backing medium (in Å).</span>
+<span class="sd">        sld_bounds (Tuple[float, float]): Minimum and maximum real SLD of the backing medium (in 10⁻⁶ Å⁻²).</span>
+<span class="sd">        imag_sld_bounds (Tuple[float, float], optional): Minimum and maximum imaginary SLD (in 10⁻⁶ Å⁻²) of the backing. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roughness_bounds</span><span class="p">,</span> <span class="n">sld_bounds</span><span class="p">,</span> <span class="n">imag_sld_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thickness_bounds</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roughness_bounds</span> <span class="o">=</span> <span class="n">roughness_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sld_bounds</span> <span class="o">=</span> <span class="n">sld_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imag_sld_bounds</span> <span class="o">=</span> <span class="n">imag_sld_bounds</span></div>
+
+
+<div class="viewcode-block" id="Structure">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Structure">[docs]</a>
+<span class="k">class</span> <span class="nc">Structure</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines a multilayer structure and its parameter bounds in a layer-wise manner.</span>
+
+<span class="sd">    This class allows the user to define the prior bounds for the full structure (film + backing) in a layer-wise format. It automatically constructs the</span>
+<span class="sd">    flattened list of parameter bounds compatible with the inference model’s expected input format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        layers (List[Union[Layer, Backing]]): Ordered list of layers defining the structure, from the ambient side to the backing. The last element</span>
+<span class="sd">            must be a :class:`Backing` instance. Note that the fronting medium (ambient) is not part of this list (since it is not a predicted parameter), </span>
+<span class="sd">            and is treated by default as being 0 (air). For different fronting media one can use the ``ambient_sld`` argument of the prediction method.</span>
+<span class="sd">        q_shift_bounds (Tuple[float, float], optional): Bounds for the global ``q_shift`` nuisance parameter. Defaults to None.</span>
+<span class="sd">        r_scale_bounds (Tuple[float, float], optional): Bounds for the global reflectivity scale factor ``r_scale``. Defaults to None.</span>
+<span class="sd">        log10_background_bounds (Tuple[float, float], optional): Bounds for the background term expressed as log10(background). Defaults to None.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        thicknesses_bounds (List[Tuple[float, float]]): Bounds for all thicknesses (excluding backing).</span>
+<span class="sd">        roughnesses_bounds (List[Tuple[float, float]]): Bounds for all roughnesses (including backing).</span>
+<span class="sd">        slds_bounds (List[Tuple[float, float]]): Bounds for all real SLDs (including backing).</span>
+<span class="sd">        imag_slds_bounds (List[Tuple[float, float]]): Bounds for all imaginary SLDs (if provided).</span>
+<span class="sd">        prior_bounds (List[Tuple[float, float]]): Flattened list of all parameter bounds in the order expected by the model: thicknesses, </span>
+<span class="sd">            roughnesses, real SLDs, imaginary SLDs (if present), followed by nuisance parameters.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; layer1 = Layer(thickness_bounds=[1, 100], roughness_bounds=[0, 10], sld_bounds=[-2, 2])</span>
+<span class="sd">        &gt;&gt;&gt; backing = Backing(roughness_bounds=[0, 15], sld_bounds=[0, 3])</span>
+<span class="sd">        &gt;&gt;&gt; structure = Structure(layers=[layer1, backing], r_scale_bounds=[0.9, 1.1])</span>
+<span class="sd">        &gt;&gt;&gt; structure.prior_bounds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">q_shift_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">r_scale_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log10_background_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">=</span><span class="n">layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span><span class="o">=</span><span class="n">q_shift_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span> <span class="o">=</span> <span class="n">r_scale_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span> <span class="o">=</span> <span class="n">log10_background_bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thicknesses_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roughnesses_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slds_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">thickness_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">thicknesses_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">thickness_bounds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">roughnesses_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">roughness_bounds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slds_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">sld_bounds</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">imag_sld_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">imag_sld_bounds</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thicknesses_bounds</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">roughnesses_bounds</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">slds_bounds</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span>
+
+        <span class="k">if</span> <span class="n">q_shift_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior_bounds</span> <span class="o">+=</span> <span class="p">[</span><span class="n">q_shift_bounds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">r_scale_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior_bounds</span> <span class="o">+=</span> <span class="p">[</span><span class="n">r_scale_bounds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">log10_background_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior_bounds</span> <span class="o">+=</span> <span class="p">[</span><span class="n">log10_background_bounds</span><span class="p">]</span>
+    
+<div class="viewcode-block" id="Structure.validate_parameters_and_ranges">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Structure.validate_parameters_and_ranges">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate_parameters_and_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference_model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate that all layer bounds and nuisance parameters match the model&#39;s configuration.</span>
+
+<span class="sd">        This method checks that:</span>
+<span class="sd">            * The number of layers matches the model’s expected number.</span>
+<span class="sd">            * Each layer’s thickness, roughness, and SLD bounds are within the</span>
+<span class="sd">              model’s training ranges.</span>
+<span class="sd">            * The SLD bound width does not exceed the maximum training width.</span>
+<span class="sd">            * Any nuisance parameters expected by the model (e.g. q_shift, r_scale,</span>
+<span class="sd">              log10_background) are provided and within training bounds.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inference_model (InferenceModel): A loaded instance of :class:`InferenceModel` used to access the model’s metadata.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the number of layers, parameter ranges, or nuisance configurations are inconsistent with the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">!=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of layers mismatch: this model expects </span><span class="si">{</span><span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span><span class="si">}</span><span class="s1"> layers (backing not included) but you provided </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        
+
+        <span class="n">thickness_ranges</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;thicknesses&#39;</span><span class="p">]</span>
+        <span class="n">roughness_ranges</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;roughnesses&#39;</span><span class="p">]</span>
+        <span class="n">sld_ranges</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;slds&#39;</span><span class="p">]</span>
+        
+        <span class="k">def</span> <span class="nf">layer_name</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">max_num_layers</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s1">&#39;the backing medium&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;layer </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">thickness_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">thickness_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">thickness_ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">layer</span><span class="o">.</span><span class="n">thickness_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thickness_ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the thickness of layer </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> are outside the training range of the network: </span><span class="si">{</span><span class="n">thickness_ranges</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">roughness_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">roughness_ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">layer</span><span class="o">.</span><span class="n">roughness_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">roughness_ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the roughness of </span><span class="si">{</span><span class="n">layer_name</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2"> are outside the training range of the network: </span><span class="si">{</span><span class="n">roughness_ranges</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">sld_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">sld_ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">layer</span><span class="o">.</span><span class="n">sld_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sld_ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the (real) SLD of </span><span class="si">{</span><span class="n">layer_name</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2"> are outside the training range of the network: </span><span class="si">{</span><span class="n">sld_ranges</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="n">max_sld_bounds_width</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">bound_width_ranges</span><span class="p">[</span><span class="s1">&#39;slds&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">sld_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">sld_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_sld_bounds_width</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the (real) SLD of </span><span class="si">{</span><span class="n">layer_name</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2"> have a width (max - min) exceeding the maximum width used for training: </span><span class="si">{</span><span class="n">max_sld_bounds_width</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="n">param_model</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_model</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_model</span><span class="p">,</span> <span class="n">NuisanceParamsWrapper</span><span class="p">):</span>
+            <span class="n">nuisance_params_config</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">shift_param_config</span>
+                                    
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;q_shift&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the q_shift parameter were provided but this parameter is not supported by this model.&#39;</span><span class="p">)</span>
+            <span class="n">q_shift_range</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;q_shift&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">q_shift_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">q_shift_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the q_shift are outside the training range of the network: </span><span class="si">{</span><span class="n">q_shift_range</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;r_scale&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the r_scale parameter were provided but this parameter is not supported by this model.&#39;</span><span class="p">)</span>
+            <span class="n">r_scale_range</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;r_scale&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">r_scale_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">r_scale_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the r_scale are outside the training range of the network: </span><span class="si">{</span><span class="n">r_scale_range</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;log10_background&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the log10_background parameter were provided but this parameter is not supported by this model.&#39;</span><span class="p">)</span>
+            <span class="n">log10_background_range</span> <span class="o">=</span> <span class="n">inference_model</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">prior_sampler</span><span class="o">.</span><span class="n">param_ranges</span><span class="p">[</span><span class="s1">&#39;log10_background&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">log10_background_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">log10_background_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided prior bounds for the r_scale are outside the training range of the network: </span><span class="si">{</span><span class="n">log10_background_range</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_model</span><span class="p">,</span> <span class="n">NuisanceParamsWrapper</span><span class="p">):</span>            
+            <span class="k">if</span> <span class="s1">&#39;q_shift&#39;</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the q_shift parameter are expected by this model but were not provided.&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;r_scale&#39;</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the r_scale parameter are expected by this model but were not provided.&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;log10_background&#39;</span> <span class="ow">in</span> <span class="n">nuisance_params_config</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prior bounds for the log10_background parameter are expected by this model but were not provided.&#39;</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All checks passed.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Structure.get_huggingface_filtering_query">
+<a class="viewcode-back" href="../../../api.html#reflectorch.Structure.get_huggingface_filtering_query">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_huggingface_filtering_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs a metadata query for selecting compatible pretrained models from Huggingface. Currently it only supports the older (research style) </span>
+<span class="sd">        layout of Huggingface repositories (such as &#39;valentinsingularity/reflectivity&#39;), but not the newer layout (such as `reflectorch-ILL`).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary describing the structure and parameter bounds, suitable for filtering available model configurations </span>
+<span class="sd">            in a Huggingface repository using :class:`HuggingfaceQueryMatcher`.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; structure = Structure([...])</span>
+<span class="sd">            &gt;&gt;&gt; query = structure.get_huggingface_filtering_query()</span>
+<span class="sd">            &gt;&gt;&gt; matcher = HuggingfaceQueryMatcher(repo_id=&#39;valentinsingularity/reflectivity&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; configs = matcher.get_matching_configs(query)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;dset.prior_sampler.kwargs.max_num_layers&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">}</span>
+        
+        <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.thicknesses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thicknesses_bounds</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thicknesses_bounds</span><span class="p">)]</span>
+        <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.roughnesses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roughnesses_bounds</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roughnesses_bounds</span><span class="p">)]</span>
+        <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.slds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slds_bounds</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slds_bounds</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.model_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;model_with_absorption&#39;</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.islds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag_slds_bounds</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.model_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;standard_model&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.shift_param_config.q_shift&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.q_shift&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_shift_bounds</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.shift_param_config.r_scale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.r_scale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_scale_bounds</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.shift_param_config.log10_background&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">query</span><span class="p">[</span><span class="s1">&#39;dset.prior_sampler.kwargs.param_ranges.log10_background&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log10_background_bounds</span>
+
+        <span class="k">return</span> <span class="n">query</span></div>
+</div>
+
+    
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">reflectorch.inference.query_matcher</span> <span class="kn">import</span> <span class="n">HuggingfaceQueryMatcher</span>
+    <span class="kn">from</span> <span class="nn">reflectorch</span> <span class="kn">import</span> <span class="n">EasyInferenceModel</span>
+
+    <span class="n">layer1</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">thickness_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],</span> <span class="n">roughness_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">],</span> <span class="n">sld_bounds</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">layer2</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="n">thickness_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">],</span> <span class="n">roughness_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">sld_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+    <span class="n">backing</span> <span class="o">=</span> <span class="n">Backing</span><span class="p">(</span><span class="n">roughness_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">],</span> <span class="n">sld_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+    <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span>
+        <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">layer1</span><span class="p">,</span> <span class="n">layer2</span><span class="p">,</span> <span class="n">backing</span><span class="p">],</span> 
+        <span class="n">r_scale_bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">],</span>
+        <span class="n">log10_background_bounds</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">prior_bounds</span><span class="p">)</span>
+
+    <span class="n">query_matcher</span> <span class="o">=</span> <span class="n">HuggingfaceQueryMatcher</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="s1">&#39;valentinsingularity/reflectivity&#39;</span><span class="p">)</span>
+    <span class="n">filtering_query</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">get_huggingface_filtering_query</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">filtering_query</span><span class="p">)</span>
+
+    <span class="n">matching_configs</span> <span class="o">=</span> <span class="n">query_matcher</span><span class="o">.</span><span class="n">get_matching_configs</span><span class="p">(</span><span class="n">filtering_query</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Matching configs: </span><span class="si">{</span><span class="n">matching_configs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+    <span class="n">inference_model</span> <span class="o">=</span> <span class="n">EasyInferenceModel</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">matching_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">structure</span><span class="o">.</span><span class="n">validate_parameters_and_ranges</span><span class="p">(</span><span class="n">inference_model</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Schreiber Lab
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -67,7 +67,12 @@ API Reference
               ConstrainedRoughnessAndImgSldSamplerStrategy,
               ParametricModel,
               EasyInferenceModel,
+              InferenceModel,
               HuggingfaceQueryMatcher,
               convert_pt_to_safetensors,
+              Layer,
+              Backing,
+              Structure,
+
     :show-inheritance:
     :member-order: bysource

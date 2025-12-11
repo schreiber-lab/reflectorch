@@ -306,7 +306,7 @@ document.write(`
 
 <div class="viewcode-block" id="interp_reflectivity">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.interp_reflectivity">[docs]</a>
-<span class="k">def</span> <span class="nf">interp_reflectivity</span><span class="p">(</span><span class="n">q_interp</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">reflectivity</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">interp_reflectivity</span><span class="p">(</span><span class="n">q_interp</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">reflectivity</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span> <span class="n">logspace</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolate data on a base 10 logarithmic scale</span>
 
 <span class="sd">    Args:</span>
@@ -318,7 +318,10 @@ document.write(`
 <span class="sd">    Returns:</span>
 <span class="sd">        array-like: interpolated reflectivity curve</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">q_interp</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">reflectivity</span><span class="p">,</span> <span class="n">min_value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span></div>
+    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">logspace</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">q_interp</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">reflectivity</span><span class="p">,</span> <span class="n">min_value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">q_interp</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">reflectivity</span><span class="p">,</span> <span class="n">min_value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span></div>
 
 </pre></div>
 

@@ -357,36 +357,54 @@ document.write(`
 <span class="c1"># taken from mlreflect package</span>
 <span class="c1"># mlreflect/xrrloader/dataloader/transform.py</span>
 
-<div class="viewcode-block" id="angle_to_q">
-<a class="viewcode-back" href="../../api.html#reflectorch.angle_to_q">[docs]</a>
 <span class="k">def</span> <span class="nf">angle_to_q</span><span class="p">(</span><span class="n">scattering_angle</span><span class="p">:</span> <span class="n">ndarray</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Conversion from full scattering angle (degrees) to scattering vector (inverse angstroms)&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">scattering_angle</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">scattering_angle</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">)</span>
 
 
-
-<div class="viewcode-block" id="q_to_angle">
-<a class="viewcode-back" href="../../api.html#reflectorch.q_to_angle">[docs]</a>
 <span class="k">def</span> <span class="nf">q_to_angle</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">ndarray</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Conversion from scattering vector (inverse angstroms) to full scattering angle (degrees)&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">q</span> <span class="o">*</span> <span class="n">wavelength</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">180</span></div>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">q</span> <span class="o">*</span> <span class="n">wavelength</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">180</span>
 
 
-
-<div class="viewcode-block" id="energy_to_wavelength">
-<a class="viewcode-back" href="../../api.html#reflectorch.energy_to_wavelength">[docs]</a>
 <span class="k">def</span> <span class="nf">energy_to_wavelength</span><span class="p">(</span><span class="n">energy</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Conversion from photon energy (eV) to photon wavelength (angstroms)&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="mf">1.2398</span> <span class="o">/</span> <span class="n">energy</span> <span class="o">*</span> <span class="mf">1e4</span></div>
+    <span class="k">return</span> <span class="mf">1.2398</span> <span class="o">/</span> <span class="n">energy</span> <span class="o">*</span> <span class="mf">1e4</span>
 
 
-
-<div class="viewcode-block" id="wavelength_to_energy">
-<a class="viewcode-back" href="../../api.html#reflectorch.wavelength_to_energy">[docs]</a>
 <span class="k">def</span> <span class="nf">wavelength_to_energy</span><span class="p">(</span><span class="n">wavelength</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Conversion from photon wavelength (angstroms) to photon energy (eV)&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="mf">1.2398</span> <span class="o">/</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e4</span></div>
+    <span class="k">return</span> <span class="mf">1.2398</span> <span class="o">/</span> <span class="n">wavelength</span> <span class="o">*</span> <span class="mf">1e4</span>
 
+<span class="k">def</span> <span class="nf">get_filtering_mask</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dR</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">consecutive</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                        <span class="n">remove_singles</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">remove_consecutives</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">q_start_trunc</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dR</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">R</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">dR</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">rel_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dR</span> <span class="o">/</span> <span class="n">R</span><span class="p">)</span>
+
+    <span class="c1"># Mask for singles</span>
+    <span class="n">mask_singles</span> <span class="o">=</span> <span class="p">(</span><span class="n">rel_error</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span> <span class="k">if</span> <span class="n">remove_singles</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1"># Mask for truncation</span>
+    <span class="n">mask_consecutive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">remove_consecutives</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cutoff_idx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">q_start_trunc</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">rel_error</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;=</span> <span class="n">consecutive</span><span class="p">:</span>
+                    <span class="n">cutoff_idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="n">consecutive</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">cutoff_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask_consecutive</span><span class="p">[</span><span class="n">cutoff_idx</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">final_mask</span> <span class="o">=</span> <span class="n">mask_singles</span> <span class="o">|</span> <span class="n">mask_consecutive</span>
+    <span class="k">return</span> <span class="o">~</span><span class="n">final_mask</span>
 </pre></div>
 
                 </article>

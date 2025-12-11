@@ -31,7 +31,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
   
@@ -331,6 +331,7 @@ document.write(`
 <span class="sd">                                                which scales the curves to the range [-1, 1], the minimum considered intensity being 1e-10.</span>
 <span class="sd">        calc_denoised_curves (bool, optional): whether to add the curves without noise to the dictionary. Defaults to False.</span>
 <span class="sd">        calc_nonsmeared_curves (bool, optional): whether to add the curves without smearing to the dictionary (only relevant when smearing is applied). Defaults to False.</span>
+<span class="sd">        add_noisy_curves (bool, optional): whether to add the noisy curves to the dictionary. Defaults to False.</span>
 <span class="sd">        smearing (Smearing, optional): curve smearing generator. Defaults to None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -341,6 +342,7 @@ document.write(`
                  <span class="n">curves_scaler</span><span class="p">:</span> <span class="n">CurvesScaler</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">calc_denoised_curves</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">calc_nonsmeared_curves</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">add_noisy_curves</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">smearing</span><span class="p">:</span> <span class="n">Smearing</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q_generator</span> <span class="o">=</span> <span class="n">q_generator</span>
@@ -351,6 +353,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">smearing</span> <span class="o">=</span> <span class="n">smearing</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">calc_denoised_curves</span> <span class="o">=</span> <span class="n">calc_denoised_curves</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">calc_nonsmeared_curves</span> <span class="o">=</span> <span class="n">calc_nonsmeared_curves</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_curves</span> <span class="o">=</span> <span class="n">add_noisy_curves</span>
 
 <div class="viewcode-block" id="BasicDataset.update_batch_data">
 <a class="viewcode-back" href="../../../api.html#reflectorch.BasicDataset.update_batch_data">[docs]</a>
@@ -404,6 +407,9 @@ document.write(`
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity_noise</span><span class="p">:</span>
             <span class="n">noisy_curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity_noise</span><span class="p">(</span><span class="n">noisy_curves</span><span class="p">,</span> <span class="n">batch_data</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_curves</span><span class="p">:</span>
+            <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;noisy_curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">noisy_curves</span>
 
         <span class="n">scaled_noisy_curves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">noisy_curves</span><span class="p">)</span>
         <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;scaled_noisy_curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_noisy_curves</span>

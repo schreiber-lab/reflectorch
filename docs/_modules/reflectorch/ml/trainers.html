@@ -31,7 +31,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
   
@@ -327,7 +327,9 @@ document.write(`
     <span class="n">scaled_sigmas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">scaled_q_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">scaled_denoised_curves</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">key_padding_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">scaled_conditioning_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">unscaled_q_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="RealTimeSimTrainer">
 <a class="viewcode-back" href="../../../api.html#reflectorch.RealTimeSimTrainer">[docs]</a>
@@ -388,6 +390,7 @@ document.write(`
         <span class="n">scaled_curves</span> <span class="o">=</span> <span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;scaled_noisy_curves&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="n">scaled_denoised_curves</span> <span class="o">=</span> <span class="n">get_scaled_or_none</span><span class="p">(</span><span class="s1">&#39;curves&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">curves_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
         <span class="n">scaled_q_values</span> <span class="o">=</span> <span class="n">get_scaled_or_none</span><span class="p">(</span><span class="s1">&#39;q_values&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">q_generator</span><span class="o">.</span><span class="n">scale_q</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_with_q_input</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">key_padding_mask</span> <span class="o">=</span> <span class="n">batch_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;key_padding_mask&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="n">scaled_q_resolutions</span> <span class="o">=</span> <span class="n">get_scaled_or_none</span><span class="p">(</span><span class="s1">&#39;q_resolutions&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">smearing</span><span class="o">.</span><span class="n">scale_resolutions</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_on_q_resolutions</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="n">conditioning_params</span> <span class="o">=</span> <span class="p">[]</span>
@@ -406,6 +409,8 @@ document.write(`
             <span class="n">scaled_q_values</span><span class="o">=</span><span class="n">scaled_q_values</span><span class="p">,</span>
             <span class="n">scaled_denoised_curves</span><span class="o">=</span><span class="n">scaled_denoised_curves</span><span class="p">,</span>
             <span class="n">scaled_conditioning_params</span><span class="o">=</span><span class="n">scaled_conditioning_params</span><span class="p">,</span>
+            <span class="n">unscaled_q_values</span><span class="o">=</span><span class="n">batch_data</span><span class="p">[</span><span class="s1">&#39;q_values&#39;</span><span class="p">],</span>
+            <span class="n">key_padding_mask</span><span class="o">=</span><span class="n">key_padding_mask</span><span class="p">,</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="PointEstimatorTrainer.get_loss_dict">
@@ -416,13 +421,17 @@ document.write(`
         <span class="n">scaled_curves</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">scaled_curves</span>
         <span class="n">scaled_bounds</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">scaled_bounds</span>
         <span class="n">scaled_q_values</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">scaled_q_values</span>
+        <span class="n">key_padding_mask</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">key_padding_mask</span>
         <span class="n">scaled_conditioning_params</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">scaled_conditioning_params</span>
+        <span class="n">unscaled_q_values</span><span class="o">=</span><span class="n">batch_data</span><span class="o">.</span><span class="n">unscaled_q_values</span>
 
         <span class="n">predicted_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
             <span class="n">curves</span> <span class="o">=</span> <span class="n">scaled_curves</span><span class="p">,</span>
             <span class="n">bounds</span> <span class="o">=</span> <span class="n">scaled_bounds</span><span class="p">,</span>
             <span class="n">q_values</span> <span class="o">=</span> <span class="n">scaled_q_values</span><span class="p">,</span>
             <span class="n">conditioning_params</span> <span class="o">=</span> <span class="n">scaled_conditioning_params</span><span class="p">,</span>
+            <span class="n">key_padding_mask</span> <span class="o">=</span> <span class="n">key_padding_mask</span><span class="p">,</span>
+            <span class="n">unscaled_q_values</span> <span class="o">=</span> <span class="n">unscaled_q_values</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rescale_loss_interval_width</span><span class="p">:</span>

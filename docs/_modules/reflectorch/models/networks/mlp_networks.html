@@ -31,7 +31,7 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
   
@@ -310,6 +310,7 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">reflectorch.models.networks.residual_net</span> <span class="kn">import</span> <span class="n">ResidualMLP</span>
 <span class="kn">from</span> <span class="nn">reflectorch.models.encoders.conv_encoder</span> <span class="kn">import</span> <span class="n">ConvEncoder</span>
+<span class="kn">from</span> <span class="nn">reflectorch.models.encoders.integral_kernel_embedding</span> <span class="kn">import</span> <span class="n">IntegralConvEmbedding</span>
 <span class="kn">from</span> <span class="nn">reflectorch.models.encoders.fno</span> <span class="kn">import</span> <span class="n">FnoEncoder</span>
 <span class="kn">from</span> <span class="nn">reflectorch.models.activations</span> <span class="kn">import</span> <span class="n">activation_by_name</span>
 
@@ -323,7 +324,7 @@ document.write(`
 <span class="sd">        :align: center</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        embedding_net_type (str): the type of embedding network, either &#39;conv&#39; or &#39;fno&#39;.</span>
+<span class="sd">        embedding_net_type (str): the type of embedding network, either &#39;conv&#39;, &#39;fno&#39; or &#39;integral_conv&#39;.</span>
 <span class="sd">        embedding_net_kwargs (dict): dictionary containing the keyword arguments for the embedding network.</span>
 <span class="sd">        dim_out (int, optional): the dimension of the output produced by the MLP. Defaults to 8.</span>
 <span class="sd">        dim_conditioning_params (int, optional): the dimension of other parameters the network is conditioned on (e.g. for the smearing coefficient dq/q)</span>
@@ -371,6 +372,8 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">ConvEncoder</span><span class="p">(</span><span class="o">**</span><span class="n">embedding_net_kwargs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;fno&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">FnoEncoder</span><span class="p">(</span><span class="o">**</span><span class="n">embedding_net_kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;integral_conv&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">IntegralConvEmbedding</span><span class="p">(</span><span class="o">**</span><span class="n">embedding_net_kwargs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">embedding_net_type</span> <span class="o">==</span> <span class="s1">&#39;no_embedding_net&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -415,7 +418,7 @@ document.write(`
 
 <div class="viewcode-block" id="NetworkWithPriors.forward">
 <a class="viewcode-back" href="../../../../api.html#reflectorch.NetworkWithPriors.forward">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conditioning_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curves</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conditioning_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key_padding_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unscaled_q_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            scaled_curves (torch.Tensor): Input tensor of shape [batch_size, n_points] or [batch_size, n_channels, n_points].</span>
@@ -428,13 +431,16 @@ document.write(`
             <span class="n">curves</span> <span class="o">=</span> <span class="n">curves</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">additional_channels</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">q_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">,</span> <span class="n">IntegralConvEmbedding</span><span class="p">):</span>
             <span class="n">additional_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_values</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">additional_channels</span><span class="p">:</span>
             <span class="n">curves</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">curves</span><span class="p">]</span> <span class="o">+</span> <span class="n">additional_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [batch_size, n_channels, n_points]</span>
 
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">,</span> <span class="n">IntegralConvEmbedding</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">unscaled_q_values</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">y</span><span class="o">=</span><span class="n">curves</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">drop_mask</span><span class="o">=</span><span class="n">key_padding_mask</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_net</span><span class="p">(</span><span class="n">curves</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditioning</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span><span class="p">:</span> 
             <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="n">conditioning_params</span><span class="p">]</span> <span class="k">if</span> <span class="n">conditioning_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
