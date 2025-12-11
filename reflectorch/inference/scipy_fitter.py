@@ -144,6 +144,8 @@ def batch_refl_fit(
     params_array, error_bars, curves_array = zip(*results)
     return np.array(params_array), np.array(error_bars), np.array(curves_array)
 
+import warnings
+from scipy.optimize import curve_fit
 
 def refl_fit(
         q: np.ndarray, 
@@ -158,28 +160,33 @@ def refl_fit(
         reflectivity_kwargs: dict = None,
         **kwargs
 ):
+    # --- 1. Bounds Handling ---
     if bounds is not None:
         if bounds.ndim != 2:
             raise ValueError(f"Bounds must be a 2D array, got {bounds.ndim}D array")
-        # introduce a small perturbation for fixed bounds
+        
+        # Introduce a small perturbation for fixed bounds to prevent optimizer issues
         epsilon = 1e-6
         adjusted_bounds = bounds.copy()
-
         for i in range(bounds.shape[1]): 
             if bounds[0, i] == bounds[1, i]:
                 adjusted_bounds[0, i] -= epsilon
                 adjusted_bounds[1, i] += epsilon
 
         init_params = np.clip(init_params, *adjusted_bounds)
+        
         if method != 'lm':
-            kwargs['bounds'] = adjusted_bounds
+            # Scipy expects a tuple (lower_bound, upper_bound)
+            # Assuming adjusted_bounds shape is (2, n_params)
+            kwargs['bounds'] = (adjusted_bounds[0], adjusted_bounds[1])
 
+    # --- 2. Input Scaling & Prep ---
     reflectivity_kwargs = reflectivity_kwargs or {}
     for key, value in reflectivity_kwargs.items():
         if isinstance(value, float):
             reflectivity_kwargs[key] = torch.tensor([[value]], dtype=torch.float64)
         elif isinstance(value, np.ndarray):
-            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)     
+            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)      
 
     curve = np.clip(curve, a_min=1e-12, a_max=None)
 
@@ -189,36 +196,59 @@ def refl_fit(
     else:
         scaled_error_bars = None  
 
+    # Define maxfev/max_nfev
     if polishing_max_steps is not None:
         if method == 'lm':
             kwargs['maxfev'] = polishing_max_steps
         else:
             kwargs['max_nfev'] = polishing_max_steps
 
-    res = curve_fit(
-        f=get_scaled_curve_func(
-            scale_curve_func=scale_curve_func,
-            prior_sampler=prior_sampler,
-            reflectivity_kwargs=reflectivity_kwargs,
-        ),
-        xdata=q, 
-        ydata=scale_curve_func(curve).reshape(-1),
-        p0=init_params,
-        sigma=scaled_error_bars,
-        absolute_sigma=True,
-        method=method,
-        **kwargs
+    # --- 3. Robust Fitting (Try...Except) ---
+    fit_func = get_scaled_curve_func(
+        scale_curve_func=scale_curve_func,
+        prior_sampler=prior_sampler,
+        reflectivity_kwargs=reflectivity_kwargs,
     )
+    
+    y_data_flat = scale_curve_func(curve).reshape(-1)
 
-    curve = prior_sampler.param_model.reflectivity(torch.tensor(q, dtype=torch.float64), 
-                                                   torch.tensor(res[0], dtype=torch.float64).unsqueeze(0), 
-                                                   **reflectivity_kwargs).squeeze().numpy()
-    # cov matrix --> variance of the parameter estimate
-    if res[1] is not None and np.ndim(res[1]) == 2 and np.all(np.isfinite(res[1])):
-        pol_param_errs = np.sqrt(np.diag(res[1]))
+    try:
+        # Attempt the fit
+        popt, pcov = curve_fit(
+            f=fit_func,
+            xdata=q, 
+            ydata=y_data_flat,
+            p0=init_params,
+            sigma=scaled_error_bars,
+            absolute_sigma=True,
+            method=method,
+            **kwargs
+        )
+    except RuntimeError:
+        # FALLBACK: If fit fails (maxfev exceeded), use initial params
+        # You could optionally retry here with higher max_nfev if desired
+        warnings.warn("Optimization failed to converge. Returning initial parameters.")
+        popt = init_params
+        pcov = None
+
+    # --- 4. Result Construction ---
+    # Re-calculate the curve using the "best" parameters found (popt)
+    curve_fitted = prior_sampler.param_model.reflectivity(
+        torch.tensor(q, dtype=torch.float64), 
+        torch.tensor(popt, dtype=torch.float64).unsqueeze(0), 
+        **reflectivity_kwargs
+    ).squeeze().numpy()
+
+    # Calculate error bars (check if covariance matrix is valid)
+    if pcov is not None and np.ndim(pcov) == 2 and np.all(np.isfinite(pcov)):
+        pol_param_errs = np.sqrt(np.diag(pcov))
     else: 
-        pol_param_errs = np.full_like(res[1], np.nan)
-    return res[0], pol_param_errs, curve
+        # Return NaNs if fit failed or covariance is infinite
+        pol_param_errs = np.full_like(popt, np.nan)
+
+    return popt, pol_param_errs, curve_fitted
+    
+
 
 
 def get_fit_with_growth(
