@@ -197,7 +197,7 @@ def refl_fit(
    #     else:
     #        kwargs['max_nfev'] = polishing_max_steps
 
-    fit_func = get_scaled_curve|_func(
+    fit_func = get_scaled_curve_func(
         scale_curve_func=scale_curve_func,
         prior_sampler=prior_sampler,
         reflectivity_kwargs=reflectivity_kwargs,
