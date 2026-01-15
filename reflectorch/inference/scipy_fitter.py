@@ -228,7 +228,7 @@ def refl_fit(
         **reflectivity_kwargs
     ).squeeze().numpy()
 
-    if pcov is not None and np.ndim(pcov) == 2 and np.all(np.isinfinite(pcov)):
+    if pcov is not None and np.ndim(pcov) == 2 and np.all(np.isfinite(pcov)):
         pol_params_errs = np.sqrt(np.diag(pcov))
     else:
         pol_params_errs = np.full_like(popt,np.nan)
