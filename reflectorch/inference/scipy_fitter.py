@@ -191,36 +191,49 @@ def refl_fit(
     else:
         scaled_error_bars = None  
 
-    if polishing_max_steps is not None:
-        if method == 'lm':
-            kwargs['maxfev'] = polishing_max_steps
-        else:
-            kwargs['max_nfev'] = polishing_max_steps
+   # if polishing_max_steps is not None:
+   #     if method == 'lm':
+   #         kwargs['maxfev'] = polishing_max_steps
+   #     else:
+    #        kwargs['max_nfev'] = polishing_max_steps
 
-    res = curve_fit(
-        f=get_scaled_curve_func(
-            scale_curve_func=scale_curve_func,
-            prior_sampler=prior_sampler,
-            reflectivity_kwargs=reflectivity_kwargs,
-        ),
-        xdata=q, 
-        ydata=scale_curve_func(curve).reshape(-1),
-        p0=init_params,
-        sigma=scaled_error_bars,
-        absolute_sigma=True,
-        method=method,
-        **kwargs
+    fit_func = get_scaled_curve|_func(
+        scale_curve_func=scale_curve_func,
+        prior_sampler=prior_sampler,
+        reflectivity_kwargs=reflectivity_kwargs,
     )
+    y_data_flat = scale_curve_func(curve).reshape(-1)
 
-    curve = prior_sampler.param_model.reflectivity(torch.tensor(q, dtype=torch.float64), 
-                                                   torch.tensor(res[0], dtype=torch.float64).unsqueeze(0), 
-                                                   **reflectivity_kwargs).squeeze().numpy()
-    # cov matrix --> variance of the parameter estimate
-    if res[1] is not None and np.ndim(res[1]) == 2 and np.all(np.isfinite(res[1])):
-        pol_param_errs = np.sqrt(np.diag(res[1]))
-    else: 
-        pol_param_errs = np.full_like(res[1], np.nan)
-    return res[0], pol_param_errs, curve
+    try:
+        popt,pcov = curve_fit(
+            f = fit_func,
+            xdata=q,
+            ydata=y_data_flat,
+            p0=init_params,
+            sigma=scaled_error_bars,
+            absolute_sigma=True,
+            method=method,
+            **kwargs
+        )
+
+    except RuntimeError:
+
+        popt = init_params
+        pcov= None
+
+    
+    curve_fitted = prior_sampler.param_model.reflectivity(
+        torch.tensor(q, dtype = torch.float64),
+        torch.tensor(popt, dtype = torhch.float64).unsqueeze(0),
+        **reflectivity_kwargs
+    ).squeeze().numpy()
+
+    if pcov is not None and np.ndim(pcov) == 2 and np.all(np.isinfinite(pcov)):
+        pol_params_errs = np.sqrt(np.diag(pcov))
+    else:
+        pol_params_errs = np.full_like(popt,np.nan)
+    return popt, pol_params_errs, curve_fitted
+    
     
 
 
