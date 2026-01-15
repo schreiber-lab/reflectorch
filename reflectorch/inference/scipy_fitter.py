@@ -224,7 +224,7 @@ def refl_fit(
     
     curve_fitted = prior_sampler.param_model.reflectivity(
         torch.tensor(q, dtype = torch.float64),
-        torch.tensor(popt, dtype = torhch.float64).unsqueeze(0),
+        torch.tensor(popt, dtype = torch.float64).unsqueeze(0),
         **reflectivity_kwargs
     ).squeeze().numpy()
 
