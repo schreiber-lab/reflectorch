@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Sequence
 
 import torch
 from torch import Tensor
@@ -554,6 +554,219 @@ class ModelWithAbsorption(StandardModel):
     
     def available_profile_types(self) -> List[str]:
         return ["sld", "imag_sld"]
+    
+class ModelWithSolventBacking(StandardModel):
+    """Parameterization for the box model in which the solvent volume fraction of the layers are additional parameters."""
+    NAME = 'model_with_solvent_backing'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "roughnesses",
+        "slds",
+        "solvent_vfs",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 4 * self.max_num_layers + 2
+    
+    def _init_sampler_strategy(self,
+                               constrained_roughness: bool = True,
+                               max_thickness_share: float = 0.5,
+                               nuisance_params_dim: int = 0,
+                               **kwargs):
+        if constrained_roughness:
+            num_params = self.param_dim + nuisance_params_dim
+            thickness_mask = torch.zeros(num_params, dtype=torch.bool)
+            roughness_mask = torch.zeros(num_params, dtype=torch.bool)
+            thickness_mask[:self.max_num_layers] = True
+            roughness_mask[self.max_num_layers:2 * self.max_num_layers + 1] = True
+            return ConstrainedRoughnessSamplerStrategy(
+                thickness_mask, roughness_mask,
+                max_thickness_share=max_thickness_share,
+                **kwargs
+            )
+        else:
+            return BasicSamplerStrategy(**kwargs)
+
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["solvent_vfs"]] * self.max_num_layers +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["solvent_vfs"]] * self.max_num_layers +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(
+        self,
+        *,
+        thickness_name: str = "Thickness",
+        roughness_name: str = "Roughness",
+        sld_name: str = "SLD",
+        solvent_vf_name: str = "Solvent VF",
+        substrate_name: str = "sub",
+        number_top_to_bottom: bool = True,
+        **kwargs,
+    ) -> List[str]:
+        layer_suffixes, layer_plus_sub = _layer_suffixes(
+            self.max_num_layers,
+            substrate_name=substrate_name,
+            number_top_to_bottom=number_top_to_bottom,
+        )
+
+        return (
+            _plain_block(thickness_name, layer_suffixes)
+            + _plain_block(roughness_name, layer_plus_sub)
+            + _plain_block(sld_name, layer_plus_sub)
+            + _plain_block(solvent_vf_name, layer_suffixes)
+        )
+
+    def get_param_labels_latex(
+        self,
+        *,
+        thickness_name: str = "d",
+        roughness_name: str = r"\sigma",
+        sld_name: str = r"\rho",
+        solvent_vf_name: str = r"\phi^{\mathrm{solv}}",
+        substrate_name: str = "B",
+        number_top_to_bottom: bool = True,
+        **kwargs,
+    ) -> List[str]:
+        layer_suffixes, layer_plus_sub = _layer_suffixes(
+            self.max_num_layers,
+            substrate_name=substrate_name,
+            number_top_to_bottom=number_top_to_bottom,
+        )
+
+        return (
+            _latex_block(thickness_name, layer_suffixes)
+            + _latex_block(roughness_name, layer_plus_sub)
+            + _latex_block(sld_name, layer_plus_sub)
+            + _latex_block(solvent_vf_name, layer_suffixes)
+        )
+    
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 2) // 4
+        assert num_layers * 4 + 2 == num_params
+
+        d, sigma, sld, solvent_vf = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=sigma,
+            sld=sld,
+            solvent_vf_single=solvent_vf,
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(
+            q, **self._params2dict(parametrized_model), solvent_mode_single ='backing', **kwargs
+        )
+    
+    def sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+        get_effective_sld: bool = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld = params["sld"]
+        solvent_vf = params["solvent_vf_single"]
+
+        solvent_sld = sld[..., [-1]]
+        num_layers = thickness.shape[-1]
+        idx = slice(0, num_layers)
+
+        if get_effective_sld:
+            effective_sld = sld.clone()
+            effective_sld[..., idx] = solvent_vf * solvent_sld + (1.0 - solvent_vf) * effective_sld[..., idx]
+            sld_in = effective_sld
+        else:
+            sld_in = sld
+
+        ambient_sld = torch.tensor(ambient_sld).to(thickness) if ambient_sld is not None else None
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld_in,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def solvent_vf_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        solvent_vf = params["solvent_vf_single"]
+
+        B = thickness.shape[0]
+        solvent_vf = torch.cat([solvent_vf, torch.ones((B, 1), device=solvent_vf.device, dtype=solvent_vf.dtype)], dim=-1)
+
+        z, profile, _ = get_density_profiles(
+            thickness,
+            roughness,
+            solvent_vf,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "solvent_vf"]
 
 class NoFresnelModel(StandardModel):
     NAME = 'no_fresnel_model'
@@ -651,15 +864,77 @@ class BasicMultilayerModel3(BasicMultilayerModel1):
 
     def to_standard_params(self, parametrized_model: Tensor) -> dict:
         return multilayer_model3(parametrized_model, self.max_num_layers)
+    
+class AnalyticSldProfileModel(ParametricModel):
+    """
+    Film SLD is given by an analytic formula sld(z, params...) loaded from config.
+    """
+    NAME = "analytic_sld_profile"
+    PARAMETER_NAMES = tuple()
+
+    def __init__(
+        self,
+        max_num_layers: int,
+        analytic_profile: dict,
+        parameter_names: List[str],
+        **kwargs,
+    ):
+        super().__init__(max_num_layers, **kwargs)
+        self.PARAMETER_NAMES = tuple(parameter_names)
+
+        self.expr: str = analytic_profile["expr"]
+        self.z_min: float = float(analytic_profile.get("z_min", 0.0))
+        self.z_max: float = float(analytic_profile["z_max"])
+
+    @property
+    def param_dim(self) -> int:
+        return len(self.PARAMETER_NAMES)
+
+    def to_standard_params(self, parametrized_model: Tensor) -> dict:
+        B = parametrized_model.shape[0]
+        N = self.max_num_layers
+        device = parametrized_model.device
+        dtype = parametrized_model.dtype
+
+        params = {name: parametrized_model[..., i:i+1] for i, name in enumerate(self.PARAMETER_NAMES)}
+
+        if "sld_substrate" not in params:
+            raise ValueError("AnalyticSldProfileModel requires parameter 'sld_substrate'.")
+
+        dz = (self.z_max - self.z_min) / float(N)
+        thickness = torch.full((B, N), dz, device=device, dtype=dtype)
+
+        z_edges = torch.linspace(self.z_min, self.z_max, N + 1, device=device, dtype=dtype)
+        zc = 0.5 * (z_edges[:-1] + z_edges[1:])
+        zc = zc[None, :].expand(B, -1)
+
+        env = {"torch": torch, "z": zc}
+        env.update(params)
+
+        sld_layers = eval(self.expr, env)
+
+        roughness = torch.zeros((B, N + 1), device=device, dtype=dtype)
+
+        sld = torch.cat([sld_layers, params["sld_substrate"]], dim=-1)
+
+        return dict(thickness=thickness, roughness=roughness, sld=sld)
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(q, **self.to_standard_params(parametrized_model), **kwargs)
+
+    def from_standard_params(self, params: dict) -> Tensor:
+        raise NotImplementedError
 
 
 MULTILAYER_MODELS = {
     'standard_model': StandardModel,
     'model_with_absorption': ModelWithAbsorption,
+    'model_with_solvent_backing': ModelWithSolventBacking,
     'no_fresnel_model': NoFresnelModel,
     'repeating_multilayer_v1': BasicMultilayerModel1,
     'repeating_multilayer_v2': BasicMultilayerModel2,
     'repeating_multilayer_v3': BasicMultilayerModel3,
+    'analytic_sld_profile': AnalyticSldProfileModel,
 }
 
 
@@ -1075,3 +1350,24 @@ class NuisanceParamsWrapper(ParametricModel):
             )
 
         return min_ranges, max_ranges
+    
+
+def _layer_suffixes(
+    num_layers: int,
+    *,
+    substrate_name: str = "sub",
+    number_top_to_bottom: bool = True,
+) -> Tuple[List[str], List[str]]:
+    def pos(i: int) -> int:
+        return i + 1 if number_top_to_bottom else num_layers - i
+
+    layers = [f"{pos(i)}" for i in range(num_layers)]
+    return layers, layers + [substrate_name]
+
+
+def _plain_block(name: str, suffixes: Sequence[str]) -> List[str]:
+    return [f"{name} {suffix}" for suffix in suffixes]
+
+
+def _latex_block(base: str, subscripts: Sequence[str]) -> List[str]:
+    return [rf"${base}_{{{sub}}}$" for sub in subscripts]
