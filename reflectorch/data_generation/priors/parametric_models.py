@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List
 
 import torch
 from torch import Tensor
@@ -9,7 +9,9 @@ from reflectorch.data_generation.reflectivity import (
     kinematical_approximation,
 )
 from reflectorch.data_generation.utils import (
+    get_density_profiles,
     get_param_labels,
+    get_param_labels_latex,
 )
 from reflectorch.data_generation.priors.sampler_strategies import (
     SamplerStrategy,
@@ -59,7 +61,7 @@ class ParametricModel(object):
         return self._sampler_strategy
 
     def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
-        """computes the reflectivity curves 
+        """computes the reflectivity curves
 
         Args:
             q: the reciprocal space (q) positions
@@ -70,6 +72,89 @@ class ParametricModel(object):
         """
         params = self.to_standard_params(parametrized_model)
         return reflectivity(q, **params, **kwargs)
+    
+    def sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute the continuous SLD profile rho(z) corresponding to `parametrized_model`.
+
+        Returns:
+            z_axis: (num,) depth axis
+            profile: (B,num) SLD profile
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld = params["sld"]
+
+        ambient_sld = ambient_sld.clone().to(thickness) if ambient_sld is not None else None
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+
+    def available_profile_types(self) -> List[str]:
+        return ["sld"]
+
+    def profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        profile_type: str = "sld",
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        profile_type = str(profile_type).lower()
+
+        if profile_type == "sld":
+            return self.sld_profile(
+                parametrized_model,
+                ambient_sld=ambient_sld,
+                z_axis=z_axis,
+                num=num,
+                padding_left=padding_left,
+                padding_right=padding_right,
+                **kwargs,
+            )
+
+        method = getattr(self, f"{profile_type}_profile", None)
+        if method is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} does not support profile_type={profile_type!r}"
+            )
+
+        return method(
+            parametrized_model,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+            **kwargs,
+        )
+
+    def supports_zero_ambient_sld_shift(self) -> bool:
+        return True
 
     def to_standard_params(self, parametrized_model: Tensor) -> dict:
         raise NotImplementedError
@@ -112,6 +197,14 @@ class ParametricModel(object):
             List[str]:
         """
         return list(self.PARAMETER_NAMES)
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        """
+        Return LaTeX-formatted parameter labels for plotting.
+
+        Subclasses should override this when a compact symbolic representation is needed.
+        """
+        return self.get_param_labels(**kwargs)
 
     def sample(self, batch_size: int,
                total_min_bounds: Tensor,
@@ -206,6 +299,13 @@ class StandardModel(ParametricModel):
 
     def get_param_labels(self, **kwargs) -> List[str]:
         return get_param_labels(self.max_num_layers, **kwargs)
+    
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return get_param_labels_latex(
+            self.max_num_layers,
+            parameterization_type="standard",
+            **kwargs,
+        )
 
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
@@ -228,6 +328,59 @@ class StandardModel(ParametricModel):
         return reflectivity(
             q, **self._params2dict(parametrized_model), **kwargs
         )
+    
+    def get_sld_indices(self):
+        return slice(2*self.max_num_layers+1, 3*self.max_num_layers+2)
+    
+    def scale_with_q(self, parametrized_model: Tensor, q_ratio: float) -> Tensor:
+        out = parametrized_model.clone()
+        out[..., 0:2*self.max_num_layers+1] = out[..., 0:2*self.max_num_layers+1] / q_ratio #thicknesses & roughnesses
+        out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2] = out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2] * q_ratio**2 #slds
+        
+        return out  
+    
+    def logdet_scale_with_q(self, batch_size: int, q_ratio: Tensor) -> Tensor:
+        # thicknesses: n_L dimensions scaled by 1/q_ratio
+        # roughnesses: n_L+1 dimensions scaled by 1/q_ratio
+        # sls: n_L+1 dimensions scaled by q_ratio**2
+        # n_L* (-log(q_ratio)) + (n_L + 1)* (-log(q_ratio)) + (n_L + 1) * (2 * log(q_ratio)) = n_L*log(q_ratio).
+        q_ratio = q_ratio.reshape(batch_size)
+        return torch.log(q_ratio)
+    
+    def scale_total_ranges_with_q(
+        self,
+        min_total_ranges: Tensor,
+        max_total_ranges: Tensor,
+        q_ratio_min: float,
+        q_ratio_max: float,
+    ):
+        min_out = min_total_ranges.clone()
+        max_out = max_total_ranges.clone()
+
+        # thicknesses & roughnesses
+        min_out[..., 0:2*self.max_num_layers+1] = (
+            min_out[..., 0:2*self.max_num_layers+1] / q_ratio_max
+        )
+        max_out[..., 0:2*self.max_num_layers+1] = (
+            max_out[..., 0:2*self.max_num_layers+1] / q_ratio_min
+        )
+
+        # slds
+        min_sld = min_out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2]
+        max_sld = max_out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2]
+
+        min_out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2] = torch.where(
+            min_sld >= 0,
+            min_sld * q_ratio_min**2,
+            min_sld * q_ratio_max**2,
+        )
+        max_out[..., 2*self.max_num_layers+1:3*self.max_num_layers+2] = torch.where(
+            max_sld >= 0,
+            max_sld * q_ratio_max**2,
+            max_sld * q_ratio_min**2,
+        )
+
+        return min_out, max_out
 
 
 class ModelWithAbsorption(StandardModel):
@@ -310,6 +463,13 @@ class ModelWithAbsorption(StandardModel):
     def get_param_labels(self, **kwargs) -> List[str]:
         return get_param_labels(self.max_num_layers, parameterization_type='absorption', **kwargs)
     
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return get_param_labels_latex(
+            self.max_num_layers,
+            parameterization_type="absorption",
+            **kwargs,
+        )
+    
     @staticmethod
     def _params2dict(parametrized_model: Tensor):
         num_params = parametrized_model.shape[-1]
@@ -331,6 +491,69 @@ class ModelWithAbsorption(StandardModel):
         return reflectivity(
             q, **self._params2dict(parametrized_model), **kwargs
         )
+    
+    def sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld = params["sld"].real
+
+        ambient_sld = torch.tensor(ambient_sld).to(thickness) if ambient_sld is not None else None
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def imag_sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld = params["sld"].imag
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "imag_sld"]
 
 
 class ModelWithShifts(StandardModel):
@@ -837,6 +1060,141 @@ class NuisanceParamsWrapper(ParametricModel):
             min_bounds, max_bounds, min_deltas, max_deltas = min_bounds_base, max_bounds_base, min_deltas_base, max_deltas_base
 
         return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute the continuous SLD profile rho(z) corresponding to `parametrized_model`.
+
+        Returns:
+            z_axis: (num,) depth axis
+            profile: (B,num) SLD profile
+        """
+        base_dim = self.base_model.param_dim
+        base_params = parametrized_model[..., :base_dim]
+
+        return self.base_model.sld_profile(
+            parametrized_model=base_params,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+    
+    def profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        profile_type: str = "sld",
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        base_dim = self.base_model.param_dim
+        base_params = parametrized_model[..., :base_dim]
+
+        return self.base_model.profile(
+            base_params,
+            profile_type=profile_type,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+            **kwargs,
+        )
+    
+    def get_sld_indices(self):
+        return self.base_model.get_sld_indices()
     
     def get_param_labels(self, **kwargs) -> List[str]:
         return self.base_model.get_param_labels(**kwargs) + self.enabled_nuisance_params
+
+    def get_param_labels(self, **kwargs) -> List[str]:
+        names = self.base_model.get_param_labels(**kwargs)
+
+        pretty = {
+            "q_shift": "q shift",
+            "r_scale": "intensity scale",
+            "log10_background": "log10 background",
+        }
+        names += [pretty.get(name, name) for name in self.enabled_nuisance_params]
+        return names
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        names = self.base_model.get_param_labels_latex(**kwargs)
+
+        pretty = {
+            "q_shift": r"$q_{sh}$",
+            "r_scale": r"$r_{sc}$",
+            "log10_background": r"$bkg.$",
+        }
+        names += [pretty.get(name, rf"${name}$") for name in self.enabled_nuisance_params]
+        return names
+
+    def available_profile_types(self) -> List[str]:
+        return self.base_model.available_profile_types()
+    
+    def supports_zero_ambient_sld_shift(self) -> bool:
+        return self.base_model.supports_zero_ambient_sld_shift()
+    
+    def scale_with_q(self, parametrized_model: Tensor, q_ratio: float) -> Tensor:
+        parametrized_model = self.base_model.scale_with_q(parametrized_model, q_ratio)
+
+        if 'q_shift' in self.enabled_nuisance_params:
+            q_shift_idx = self.base_model.param_dim + self.enabled_nuisance_params.index('q_shift')
+            parametrized_model[..., q_shift_idx:q_shift_idx+1] = parametrized_model[..., q_shift_idx:q_shift_idx+1] * q_ratio
+        
+        return parametrized_model
+    
+    def logdet_scale_with_q(self, batch_size: int, q_ratio: Tensor) -> Tensor:
+        q_ratio = q_ratio.reshape(batch_size)
+
+        logdet = self.base_model.logdet_scale_with_q(batch_size=batch_size, q_ratio=q_ratio)
+
+        if 'q_shift' in self.enabled_nuisance_params:
+            logdet = logdet + torch.log(q_ratio)
+
+        return logdet
+    
+    def scale_total_ranges_with_q(
+        self,
+        min_total_ranges: Tensor,
+        max_total_ranges: Tensor,
+        q_ratio_min: float,
+        q_ratio_max: float,
+    ):
+        min_ranges, max_ranges = self.base_model.scale_total_ranges_with_q(
+            min_total_ranges, max_total_ranges, q_ratio_min, q_ratio_max
+        )
+
+        if 'q_shift' in self.enabled_nuisance_params:
+            q_shift_idx = self.base_model.param_dim + self.enabled_nuisance_params.index('q_shift')
+
+            min_q_shift = min_ranges[..., q_shift_idx]
+            max_q_shift = max_ranges[..., q_shift_idx]
+
+            min_ranges[..., q_shift_idx] = torch.where(
+                min_q_shift >= 0,
+                min_q_shift * q_ratio_min,
+                min_q_shift * q_ratio_max,
+            )
+            max_ranges[..., q_shift_idx] = torch.where(
+                max_q_shift >= 0,
+                max_q_shift * q_ratio_max,
+                max_q_shift * q_ratio_min,
+            )
+
+        return min_ranges, max_ranges
