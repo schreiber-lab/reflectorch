@@ -1,5 +1,6 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from math import sqrt, pi, log10
+import warnings
 
 import torch
 from torch import Tensor
@@ -155,8 +156,26 @@ def get_density_profiles(
     assert slds.shape == (bs, n + 1), (
         f"SLDs must be (batch_size, num_layers+1). Found {slds.shape} instead."
     )
-    assert torch.all(thicknesses >= 0), "Negative thickness encountered."
-    assert torch.all(roughnesses >= 0), "Negative roughness encountered."
+    
+    neg_thickness = torch.any(thicknesses < 0)
+    neg_roughness = torch.any(roughnesses < 0)
+
+    if neg_thickness or neg_roughness:
+        msg_parts = []
+        if neg_thickness:
+            min_t = thicknesses.min().item()
+            msg_parts.append(f"negative thicknesses encountered (min={min_t:.3e})")
+        if neg_roughness:
+            min_r = roughnesses.min().item()
+            msg_parts.append(f"negative roughnesses encountered (min={min_r:.3e})")
+
+        warnings.warn(
+            "get_density_profiles(): " + "; ".join(msg_parts) + ". Clamping to 0.",
+            stacklevel=2,
+        )
+
+    thicknesses = torch.clamp(thicknesses, min=0.0)
+    roughnesses = torch.clamp(roughnesses, min=0.0)
 
     if ambient_sld is None:
         ambient_sld = torch.zeros((bs, 1), device=thicknesses.device)
