@@ -555,63 +555,6 @@ class ModelWithAbsorption(StandardModel):
     def available_profile_types(self) -> List[str]:
         return ["sld", "imag_sld"]
 
-
-class ModelWithShifts(StandardModel):
-    """Variant of the standard box model parameterization in which two additional parameters are considered: the shift in the q positions (additive) and the shift in 
-    intensity (multiplicative, or additive in log domain)."""
-    NAME = 'model_with_shifts'
-
-    PARAMETER_NAMES = (
-        "thicknesses",
-        "roughnesses",
-        "slds",
-        "q_shift",
-        "norm_shift",
-    )
-
-    @property
-    def param_dim(self) -> int:
-        return 3 * self.max_num_layers + 4
-
-    def to_standard_params(self, parametrized_model: Tensor) -> dict:
-        params = self._params2dict(parametrized_model)
-        params.pop('q_shift')
-        params.pop('norm_shift')
-
-        return params
-
-    def get_param_labels(self, **kwargs) -> List[str]:
-        return get_param_labels(self.max_num_layers, **kwargs) + [r"$\Delta q$ (Å$^{{-1}}$)", r"$\Delta I$"]
-
-
-    @staticmethod
-    def _params2dict(parametrized_model: Tensor):
-        num_params = parametrized_model.shape[-1]
-        num_layers = (num_params - 4) // 3
-        assert num_layers * 3 + 4 == num_params
-
-        d, sigma, sld, q_shift, norm_shift = torch.split(
-            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, 1, 1], -1
-        )
-        params = dict(
-            thickness=d,
-            roughness=sigma,
-            sld=sld,
-            q_shift=q_shift,
-            norm_shift=norm_shift,
-        )
-
-        return params
-
-    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
-        return reflectivity_with_shifts(
-            q, **self._params2dict(parametrized_model), **kwargs
-        )
-
-def reflectivity_with_shifts(q, thickness, roughness, sld, q_shift, norm_shift, **kwargs):
-    q = torch.atleast_2d(q) + q_shift
-    return reflectivity(q, thickness, roughness, sld, **kwargs) * norm_shift   
-
 class NoFresnelModel(StandardModel):
     NAME = 'no_fresnel_model'
 
@@ -710,79 +653,13 @@ class BasicMultilayerModel3(BasicMultilayerModel1):
         return multilayer_model3(parametrized_model, self.max_num_layers)
 
 
-class MultilayerModel1WithShifts(BasicMultilayerModel1):
-    NAME = 'repeating_multilayer_v1_with_shifts'
-
-    PARAMETER_NAMES = (
-        "d_full_rel",
-        "rel_sigmas",
-        "d_block",
-        "s_block_rel",
-        "r_block",
-        "dr",
-        "d3_rel",
-        "s3_rel",
-        "r3",
-        "d_sio2",
-        "s_sio2",
-        "s_si",
-        "r_sio2",
-        "r_si",
-        "q_shift",
-        "norm_shift",
-    )
-
-    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
-        q_shift, norm_shift = parametrized_model[..., -2:].T[..., None]
-        return reflectivity_with_shifts(
-            q, q_shift=q_shift, norm_shift=norm_shift, abeles_func=abeles_memory_eff,
-            **self.to_standard_params(parametrized_model), **kwargs
-        )
-
-
-class MultilayerModel3WithShifts(BasicMultilayerModel3):
-    NAME = 'repeating_multilayer_v3_with_shifts'
-
-    PARAMETER_NAMES = (
-        "d_full_rel",
-        "rel_sigmas",
-        "dr_sigmoid_rel_pos",
-        "dr_sigmoid_rel_width",
-        "d_block1_rel",
-        "d_block",
-        "s_block_rel",
-        "r_block",
-        "dr",
-        "d3_rel",
-        "s3_rel",
-        "r3",
-        "d_sio2",
-        "s_sio2",
-        "s_si",
-        "r_sio2",
-        "r_si",
-        "q_shift",
-        "norm_shift",
-    )
-
-    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
-        q_shift, norm_shift = parametrized_model[..., -2:].T[..., None]
-        return reflectivity_with_shifts(
-            q, q_shift=q_shift, norm_shift=norm_shift, abeles_func=abeles_memory_eff,
-            **self.to_standard_params(parametrized_model), **kwargs
-        )
-
-
 MULTILAYER_MODELS = {
     'standard_model': StandardModel,
     'model_with_absorption': ModelWithAbsorption,
-    'model_with_shifts': ModelWithShifts,
     'no_fresnel_model': NoFresnelModel,
     'repeating_multilayer_v1': BasicMultilayerModel1,
     'repeating_multilayer_v2': BasicMultilayerModel2,
     'repeating_multilayer_v3': BasicMultilayerModel3,
-    'repeating_multilayer_v1_with_shifts': MultilayerModel1WithShifts,
-    'repeating_multilayer_v3_with_shifts': MultilayerModel3WithShifts,
 }
 
 
