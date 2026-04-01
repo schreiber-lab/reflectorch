@@ -27,7 +27,7 @@ def reflectivity(
         r_scale: Tensor = 1.0,
         background: Tensor = 0.0,
         solvent_vf = None,
-        solvent_mode = 'fronting',
+        solvent_mode = None, #'fronting', 'backing'
         abeles_func = None,
         **abeles_kwargs
 ):
@@ -57,18 +57,20 @@ def reflectivity(
     abeles_func = abeles_func or abeles
     q = torch.atleast_2d(q) + q_shift
     q = torch.clamp(q, min=0.0)
-    
-    if solvent_vf is not None:
+
+    if solvent_mode is not None and solvent_vf is not None:
+        sld = sld.clone()
         num_layers = thickness.shape[-1]
         if solvent_mode == 'fronting':
             assert sld.shape[-1] == num_layers + 2
             assert solvent_vf.shape[-1] == num_layers
             solvent_sld = sld[..., [0]]
-            idx = slice(1, num_layers)
+            idx = slice(1, num_layers+1)
             sld[..., idx] = solvent_vf * solvent_sld + (1.0 - solvent_vf) * sld[..., idx]
         elif solvent_mode == 'backing':
+            assert solvent_vf.shape[-1] == num_layers
             solvent_sld = sld[..., [-1]]
-            idx = slice(1, num_layers) if sld.shape[-1] == num_layers + 2 else slice(0, num_layers)
+            idx = slice(1, num_layers+1) if sld.shape[-1] == num_layers + 2 else slice(0, num_layers)
             sld[..., idx] = solvent_vf * solvent_sld + (1.0 - solvent_vf) * sld[..., idx]
         else:
             raise NotImplementedError

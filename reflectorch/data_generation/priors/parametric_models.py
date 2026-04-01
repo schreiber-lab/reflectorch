@@ -679,7 +679,7 @@ class ModelWithSolventBacking(StandardModel):
             thickness=d,
             roughness=sigma,
             sld=sld,
-            solvent_vf_single=solvent_vf,
+            solvent_vf=solvent_vf,
         )
 
         return params
@@ -707,7 +707,7 @@ class ModelWithSolventBacking(StandardModel):
         thickness = params["thickness"]
         roughness = params["roughness"]
         sld = params["sld"]
-        solvent_vf = params["solvent_vf_single"]
+        solvent_vf = params["solvent_vf"]
 
         solvent_sld = sld[..., [-1]]
         num_layers = thickness.shape[-1]
@@ -749,7 +749,7 @@ class ModelWithSolventBacking(StandardModel):
 
         thickness = params["thickness"]
         roughness = params["roughness"]
-        solvent_vf = params["solvent_vf_single"]
+        solvent_vf = params["solvent_vf"]
 
         B = thickness.shape[0]
         solvent_vf = torch.cat([solvent_vf, torch.ones((B, 1), device=solvent_vf.device, dtype=solvent_vf.dtype)], dim=-1)
