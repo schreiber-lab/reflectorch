@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, Type, List
+from typing import Optional, Tuple, Dict, Type, List
 
 import torch
 from torch import Tensor
@@ -180,26 +180,32 @@ class BasicParams(AbstractParams):
         Args:
             q_ratio (float): the scaling ratio
         """
-        self.parameters = self.param_model.scale_with_q(self.parameters, q_ratio)
-        self.min_bounds = self.param_model.scale_with_q(self.min_bounds, q_ratio)
-        self.max_bounds = self.param_model.scale_with_q(self.max_bounds, q_ratio)
+
+        return BasicParams(
+            parameters=self.param_model.scale_with_q(self.parameters, q_ratio),
+            min_bounds=self.param_model.scale_with_q(self.min_bounds, q_ratio),
+            max_bounds=self.param_model.scale_with_q(self.max_bounds, q_ratio),
+            max_num_layers=self.max_num_layers,
+            param_model=self.param_model,
+        )
+
 
 
 class SubpriorParametricSampler(PriorSampler, ScalerMixin):
     PARAM_CLS = BasicParams
 
     def __init__(self,
-                 param_ranges: Dict[str, Tuple[float, float]],
-                 bound_width_ranges: Dict[str, Tuple[float, float]],
                  model_name: str,
+                 param_ranges: Dict[str, Tuple[float, float]],
+                 bound_width_ranges: Optional[Dict[str, Tuple[float, float]]] = None, 
                  device: torch.device = DEFAULT_DEVICE,
                  dtype: torch.dtype = DEFAULT_DTYPE,
                  max_num_layers: int = 50,
                  logdist: bool = False,
-                 scale_params_by_ranges = False,
-                 scaled_range: Tuple[float, float] = (-1., 1.),
-                 **kwargs
-                 ):
+                 scale_params_by_ranges: bool = False,
+                 scaled_range: Tuple[float, float] = (-1.0, 1.0),
+                **kwargs,
+    ):
         """Prior sampler for the parameters of a parametric model and their subprior bounds
 
         Args:
@@ -216,6 +222,12 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
         self.scaled_range = scaled_range
 
         self.shift_param_config = kwargs.pop('shift_param_config', {})
+
+        if bound_width_ranges is None:
+            bound_width_ranges = {
+                name: [0.0, pmax - pmin]
+                for name, (pmin, pmax) in param_ranges.items()
+            }
 
         base_model: ParametricModel = MULTILAYER_MODELS[model_name](max_num_layers, logdist=logdist, **kwargs)
         if any(self.shift_param_config.values()):
@@ -332,6 +344,60 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             param_model=self.param_model,
         )
     
+    def _restore_logdet(self, min_vector: Tensor, max_vector: Tensor) -> Tensor:
+        """
+        Computes log |det d(restore)/d(scaled)| for ScalerMixin._restore.
+
+        ScalerMixin restore is:
+            x = (s - bias)/length * (max-min) + min
+        so each dim has Jacobian (max-min)/length.
+        """
+        if min_vector.dim() == 1:
+            min_vector = torch.atleast_2d(min_vector)
+            max_vector = torch.atleast_2d(max_vector)
+        
+        FIXED_TOL = 1e-7
+        fixed = (max_vector - min_vector).abs() <= FIXED_TOL
+        #fixed = (min_vector == max_vector)
+
+        delta = max_vector - min_vector
+
+        jac = delta / float(self._length)
+        jac = jac.masked_fill(fixed, 1.0)
+
+        return torch.log(jac).sum(dim=-1)
+
+    def restore_params_with_logdet(self, scaled_params: Tensor) -> Tuple[BasicParams, Tensor]:
+        """
+        Restores parameters and returns the total log-Jacobian of the restore mapping.
+        Needed for importance sampling:
+            log q_theta(theta) = log q_scaled(s) - log |det dtheta/ds|
+        """
+        num_params = scaled_params.shape[-1] // 3
+        s_theta, s_min, s_max = torch.split(scaled_params, num_params, -1)
+
+        min_bounds = self._restore(s_min, self.min_bounds, self.max_bounds)
+        max_bounds = self._restore(s_max, self.min_bounds, self.max_bounds)
+
+        if self.scale_params_by_ranges:
+            params = self._restore(s_theta, self.min_bounds, self.max_bounds)
+            logdet = self._restore_logdet(
+                self.min_bounds.expand_as(params),
+                self.max_bounds.expand_as(params),
+            )
+        else:
+            params = self._restore(s_theta, min_bounds, max_bounds)
+            logdet = self._restore_logdet(min_bounds, max_bounds)
+
+        out = BasicParams(
+            parameters=params,
+            min_bounds=min_bounds,
+            max_bounds=max_bounds,
+            max_num_layers=self.max_num_layers,
+            param_model=self.param_model,
+        )
+        return out, logdet
+    
     def scale_bounds(self, bounds: Tensor) -> Tensor:
         return self._scale(bounds, self.min_bounds, self.max_bounds)
 
@@ -367,3 +433,100 @@ class SubpriorParametricSampler(PriorSampler, ScalerMixin):
             max_num_layers=self.max_num_layers,
             param_model=self.param_model,
         )
+
+    def get_total_ranges(self):
+        return self.min_bounds.clone(), self.max_bounds.clone()
+
+    def get_total_ranges_with_q(
+        self,
+        q_ratio_min: float,
+        q_ratio_max: float,
+    ):
+        return self.param_model.scale_total_ranges_with_q(
+            min_total_ranges=self.min_bounds.clone(),
+            max_total_ranges=self.max_bounds.clone(),
+            q_ratio_min=q_ratio_min,
+            q_ratio_max=q_ratio_max,
+        )
+
+    def scale_params_custom_range(self, params: BasicParams, min_range: Tensor, max_range: Tensor) -> Tensor:
+        """
+        for q-params transform
+        """
+        if self.scale_params_by_ranges:
+            scaled_params = torch.cat(
+                [
+                    self._scale(params.parameters, min_range, max_range),
+                    self._scale(params.min_bounds, min_range, max_range),
+                    self._scale(params.max_bounds, min_range, max_range),
+                ],
+                -1,
+            )
+            return scaled_params
+        else:
+            scaled_params = torch.cat(
+                [
+                    self._scale(params.parameters, params.min_bounds, params.max_bounds),
+                    self._scale(params.min_bounds, min_range, max_range),
+                    self._scale(params.max_bounds, min_range, max_range),
+                ],
+                -1,
+            )
+            return scaled_params
+
+    def restore_params_custom_range(self, scaled_params: Tensor, min_range: Tensor, max_range: Tensor) -> BasicParams:
+        """
+        for q-params transform
+        """
+        num_params = scaled_params.shape[-1] // 3
+        scaled_params, scaled_min_bounds, scaled_max_bounds = torch.split(
+            scaled_params, num_params, -1
+        )
+
+        if self.scale_params_by_ranges:
+            min_bounds = self._restore(scaled_min_bounds, min_range, max_range)
+            max_bounds = self._restore(scaled_max_bounds, min_range, max_range)
+            params = self._restore(scaled_params, min_range, max_range)
+        else:
+            min_bounds = self._restore(scaled_min_bounds, min_range, max_range)
+            max_bounds = self._restore(scaled_max_bounds, min_range, max_range)
+            params = self._restore(scaled_params, min_bounds, max_bounds)
+
+        return BasicParams(
+            parameters=params,
+            min_bounds=min_bounds,
+            max_bounds=max_bounds,
+            max_num_layers=self.max_num_layers,
+            param_model=self.param_model,
+        )
+    
+    def restore_params_with_logdet_custom_range(
+        self,
+        scaled_params: Tensor,
+        min_range: Tensor,
+        max_range: Tensor,
+    ) -> Tuple[BasicParams, Tensor]:
+        num_params = scaled_params.shape[-1] // 3
+        s_theta, s_min, s_max = torch.split(scaled_params, num_params, -1)
+
+        min_bounds = self._restore(s_min, min_range, max_range)
+        max_bounds = self._restore(s_max, min_range, max_range)
+
+        if self.scale_params_by_ranges:
+            params = self._restore(s_theta, min_range, max_range)
+            logdet = self._restore_logdet(
+                min_range.expand_as(params),
+                max_range.expand_as(params),
+            )
+        else:
+            params = self._restore(s_theta, min_bounds, max_bounds)
+            logdet = self._restore_logdet(min_bounds, max_bounds)
+
+        out = BasicParams(
+            parameters=params,
+            min_bounds=min_bounds,
+            max_bounds=max_bounds,
+            max_num_layers=self.max_num_layers,
+            param_model=self.param_model,
+        )
+        return out, logdet
