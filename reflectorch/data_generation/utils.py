@@ -240,3 +240,60 @@ def get_param_labels(
         all_labels = all_labels + imag_sld_labels
         
     return all_labels
+
+def get_param_labels_latex(
+    num_layers: int,
+    *,
+    thickness_name: str = 'd',
+    roughness_name: str = r'\sigma',
+    sld_superscript: Optional[str] = None,
+    sld_name: Optional[str] = None,
+    imag_sld_name: Optional[str] = None,
+    substrate_name: str = 'B',
+    parameterization_type: str = 'standard',
+    number_top_to_bottom: bool = True,
+):
+    """
+    Generates LaTeX-formatted parameter labels for plotting.
+    """
+
+    def pos(i: int) -> int:
+        return i + 1 if number_top_to_bottom else num_layers - i
+
+    def latex_label(base: str, subscript: str) -> str:
+        return rf"${base}_{{{subscript}}}$"
+
+    if sld_superscript is None:
+        sld_sup = ""
+    else:
+        sld_sup = rf"^{{{sld_superscript}}}"
+
+    if sld_name is None:
+        if parameterization_type == "absorption":
+            sld_name_eff = rf"\mathrm{{Re}}\,\rho{sld_sup}"
+        else:
+            sld_name_eff = rf"\rho{sld_sup}"
+    else:
+        sld_name_eff = sld_name
+
+    if imag_sld_name is None:
+        imag_sld_name_eff = rf"\mathrm{{Im}}\,\rho{sld_sup}"
+    else:
+        imag_sld_name_eff = imag_sld_name
+
+    thickness_labels = [latex_label(thickness_name, pos(i)) for i in range(num_layers)]
+
+    roughness_labels = [latex_label(roughness_name, pos(i)) for i in range(num_layers)]
+    roughness_labels.append(latex_label(roughness_name, substrate_name))
+
+    sld_labels = [latex_label(sld_name_eff, pos(i)) for i in range(num_layers)]
+    sld_labels.append(latex_label(sld_name_eff, substrate_name))
+
+    all_labels = thickness_labels + roughness_labels + sld_labels
+
+    if parameterization_type == 'absorption':
+        imag_sld_labels = [latex_label(imag_sld_name_eff, pos(i)) for i in range(num_layers)]
+        imag_sld_labels.append(latex_label(imag_sld_name_eff, substrate_name))
+        all_labels += imag_sld_labels
+
+    return all_labels
