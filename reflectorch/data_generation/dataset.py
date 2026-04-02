@@ -39,6 +39,8 @@ class BasicDataset(object):
                  calc_nonsmeared_curves: bool = False,
                  add_noisy_curves: bool = False,
                  smearing: Smearing = None,
+                 use_q_params_transform: bool = False,
+                 q_fixed_transform : float = 0.2,
                  ):
         self.q_generator = q_generator
         self.intensity_noise = intensity_noise
@@ -49,6 +51,17 @@ class BasicDataset(object):
         self.calc_denoised_curves = calc_denoised_curves
         self.calc_nonsmeared_curves = calc_nonsmeared_curves
         self.add_noisy_curves = add_noisy_curves
+
+        self.use_q_params_transform = use_q_params_transform
+        self.q_fixed_transform = q_fixed_transform
+
+        if self.use_q_params_transform:
+            self.q_ratio_min_transform = self.q_fixed_transform / self.q_generator.q_max_range[1]
+            self.q_ratio_max_transform = self.q_fixed_transform / self.q_generator.q_max_range[0]
+            self.min_total_ranges_qtransform, self.max_total_ranges_qtransform = self.prior_sampler.get_total_ranges_with_q(
+                q_ratio_min=self.q_ratio_min_transform,
+                q_ratio_max=self.q_ratio_max_transform,
+            )
 
     def update_batch_data(self, batch_data: BATCH_DATA_TYPE) -> None:
         """implement in a subclass to edit batch_data dict inplace"""
@@ -80,6 +93,25 @@ class BasicDataset(object):
 
         batch_data['q_values'] = q_values
 
+        if self.use_q_params_transform:
+            if "key_padding_mask" in batch_data:
+                valid_mask = batch_data["key_padding_mask"]
+                q_max = q_values.masked_fill(~valid_mask, float("-inf")).amax(dim=-1, keepdim=True)
+            else:
+                q_max = q_values.amax(dim=-1, keepdim=True)
+
+            k = self.q_fixed_transform / q_max
+
+            params_transformed = params.scale_with_q(q_ratio=k)
+        
+            scaled_params = self.prior_sampler.scale_params_custom_range(
+                params_transformed, self.min_total_ranges_qtransform, self.max_total_ranges_qtransform
+            )
+
+            batch_data['params'] = params_transformed
+            batch_data['scaled_params'] = scaled_params
+            batch_data['q_transform_ratio'] = k
+
         refl_kwargs = {}
 
         curves, q_resolutions, nonsmeared_curves = self._calc_curves(q_values, params, refl_kwargs)
@@ -103,6 +135,11 @@ class BasicDataset(object):
 
         scaled_noisy_curves = self.curves_scaler.scale(noisy_curves)
         batch_data['scaled_noisy_curves'] = scaled_noisy_curves
+
+        sigmas = batch_data.get('sigmas', None)
+        if torch.is_tensor(sigmas):
+            scaled_sigmas = self.curves_scaler.scale(sigmas)
+            batch_data['scaled_sigmas'] = scaled_sigmas
 
         is_finite = torch.all(torch.isfinite(scaled_noisy_curves), -1)
 
