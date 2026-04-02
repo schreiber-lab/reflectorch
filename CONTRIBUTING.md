@@ -26,3 +26,7 @@ If your changes affect user-facing features, please update the documentation acc
 ```bash
 jupyter-book build documentation
 ```
+
+### PyPi releases
+
+The repository contains a Github action for automatic publishing to PyPi via Trusted Publishers (https://docs.pypi.org/trusted-publishers/). The publishing workflow will be triggered automatically upon release of a new Github tag. Additionally, the publishing workflow can be triggered manually from the "Actions" tab. The action is completed after the approval from a main developer.
