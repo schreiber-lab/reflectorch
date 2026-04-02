@@ -9,6 +9,7 @@ from reflectorch.inference.preprocess_exp import (
 )
 from reflectorch.inference.torch_fitter import ReflGradientFit
 from reflectorch.inference.input_interface import Layer, Backing, Structure
+from reflectorch.inference.data import ReflectivityData
 from reflectorch.inference.log_posterior import ReflectivityLogPosterior
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "Layer",
     "Backing",
     "Structure",
+    "ReflectivityData",
     "ReflectivityLogPosterior",
     "interp_reflectivity",
     "apply_attenuation_correction",
