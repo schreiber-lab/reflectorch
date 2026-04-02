@@ -11,6 +11,7 @@ __all__ = [
     'DataLoader',
     'PeriodicTrainerCallback',
     'SaveBestModel',
+    'SaveModelSnapshots',
     'LogLosses',
     'Logger',
     'Loggers',
