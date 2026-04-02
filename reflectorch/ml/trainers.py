@@ -13,6 +13,7 @@ __all__ = [
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PointEstimatorTrainer',
+    'NFlowTrainer',
 ]
 
 
@@ -140,43 +141,6 @@ class PointEstimatorTrainer(RealTimeSimTrainer):
 
         return {'loss': loss}
 
-
-# class PointEstimatorTrainer(RealTimeSimTrainer):
-#     """Trainer for the regression inverse problem with incorporation of prior bounds"""
-#     add_sigmas_to_context: bool = False
-        
-#     def _get_batch(self, batch_data: BATCH_DATA_TYPE):
-#         scaled_params = batch_data['scaled_params'].to(torch.float32)
-#         scaled_curves = batch_data['scaled_noisy_curves'].to(torch.float32)
-#         if self.train_with_q_input:
-#             q_values = batch_data['q_values'].to(torch.float32)
-#             scaled_q_values = self.loader.q_generator.scale_q(q_values)
-#         else:
-#             scaled_q_values = None
-
-#         num_params = scaled_params.shape[-1] // 3
-#         assert num_params * 3 == scaled_params.shape[-1]
-#         scaled_params, scaled_bounds = torch.split(scaled_params, [num_params, 2 * num_params], dim=-1)
-
-#         return scaled_params, scaled_bounds, scaled_curves, scaled_q_values
-
-#     def get_loss_dict(self, batch_data):
-#         """computes the loss dictionary"""
-
-#         scaled_params, scaled_bounds, scaled_curves, scaled_q_values = batch_data
-
-#         if self.train_with_q_input:
-#             predicted_params = self.model(scaled_curves, scaled_bounds, scaled_q_values)
-#         else:
-#             predicted_params = self.model(scaled_curves, scaled_bounds)
-            
-#         loss = self.mse(predicted_params, scaled_params)
-#         return {'loss': loss}
-
-#     def init(self):
-#         self.mse = nn.MSELoss()
-
-
 class DenoisingAETrainer(RealTimeSimTrainer):
     """Trainer which can be used for training a denoising autoencoder model. Overrides _get_batch and get_loss_dict methods """
     def init(self):
@@ -203,3 +167,73 @@ class DenoisingAETrainer(RealTimeSimTrainer):
         loss = self.criterion(scaled_curves, restored_curves)
         return {'loss': loss}
     
+class NFlowTrainer(RealTimeSimTrainer):
+    """
+    """
+    def init(self):
+        self.train_with_bounds = getattr(self, 'train_with_bounds', False)
+        self.train_with_q_input = getattr(self, 'train_with_q_input', False)
+        self.train_with_sigmas = getattr(self, 'train_with_sigmas', False)
+        self.condition_on_q_resolutions = getattr(self, 'condition_on_q_resolutions', False)
+    
+    def _get_batch(self, batch_data: BATCH_DATA_TYPE) -> BasicBatchData:
+        def get_scaled_or_none(key, scaler=None):
+            value = batch_data.get(key)
+            if value is None:
+                return None
+            scale_func = scaler or (lambda x: x)
+            return scale_func(value).to(torch.float32)
+
+        scaled_params = batch_data['scaled_params'].to(torch.float32)
+        scaled_curves = batch_data['scaled_noisy_curves'].to(torch.float32)
+        scaled_q_values = get_scaled_or_none('q_values', self.loader.q_generator.scale_q) if self.train_with_q_input else None
+        scaled_sigmas = get_scaled_or_none('scaled_sigmas', None) if self.train_with_sigmas else None
+        key_padding_mask = batch_data.get('key_padding_mask', None)
+
+        scaled_q_resolutions = get_scaled_or_none('q_resolutions', self.loader.smearing.scale_resolutions) if self.condition_on_q_resolutions else None
+        conditioning_params = []
+        if scaled_q_resolutions is not None:
+            conditioning_params.append(scaled_q_resolutions)
+        scaled_conditioning_params = torch.cat(conditioning_params, dim=-1) if len(conditioning_params) > 0 else None
+    
+        num_params = scaled_params.shape[-1] // 3
+        assert num_params * 3 == scaled_params.shape[-1]
+        scaled_params, scaled_bounds = torch.split(scaled_params, [num_params, 2 * num_params], dim=-1)
+
+        if not self.train_with_bounds:
+            scaled_bounds = None
+
+        return BasicBatchData(
+            scaled_params=scaled_params,
+            scaled_bounds=scaled_bounds,
+            scaled_curves=scaled_curves,
+            scaled_sigmas=scaled_sigmas,
+            scaled_q_values=scaled_q_values,
+            scaled_conditioning_params=scaled_conditioning_params,
+            unscaled_q_values=batch_data['q_values'],
+            key_padding_mask=key_padding_mask,
+        )
+
+    def get_loss_dict(self, batch_data: BasicBatchData):
+        """Returns the regression loss"""
+        scaled_params=batch_data.scaled_params
+        scaled_curves=batch_data.scaled_curves
+        scaled_bounds=batch_data.scaled_bounds
+        scaled_q_values=batch_data.scaled_q_values
+        scaled_sigmas=batch_data.scaled_sigmas
+        key_padding_mask=batch_data.key_padding_mask
+        scaled_conditioning_params=batch_data.scaled_conditioning_params
+        unscaled_q_values=batch_data.unscaled_q_values
+
+        loss = -self.model.log_prob(
+            inputs=scaled_params,
+            curves = scaled_curves,
+            bounds = scaled_bounds,
+            q_values = scaled_q_values,
+            sigmas = scaled_sigmas,
+            conditioning_params = scaled_conditioning_params,
+            key_padding_mask = key_padding_mask,
+            unscaled_q_values = unscaled_q_values,
+        ).mean()
+
+        return {'loss': loss}
