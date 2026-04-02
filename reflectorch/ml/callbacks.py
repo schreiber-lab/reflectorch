@@ -73,7 +73,6 @@ class SaveModelSnapshots(TrainerCallback):
         path (str): Base checkpoint path, e.g. ".../model.pt".
         freq (int): Save frequency in iterations.
         save_last (bool): Whether to also save a final snapshot at end of training.
-        include_ema (bool): Whether to save EMA weights when available.
         subdir (str): Directory name for snapshots relative to base path parent.
     """
 
@@ -82,13 +81,11 @@ class SaveModelSnapshots(TrainerCallback):
         path: str,
         freq: int = 1000,
         save_last: bool = True,
-        include_ema: bool = True,
         subdir: str = "checkpoints",
     ):
         self.base_path = Path(path)
         self.freq = freq
         self.save_last = save_last
-        self.include_ema = include_ema
         self.subdir = subdir
 
     def start_training(self, trainer: Trainer) -> None:
@@ -110,8 +107,6 @@ class SaveModelSnapshots(TrainerCallback):
             "losses": trainer.losses,
             "batch_num": batch_num,
         }
-        if self.include_ema and trainer.model_ema is not None:
-            save_dict["model_ema"] = trainer.model_ema.state_dict()
         return save_dict
 
     def save(self, trainer: Trainer, batch_num: int) -> None:

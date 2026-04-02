@@ -130,6 +130,16 @@ def get_callbacks_from_config(config: dict, folder_paths: dict = None) -> Tuple[
         save_model = SaveBestModel(folder_paths['model'], freq=save_conf['freq'])
         callbacks.append(save_model)
 
+    snapshot_conf = callback_conf.pop('save_model_snapshots', None)
+    if snapshot_conf and snapshot_conf.get('enable', False):
+        snapshot_cb = SaveModelSnapshots(
+            path=folder_paths['model'],
+            freq=snapshot_conf['freq'],
+            save_last=snapshot_conf.get('save_last', True),
+            subdir=snapshot_conf.get('subdir', 'checkpoints'),
+        )
+        callbacks.append(snapshot_cb)
+
     for conf in callback_conf.values():
         callback = init_from_conf(conf)
 
