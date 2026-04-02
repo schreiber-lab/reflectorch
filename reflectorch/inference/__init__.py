@@ -1,6 +1,5 @@
 from reflectorch.inference.inference_model import InferenceModel, EasyInferenceModel
 from reflectorch.inference.query_matcher import HuggingfaceQueryMatcher
-from reflectorch.inference.multilayer_inference_model import MultilayerInferenceModel
 from reflectorch.inference.preprocess_exp import (
     StandardPreprocessing,
     standard_preprocessing,
@@ -14,7 +13,6 @@ from reflectorch.inference.input_interface import Layer, Backing, Structure
 __all__ = [
     "InferenceModel",
     "EasyInferenceModel",
-    "MultilayerInferenceModel",
     "HuggingfaceQueryMatcher",
     "StandardPreprocessing",
     "standard_preprocessing",
