@@ -13,5 +13,5 @@ from reflectorch.utils import __all__ as all_utils
 from reflectorch.paths import __all__ as all_paths
 from reflectorch.runs import __all__ as all_runs
 from reflectorch.inference import __all__ as all_inference
-
+from reflectorch.inference.reflectorch_nexus_saver import write_reflectorch_nexus, PARAM_SPECS
 __all__ = all_data_generation + all_ml + all_models + all_utils + all_paths + all_runs + all_inference
