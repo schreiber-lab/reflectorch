@@ -57,13 +57,7 @@ __all__ = ["write_reflectorch_nexus", "add_reflectorch_output",
            "DEFAULT_INSTRUMENT_INFO", "DEFAULT_FOOTPRINT_INFO"]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Parameter schema
-# (dataset name under data/analysis, long_name, units,
-#  bound dataset base name under process/reflectorch/input_parameters/bounds,
-#  units attribute attached to the bound datasets - None means no units attr,
-#  exactly as in the curated reference file)
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 PARAM_SPECS: List[dict] = [
     dict(name="thick",    long_name="Film Thickness",
