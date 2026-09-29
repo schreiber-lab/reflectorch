@@ -9,15 +9,15 @@ matches EXACTLY the curated multiscan file layout
 raw_data}, instrument, process/{footprint_correction, reflectorch}, sample,
 user).
 
-Location in the repo: ``reflectorch/inference/reflectorch_nexus_saver.py``
-and export it in ``reflectorch/inference/__init__.py``::
+Drop this file into ``reflectorch/inference/`` (or keep it next to your
+analysis notebook) and add to ``reflectorch/inference/__init__.py``::
 
     from reflectorch.inference.reflectorch_nexus_saver import write_reflectorch_nexus, PARAM_SPECS
 
 The writer is deliberately explicit: every group, dataset, dtype and
 attribute of the curated schema is spelled out below, so the produced file is
-structurally identical to the reference (verified with a recursive
-structure diff).
+byte-level compatible in structure with the reference (verified with a
+recursive structure diff).
 
 Main entry point
 ----------------
@@ -35,11 +35,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
-
-try:
-    import h5py
-except ImportError as _e:  # h5py is not a core reflectorch dependency
-    raise ImportError("Saving to NeXus requires h5py: pip install h5py") from _e
+import h5py
 
 try:
     from importlib.metadata import version as _pkg_version
@@ -183,7 +179,6 @@ def write_reflectorch_nexus(
         model_yaml: str = "",                # raw YAML of the model config
         reflectorch_version: str = None,
         param_specs: List[dict] = None,
-        # ── composition columns (optional) ──────────────────────────────────
         material_names: Optional[Sequence[str]] = ("C60", "DIP"),
         fractions: Optional[np.ndarray] = None,   # (N_scans, n_materials), rows aligned with R
         volume_ratio_convention: str = (
@@ -197,7 +192,6 @@ def write_reflectorch_nexus(
         timestamps: Optional[Sequence[str]] = None,   # (N_scans,) SPEC '#D' strings
         y_motor: Optional[np.ndarray] = None,         # (N_scans,) [mm]
         monitor: int = 1,
-        # ── file-level metadata ─────────────────────────────────────────────
         filename: str = "",
         title: str = "XRR Multiscan of C60:DIP Gradient Thin Film",
         definition: str = "NXxrd",
