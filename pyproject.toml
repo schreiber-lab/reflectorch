@@ -42,6 +42,7 @@ dependencies = [
     "tensorboard",
     "anywidget",
     "joblib",
+    "h5py",
 ]
 
 [project.optional-dependencies]
