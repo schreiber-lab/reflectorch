@@ -9,19 +9,23 @@ matches EXACTLY the curated multiscan file layout
 raw_data}, instrument, process/{footprint_correction, reflectorch}, sample,
 user).
 
-Drop this file into ``reflectorch/inference/`` (or keep it next to your
-analysis notebook) and add to ``reflectorch/inference/__init__.py``::
+Location in the repo: ``reflectorch/inference/reflectorch_nexus_saver.py``
+and export it in ``reflectorch/inference/__init__.py``::
 
     from reflectorch.inference.reflectorch_nexus_saver import write_reflectorch_nexus, PARAM_SPECS
 
 The writer is deliberately explicit: every group, dataset, dtype and
 attribute of the curated schema is spelled out below, so the produced file is
-byte-level compatible in structure with the reference (verified with a
-recursive structure diff).
+structurally identical to the reference (verified with a recursive
+structure diff).
 
 Main entry point
 ----------------
 :func:`write_reflectorch_nexus` - one call, writes the whole file.
+:func:`add_reflectorch_output` - adds the full reflectorch output (all
+    parameters, curves, SLD profiles) to an existing file.
+:func:`save_prediction_dict_to_nexus` - one-liner for a single curve from
+    ``EasyInferenceModel.preprocess_and_predict``.
 
 The physical parameters are described by :data:`PARAM_SPECS` (dataset name,
 long_name, units, and the corresponding ``<name>_lower`` / ``<name>_upper``
@@ -35,7 +39,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
-import h5py
+
+try:
+    import h5py
+except ImportError as _e:  # h5py is not a core reflectorch dependency
+    raise ImportError("Saving to NeXus requires h5py: pip install h5py") from _e
 
 try:
     from importlib.metadata import version as _pkg_version
@@ -43,7 +51,8 @@ try:
 except Exception:  # pragma: no cover
     REFLECTORCH_VERSION_DEFAULT = "unknown"
 
-__all__ = ["write_reflectorch_nexus", "PARAM_SPECS",
+__all__ = ["write_reflectorch_nexus", "add_reflectorch_output",
+           "save_prediction_dict_to_nexus", "PARAM_SPECS",
            "DEFAULT_SAMPLE_INFO", "DEFAULT_USER_INFO",
            "DEFAULT_INSTRUMENT_INFO", "DEFAULT_FOOTPRINT_INFO"]
 
@@ -179,6 +188,7 @@ def write_reflectorch_nexus(
         model_yaml: str = "",                # raw YAML of the model config
         reflectorch_version: str = None,
         param_specs: List[dict] = None,
+        # ── composition columns (optional) ──────────────────────────────────
         material_names: Optional[Sequence[str]] = ("C60", "DIP"),
         fractions: Optional[np.ndarray] = None,   # (N_scans, n_materials), rows aligned with R
         volume_ratio_convention: str = (
@@ -192,6 +202,7 @@ def write_reflectorch_nexus(
         timestamps: Optional[Sequence[str]] = None,   # (N_scans,) SPEC '#D' strings
         y_motor: Optional[np.ndarray] = None,         # (N_scans,) [mm]
         monitor: int = 1,
+        # ── file-level metadata ─────────────────────────────────────────────
         filename: str = "",
         title: str = "XRR Multiscan of C60:DIP Gradient Thin Film",
         definition: str = "NXxrd",
@@ -459,4 +470,81 @@ def write_reflectorch_nexus(
     print(f"NeXus file written -> {output_file.resolve()} [{entry_name}] "
           f"({n_scans} scans x {n_q} q-points, "
           f"{len(param_specs)} parameters)")
+    return output_file
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# full reflectorch output (all parameters, curves, SLD profiles)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def add_reflectorch_output(output_file: Union[str, Path], arrays: Dict[str, np.ndarray],
+                           entry_idx: int = 0) -> None:
+    """Append everything reflectorch returned to
+    ``entry_xxxx/data/analysis/reflectorch_output`` of an existing file.
+    ``arrays`` maps dataset name -> array (strings/lists of strings allowed)."""
+    with h5py.File(output_file, "a") as f:
+        ana = f[f"entry_{entry_idx:04d}/data/analysis"]
+        if "reflectorch_output" in ana:
+            del ana["reflectorch_output"]
+        g = ana.create_group("reflectorch_output")
+        g.attrs.update({"NX_class": "NXcollection",
+                        "description": "Full reflectorch output: all model "
+                                       "parameters, curves and SLD profiles"})
+        for key, val in arrays.items():
+            if val is None:
+                continue
+            val = np.asarray(val)
+            if val.dtype.kind in "US":
+                val = val.astype("S")
+            g.create_dataset(key, data=val)
+
+
+# reflectorch label -> name in the curated schema (other labels are only
+# stored in reflectorch_output)
+LABEL_TO_SCHEMA = {"Thickness L1": "thick", "Roughness L1": "rough",
+                   "SLD L1": "SLD", "Roughness sub": "Si_rough",
+                   "r_scale": "r_scale", "q_shift": "q_shift"}
+
+
+def save_prediction_dict_to_nexus(output_file, prediction_dict, q_exp, curve_exp,
+                                  prior_bounds, sigmas=None, model_yaml="",
+                                  label_to_schema=None, **kwargs):
+    """Save the output of ``EasyInferenceModel.preprocess_and_predict`` for
+    ONE curve as NeXus (curated schema with 1 scan + full reflectorch output)."""
+    label_to_schema = label_to_schema or LABEL_TO_SCHEMA
+    names = list(prediction_dict["param_names"])
+    pred = np.atleast_1d(prediction_dict["predicted_params_array"])
+    pol = prediction_dict.get("polished_params_array")
+    pol = np.atleast_1d(pol) if pol is not None else np.full(len(names), np.nan)
+
+    predicted, polished, bounds = {}, {}, {}
+    for j, lab in enumerate(names):
+        if lab in label_to_schema:
+            key = label_to_schema[lab]
+            predicted[key] = [pred[j]]
+            polished[key] = [pol[j]]
+            bounds[key] = tuple(prior_bounds[j])
+
+    curve_exp = np.asarray(curve_exp, float)
+    dR = np.asarray(sigmas, float) if sigmas is not None else np.zeros_like(curve_exp)
+
+    # only write the schema parameters this model actually has
+    kwargs.setdefault("param_specs", [p for p in PARAM_SPECS if p["name"] in predicted])
+
+    write_reflectorch_nexus(
+        output_file, q=q_exp, R=curve_exp[None, :], dR=dR[None, :],
+        predicted=predicted, polished=polished, prior_bounds=bounds,
+        coord=np.array([0.0]), model_yaml=model_yaml,
+        material_names=None, fractions=None, **kwargs)
+
+    add_reflectorch_output(output_file, {
+        "param_names": names,
+        "prior_bounds": np.asarray(prior_bounds, float),
+        "predicted_params": pred,
+        "polished_params": pol,
+        **{k: prediction_dict.get(k) for k in (
+            "polished_params_error_array", "q_plot_pred", "predicted_curve",
+            "polished_curve", "predicted_sld_xaxis", "predicted_sld_profile",
+            "sld_profile_polished")},
+    })
     return output_file
