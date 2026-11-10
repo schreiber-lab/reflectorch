@@ -14,7 +14,7 @@ from reflectorch.inference.reflectorch_nexus_saver import (
     write_reflectorch_nexus,
     add_reflectorch_output,
     save_prediction_dict_to_nexus,
-    
+    download_file,
     PARAM_SPECS,
 )
 
@@ -35,6 +35,6 @@ __all__ = [
     "write_reflectorch_nexus",
     "add_reflectorch_output",
     "save_prediction_dict_to_nexus",
-   
+    "download_file,"
     "PARAM_SPECS",
 ]
