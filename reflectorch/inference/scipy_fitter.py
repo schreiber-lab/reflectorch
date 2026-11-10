@@ -1,7 +1,4 @@
-
 import warnings
-import joblib
-from joblib import Parallel, delayed
 import numpy as np
 from scipy.optimize import minimize, curve_fit
 import torch
@@ -15,7 +12,6 @@ __all__ = [
     "fit_refl_curve",
     "restore_masked_params",
     "get_fit_with_growth",
-    "batch_standard_refl_fit",
 ]
 
 
@@ -31,6 +27,7 @@ def standard_restore_params(fitted_params) -> dict:
 
 def mse_loss(curve1, curve2):
     return np.sum((curve1 - curve2) ** 2)
+
 
 def standard_refl_fit(
         q: np.ndarray, curve: np.ndarray,
@@ -59,103 +56,15 @@ def standard_refl_fit(
     return res[0], curve
 
 
-
-def batch_refl_fit(
-        q: np.ndarray, 
-        curves: np.ndarray,
-        init_params: np.ndarray, # (n_curves, n_params)
-        prior_sampler: PriorSampler,
-        bounds: np.ndarray = None,
-        error_bars: np.ndarray = None,
-        scale_curve_func=np.log10,
-        method: str = 'trf', #'lm', 'trf'
-        polishing_max_steps: int = None,
-        reflectivity_kwargs: dict = None,
-        n_jobs: int = -1,
-        verbose: int = 5,
-        **kwargs
-):
-    """
-    Fit (polished fit) multiple reflectivity curves in parallel using joblib.
-
-    Parameters
-    ----------
-    q : np.ndarray
-        1D array of momentum transfer values (same for all curves).
-    curves : np.ndarray
-        2D array of reflectivity curves with shape (n_curves, n_q).
-    init_params : np.ndarray
-        2D array of initial parameter guesses (n_curves, n_params).
-    prior_sampler : PriorSampler
-        The prior sampler.
-    bounds : np.ndarray, optional
-        Bounds for the parameters, shape (2, n_params). Shared by all the curves. Default: None.
-    error_bars : np.ndarray, optional
-        Error bars for the curves, shape (n_curves, n_q). Default: None.
-    scale_curve_func : callable, optional
-        Function to scale the curves. Default: `np.log10`.
-    method : str, optional
-        The method to use for the fitting. Default: 'trf'.
-    polishing_max_steps : int, optional
-        The maximum number of function evaluations for the polishing step. Default: None.
-    reflectivity_kwargs : dict, optional
-        Keyword arguments for the reflectivity function. Default: None.
-    n_jobs : int, optional
-        The number of jobs to run in parallel. Default: -1 (all CPUs).
-    verbose : int, optional
-        The verbosity level for joblib. Default: 5.
-    **kwargs : dict
-        Extra keyword arguments passed to `scipy.optimize.curve_fit`.
-
-    Returns
-    -------
-    params_array : np.ndarray
-        Array of fitted parameter values for each curve, shape (n_curves, n_params).
-    error_bars_array : np.ndarray
-        Array of error bars for the fitted parameter values, shape (n_curves, n_params).
-    curves_array : np.ndarray
-        Array of fitted reflectivity curves, shape (n_curves, n_q).
-    """
-    if bounds is not None:
-        if bounds.ndim == 2:
-            bounds = bounds[None].repeat(curves.shape[0], 0)
-        elif bounds.ndim == 3:
-            assert bounds.shape[0] == curves.shape[0], f"Bounds must have the same number of curves as the number of curves, got {bounds.shape[0]} and {curves.shape[0]}"
-        else:
-            raise ValueError(f"Bounds must be a 2D or 3D array, got {bounds.ndim}D array")
-    else:
-        bounds = [None] * curves.shape[0]
-    
-    results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-        delayed(refl_fit)(
-            q=q, curve=curve, init_params=init_params,
-            bounds=bound,
-            prior_sampler=prior_sampler,
-            error_bars=error_bars,
-            method=method,
-            scale_curve_func=scale_curve_func,
-            polishing_max_steps=polishing_max_steps,
-            reflectivity_kwargs=reflectivity_kwargs,
-            **kwargs
-        )
-        for curve, init_params, bound in zip(curves, init_params, bounds)
-    )
-
-    params_array, error_bars, curves_array = zip(*results)
-    return np.array(params_array), np.array(error_bars), np.array(curves_array)
-
-import warnings
-from scipy.optimize import curve_fit
-
 def refl_fit(
-        q: np.ndarray, 
+        q: np.ndarray,
         curve: np.ndarray,
         init_params: np.ndarray,
         prior_sampler: PriorSampler,
         bounds: np.ndarray = None,
         error_bars: np.ndarray = None,
         scale_curve_func=np.log10,
-        method: str = 'trf', #'lm', 'trf'
+        method: str = 'trf',  # 'lm', 'trf'
         polishing_max_steps: int = None,
         reflectivity_kwargs: dict = None,
         **kwargs
@@ -167,7 +76,7 @@ def refl_fit(
         epsilon = 1e-6
         adjusted_bounds = bounds.copy()
 
-        for i in range(bounds.shape[1]): 
+        for i in range(bounds.shape[1]):
             if bounds[0, i] == bounds[1, i]:
                 adjusted_bounds[0, i] -= epsilon
                 adjusted_bounds[1, i] += epsilon
@@ -181,7 +90,7 @@ def refl_fit(
         if isinstance(value, float):
             reflectivity_kwargs[key] = torch.tensor([[value]], dtype=torch.float64)
         elif isinstance(value, np.ndarray):
-            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)     
+            reflectivity_kwargs[key] = torch.tensor(value, dtype=torch.float32).unsqueeze(0)
 
     curve = np.clip(curve, a_min=1e-12, a_max=None)
 
@@ -189,13 +98,13 @@ def refl_fit(
         error_bars = np.clip(error_bars, a_min=1e-20, a_max=None)
         scaled_error_bars = error_bars / (curve * np.log(10))
     else:
-        scaled_error_bars = None  
+        scaled_error_bars = None
 
-   # if polishing_max_steps is not None:
-   #     if method == 'lm':
-   #         kwargs['maxfev'] = polishing_max_steps
-   #     else:
-    #        kwargs['max_nfev'] = polishing_max_steps
+    # if polishing_max_steps is not None:
+    #     if method == 'lm':
+    #         kwargs['maxfev'] = polishing_max_steps
+    #     else:
+    #         kwargs['max_nfev'] = polishing_max_steps
 
     fit_func = get_scaled_curve_func(
         scale_curve_func=scale_curve_func,
@@ -205,8 +114,8 @@ def refl_fit(
     y_data_flat = scale_curve_func(curve).reshape(-1)
 
     try:
-        popt,pcov = curve_fit(
-            f = fit_func,
+        popt, pcov = curve_fit(
+            f=fit_func,
             xdata=q,
             ydata=y_data_flat,
             p0=init_params,
@@ -217,29 +126,24 @@ def refl_fit(
         )
 
     except RuntimeError:
-
         popt = init_params
-        pcov= None
+        pcov = None
 
-    
     curve_fitted = prior_sampler.param_model.reflectivity(
-        torch.tensor(q, dtype = torch.float64),
-        torch.tensor(popt, dtype = torch.float64).unsqueeze(0),
+        torch.tensor(q, dtype=torch.float64),
+        torch.tensor(popt, dtype=torch.float64).unsqueeze(0),
         **reflectivity_kwargs
     ).squeeze().numpy()
 
     if pcov is not None and np.ndim(pcov) == 2 and np.all(np.isfinite(pcov)):
         pol_params_errs = np.sqrt(np.diag(pcov))
     else:
-        pol_params_errs = np.full_like(popt,np.nan)
+        pol_params_errs = np.full_like(popt, np.nan)
     return popt, pol_params_errs, curve_fitted
-    
-    
-
 
 
 def get_fit_with_growth(
-        q: np.ndarray, 
+        q: np.ndarray,
         curve: np.ndarray,
         init_params: np.ndarray,
         bounds: np.ndarray = None,
@@ -253,16 +157,16 @@ def get_fit_with_growth(
         bounds = np.concatenate([bounds, np.array([0, max_d_change])[..., None]], -1)
 
     params, curve = standard_refl_fit(
-        q, 
-        curve, 
-        init_params, 
-        bounds, 
+        q,
+        curve,
+        init_params,
+        bounds,
         refl_generator=growth_reflectivity,
         restore_params_func=get_restore_params_with_growth_func(q_size=q.size, d_idx=0),
-        scale_curve_func=scale_curve_func, 
+        scale_curve_func=scale_curve_func,
         **kwargs
     )
-    
+
     params[0] += params[-1] / 2
     return params, curve
 
@@ -285,8 +189,9 @@ def fit_refl_curve(q: np.ndarray, curve: np.ndarray,
     res = minimize(fitting_func, init_params, bounds=bounds, **kwargs)
 
     if not res.success:
-        warnings.warn(f"Minimization did not converge.")
+        warnings.warn("Minimization did not converge.")
     return res.x
+
 
 def standard_get_scaled_curve_func(
         refl_generator=abeles_np,
@@ -301,20 +206,21 @@ def standard_get_scaled_curve_func(
 
     return scaled_curve_func
 
+
 def get_scaled_curve_func(
         scale_curve_func=np.log10,
         prior_sampler: PriorSampler = None,
         reflectivity_kwargs: dict = None,
-):  
+):
     reflectivity_kwargs = reflectivity_kwargs or {}
-    
+
     def scaled_curve_func(q, *fitted_params):
         q_tensor = torch.from_numpy(q).to(torch.float64)
         fitted_params_tensor = torch.tensor(fitted_params, dtype=torch.float64).unsqueeze(0)
-        
+
         fitted_curve_tensor = prior_sampler.param_model.reflectivity(q_tensor, fitted_params_tensor, **reflectivity_kwargs)
         fitted_curve = fitted_curve_tensor.squeeze().numpy()
-        
+
         scaled_curve = scale_curve_func(fitted_curve)
 
         return scaled_curve.reshape(-1)
