@@ -4,10 +4,20 @@ reflectorch_nexus_saver.py
 ==========================
 
 NeXus/HDF5 writer for reflectorch inference results whose output structure
-matches EXACTLY the curated multiscan file layout
-(``xrr_C60_DIP_multiscan.h5``: entry_0000 -> data/{analysis, processed_data,
-raw_data}, instrument, process/{footprint_correction, reflectorch}, sample,
-user).
+matches EXACTLY the curated, Sisyphos-compliant multiscan file layout
+(``XRR_C60_DIP_multiscan_sisyphos.h5``):
+
+    entry_0000
+      data/{analysis, processed_data, raw_data, filename}
+      instrument/{detector, monochromator (wavelength in m), name,
+                  source/notes (incl. principal_investigator),
+                  techniques/technique_0/name}
+      process/{footprint_correction (+date), reflectorch (+date)}
+      sample
+      users/user_0   (ORCID, address, affiliation, email, name, role)
+
+All user / beamtime / technique strings carry ``type='NX_CHAR'``,
+process dates carry ``type='NX_DATE_TIME'``.
 
 Location in the repo: ``reflectorch/inference/reflectorch_nexus_saver.py``
 and export it in ``reflectorch/inference/__init__.py``::
@@ -105,30 +115,33 @@ DEFAULT_SAMPLE_INFO = dict(
     ],
 )
 
+# -> entry/users/user_0  (BNAPbBr / Sisyphos layout)
 DEFAULT_USER_INFO = dict(
-    name="Dmitry Lapkin",
-    role="Principal Investigator",
-    affiliation="University of Tübingen",
-    email="dmitry.lapkin@uni-tuebingen.de",
     ORCID="0000-0000-0000-0000",
-    telephone_number="",
+    address="Auf der Morgenstelle 10, 72076 Tübingen, Germany",
+    affiliation="University of Tübingen",
+    email="",
+    name="",
+    role="",
 )
 
 DEFAULT_INSTRUMENT_INFO = dict(
     name="GE Diffractometer System XRD 3003 TT",
-    angle_of_incidence=0.075,               # degrees (nominal)
     count_time=1.0,                          # seconds
     detector_description="Point detector",
     monochromator_name=("Ni/C multilayer mirror and a germanium "
                         "channel-cut crystal"),
-    wavelength=1.5405452421779864,           # Angstrom (Cu K-alpha equiv.)
+    wavelength=1.5405452421779864,           # Angstrom in -> stored in metres
     source_name="GE Diffractometer System XRD 3003 TT",
     source_probe="X-ray",
     source_type="Diffractometer",
-    notes=dict(DOI="", beamtime_id="",
-               description=("XRR of C60:DIP gradient thin film, 51 positions, "
-                            "lab diffractometer"),
-               proposal_id="", title=""),
+    technique="X-Ray Reflectometry",         # -> instrument/techniques/technique_0/name
+    # -> instrument/source/notes  (beamtime / proposal info)
+    notes=dict(DOI="Unknown", beamtime_id="",
+               description="XRR of C60/DIP gradient thin film",
+               principal_investigator="Unknown",
+               proposal_id="Unknown",
+               title="C60_DIP gradient film — full XRR series"),
 )
 
 DEFAULT_FOOTPRINT_INFO = dict(
@@ -153,6 +166,13 @@ def _iso(t: str) -> str:
         except ValueError:
             continue
     return t
+
+
+def _str_nx(grp, name: str, value) -> "h5py.Dataset":
+    """String dataset with the Sisyphos-style ``type='NX_CHAR'`` attribute."""
+    ds = grp.create_dataset(name, data=str(value))
+    ds.attrs["type"] = "NX_CHAR"
+    return ds
 
 
 def _param_structured_dtype(material_names: Optional[Sequence[str]]) -> np.dtype:
@@ -206,6 +226,7 @@ def write_reflectorch_nexus(
         user_info: dict = None,
         instrument_info: dict = None,
         footprint_info: dict = None,
+        process_date: str = None,            # ISO date for process steps; default: now
         entry_idx: int = 0,
 ) -> Path:
     """Write reflectorch inference results to a NeXus file with the exact
@@ -222,7 +243,15 @@ def write_reflectorch_nexus(
     smpl = {**DEFAULT_SAMPLE_INFO, **(sample_info or {})}
     user = {**DEFAULT_USER_INFO, **(user_info or {})}
     inst = {**DEFAULT_INSTRUMENT_INFO, **(instrument_info or {})}
+    # merge notes key-by-key so overriding e.g. only the PI keeps the rest
+    inst["notes"] = {**DEFAULT_INSTRUMENT_INFO["notes"],
+                     **(instrument_info or {}).get("notes", {})}
     fp = {**DEFAULT_FOOTPRINT_INFO, **(footprint_info or {})}
+    process_date = process_date or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    # wavelength: given in Angstrom (~1.54) -> stored in metres
+    wl = float(inst["wavelength"])
+    wl_m = wl * 1e-10 if wl > 1e-3 else wl
 
     q = np.asarray(q, dtype=float)
     R = np.atleast_2d(np.asarray(R, dtype=float))
@@ -350,10 +379,6 @@ def write_reflectorch_nexus(
         ig = entry.create_group("instrument")
         ig.attrs["NX_class"] = "NXinstrument"
         ig.create_dataset("name", data=str(inst["name"]))
-        ds = ig.create_dataset("angle_of_incidence",
-                               data=float(inst["angle_of_incidence"]))
-        ds.attrs.update({"long_name": "Nominal angle of incidence",
-                         "units": "degrees"})
 
         det = ig.create_group("detector")
         det.attrs.update({"NX_class": "NXdetector",
@@ -365,11 +390,10 @@ def write_reflectorch_nexus(
         mono = ig.create_group("monochromator")
         mono.attrs["NX_class"] = "NXmonochromator"
         mono.create_dataset("name", data=np.bytes_(inst["monochromator_name"]))
-        ds = mono.create_dataset("wavelength", data=float(inst["wavelength"]))
+        ds = mono.create_dataset("wavelength", data=wl_m)
         ds.attrs.update({"long_name": "Incident X-ray wavelength "
                                       "(Cu K-alpha equivalent)",
-                         "units": "m"})  # NB: attr kept as in the curated
-        #                                    reference file (value is Angstrom)
+                         "units": "m"})
 
         src = ig.create_group("source")
         src.attrs["NX_class"] = "NXsource"
@@ -379,8 +403,15 @@ def write_reflectorch_nexus(
         notes = src.create_group("notes")
         notes.attrs.update({"NX_class": "NXnote",
                             "description": "Proposal and beamtime information"})
-        for key in ("DOI", "beamtime_id", "description", "proposal_id", "title"):
-            notes.create_dataset(key, data=str(inst["notes"].get(key, "")))
+        for key in ("DOI", "beamtime_id", "description",
+                    "principal_investigator", "proposal_id", "title"):
+            _str_nx(notes, key, inst["notes"].get(key, ""))
+
+        tech = ig.create_group("techniques")
+        tech.attrs["NX_class"] = "NXcollection"
+        t0 = tech.create_group("technique_0")
+        t0.attrs["NX_class"] = "NXnote"
+        _str_nx(t0, "name", inst["technique"])
 
         # ═════════════════════════ process ══════════════════════════════════
         pg = entry.create_group("process")
@@ -392,6 +423,8 @@ def write_reflectorch_nexus(
         fpg.create_dataset("beam_shape", data=np.bytes_(fp["beam_shape"]))
         ds = fpg.create_dataset("beam_width", data=float(fp["beam_width"]))
         ds.attrs["units"] = "mm"
+        ds = fpg.create_dataset("date", data=str(process_date))
+        ds.attrs["type"] = "NX_DATE_TIME"
         fpg.create_dataset("description", data=np.bytes_(fp["description"]))
         ds = fpg.create_dataset("sample_size", data=np.bytes_(fp["sample_size"]))
         ds.attrs["units"] = "mm"
@@ -401,6 +434,8 @@ def write_reflectorch_nexus(
         # reflectorch provenance
         rg = pg.create_group("reflectorch")
         rg.attrs["NX_class"] = "NXprocess"
+        ds = rg.create_dataset("date", data=str(process_date))
+        ds.attrs["type"] = "NX_DATE_TIME"
         rg.create_dataset("program", data=np.bytes_("reflectorch"))
         ds = rg.create_dataset("version", data=np.bytes_(reflectorch_version))
         ds.attrs["description"] = "Reflectorch version used for inference"
@@ -454,12 +489,13 @@ def write_reflectorch_nexus(
             ds = mg.create_dataset("thickness", data=float(m["thickness"]))
             ds.attrs.update({"type": "NX_FLOAT", "units": "meters"})
 
-        # ═════════════════════════ user ═════════════════════════════════════
-        ug = entry.create_group("user")
+        # ═════════════════════════ users/user_0 ═════════════════════════════
+        users = entry.create_group("users")
+        users.attrs["NX_class"] = "NXuser"          # as in the BNAPbBr reference
+        ug = users.create_group("user_0")
         ug.attrs["NX_class"] = "NXuser"
-        for key in ("ORCID", "affiliation", "email", "name", "role",
-                    "telephone_number"):
-            ug.create_dataset(key, data=str(user.get(key, "")))
+        for key in ("ORCID", "address", "affiliation", "email", "name", "role"):
+            _str_nx(ug, key, user.get(key, ""))
 
     print(f"NeXus file written -> {output_file.resolve()} [{entry_name}] "
           f"({n_scans} scans x {n_q} q-points, "
