@@ -10,6 +10,13 @@ from reflectorch.inference.preprocess_exp import (
 )
 from reflectorch.inference.torch_fitter import ReflGradientFit
 from reflectorch.inference.input_interface import Layer, Backing, Structure
+from reflectorch.inference.reflectorch_nexus_saver import (
+    write_reflectorch_nexus,
+    add_reflectorch_output,
+    save_prediction_dict_to_nexus,
+    download_file,
+    PARAM_SPECS,
+)
 
 __all__ = [
     "InferenceModel",
@@ -25,21 +32,9 @@ __all__ = [
     "interp_reflectivity",
     "apply_attenuation_correction",
     "apply_footprint_correction",
+    "write_reflectorch_nexus",
+    "add_reflectorch_output",
+    "save_prediction_dict_to_nexus",
+    "download_file",
+    "PARAM_SPECS",
 ]
-
-# NeXus saving is optional: only available if h5py is installed
-try:
-    from reflectorch.inference.reflectorch_nexus_saver import (
-        write_reflectorch_nexus,
-        add_reflectorch_output,
-        save_prediction_dict_to_nexus,
-        PARAM_SPECS,
-    )
-    __all__ += [
-        "write_reflectorch_nexus",
-        "add_reflectorch_output",
-        "save_prediction_dict_to_nexus",
-        "PARAM_SPECS",
-    ]
-except ImportError:
-    pass
