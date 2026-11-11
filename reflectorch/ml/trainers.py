@@ -16,6 +16,8 @@ __all__ = [
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PointEstimatorTrainer',
+    'NeuralOdeTrainer',
+    'FlowMatchingTrainer',
     'NFlowTrainer',
 ]
 
