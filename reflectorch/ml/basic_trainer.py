@@ -56,6 +56,7 @@ class Trainer(object):
         self.optim = self.configure_optimizer(optim_cls, lr=lr, **(optim_kwargs or {}))
         self.lrs = []
         self.losses = defaultdict(list)
+        self.model_ema = None
 
         self.logger = _init_logger(logger)
         self.callback_params = {}
@@ -124,6 +125,8 @@ class Trainer(object):
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.clip_grad_norm_max)
 
             self.optim.step()
+            if self.model_ema is not None:
+                self.model_ema.update(self.model)
 
             avr_loss_dict = {k: np.mean(v) for k, v in avr_loss_dict.items()}
             self._update_losses(avr_loss_dict, total_loss)
