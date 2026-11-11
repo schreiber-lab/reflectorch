@@ -43,6 +43,7 @@ dependencies = [
     "anywidget",
     "joblib",
     "h5py",
+    "nflows",
 ]
 
 [project.optional-dependencies]
