@@ -11,6 +11,7 @@ __all__ = [
     'DataLoader',
     'PeriodicTrainerCallback',
     'SaveBestModel',
+    'SaveModelSnapshots',
     'LogLosses',
     'Logger',
     'Loggers',
@@ -29,4 +30,5 @@ __all__ = [
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PointEstimatorTrainer',
+    'NFlowTrainer',
 ]

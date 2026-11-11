@@ -1,5 +1,6 @@
 import torch
 from torch import Tensor
+from functools import partial
 
 from reflectorch.data_generation.utils import (
     uniform_sampler,
@@ -21,16 +22,60 @@ class SamplerStrategy(object):
 
 
 class BasicSamplerStrategy(SamplerStrategy):
-    """Sampler strategy with no constraints on the values of the parameters
+    """Sampler strategy with no constraints on the values of the parameters.
 
     Args:
-        logdist (bool, optional): if True the relative widths of the subprior intervals are sampled uniformly on a logarithmic scale instead of uniformly. Defaults to False.
+        logdist (bool, optional):
+            Backward-compatible flag.
+            If width_distribution is None:
+              - False -> uniform width sampling
+              - True  -> log-uniform width sampling
+        width_distribution (str, optional):
+            One of {"uniform", "loguniform", "exp_uniform_mixture"}.
+            If provided, overrides logdist.
+        exp_width_weight (float, optional):
+            Mixture weight for the exp_uniform_mixture width sampler.
+        exp_width_lam (float, optional):
+            Scale parameter for the exp_uniform_mixture width sampler.
+            Smaller values bias more strongly toward narrow widths.
     """
-    def __init__(self, logdist: bool = False):
-        if logdist:
-            self.widths_sampler_func = logdist_sampler
-        else:
+
+    def __init__(
+        self,
+        logdist: bool = False,
+        width_distribution: str = None,
+        exp_width_weight: float = 0.5,
+        exp_width_lam: float = 0.05,
+    ):
+        self.logdist = logdist
+        self.width_distribution = width_distribution
+        self.exp_width_weight = exp_width_weight
+        self.exp_width_lam = exp_width_lam
+
+        if width_distribution is None:
+            if logdist:
+                self.widths_sampler_func = logdist_sampler
+            else:
+                self.widths_sampler_func = uniform_sampler
+
+        elif width_distribution == "uniform":
             self.widths_sampler_func = uniform_sampler
+
+        elif width_distribution == "loguniform":
+            self.widths_sampler_func = logdist_sampler
+
+        elif width_distribution == "exp_uniform_mixture":
+            self.widths_sampler_func = partial(
+                exp_uniform_mixture_width_sampler,
+                weight=exp_width_weight,
+                lam=exp_width_lam,
+            )
+
+        else:
+            raise ValueError(
+                f"Unknown width_distribution={width_distribution!r}. "
+                "Expected one of {'uniform', 'loguniform', 'exp_uniform_mixture'}."
+            )
 
     def sample(self, batch_size: int,
                total_min_bounds: Tensor,
@@ -74,8 +119,16 @@ class ConstrainedRoughnessSamplerStrategy(BasicSamplerStrategy):
                  logdist: bool = False,
                  max_thickness_share: float = 0.5,
                  max_total_thickness: float = None,
+                 width_distribution: str = None,
+                 exp_width_weight: float = 0.5,
+                 exp_width_lam: float = 0.05,
                  ):
-        super().__init__(logdist=logdist)
+        super().__init__(
+            logdist=logdist,
+            width_distribution=width_distribution,
+            exp_width_weight=exp_width_weight,
+            exp_width_lam=exp_width_lam,
+        )
         self.thickness_mask = thickness_mask
         self.roughness_mask = roughness_mask
         self.max_thickness_share = max_thickness_share
@@ -133,8 +186,16 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
                  max_thickness_share: float = 0.5,
                  max_sld_share: float = 0.2,
                  max_total_thickness: float = None,
+                 width_distribution: str = None,
+                 exp_width_weight: float = 0.5,
+                 exp_width_lam: float = 0.05,
                  ):
-        super().__init__(logdist=logdist)
+        super().__init__(
+            logdist=logdist,
+            width_distribution=width_distribution,
+            exp_width_weight=exp_width_weight,
+            exp_width_lam=exp_width_lam,
+        )
         self.thickness_mask = thickness_mask
         self.roughness_mask = roughness_mask
         self.sld_mask = sld_mask
@@ -368,3 +429,79 @@ def constrained_roughness_and_isld_sampler(
 
 
     return params, min_bounds, max_bounds
+
+
+def truncated_exponential_width_sampler(
+    min_widths: Tensor,
+    max_widths: Tensor,
+    batch_size: int,
+    param_dim: int,
+    lam: float = 0.05,
+    device=None,
+    dtype=None,
+) -> Tensor:
+    """
+    Sample widths with density biased toward small values inside [min_widths, max_widths].
+
+    Implemented form matches:
+        y in [0, 1],  p(y) proportional to exp(-y / lam)
+    then widths = min_widths + y * (max_widths - min_widths)
+
+    lam acts like a scale:
+      - small lam -> stronger concentration near min_widths
+      - large lam -> closer to uniform over [min_widths, max_widths]
+    """
+    min_widths = min_widths.expand(batch_size, param_dim)
+    max_widths = max_widths.expand(batch_size, param_dim)
+
+    span = max_widths - min_widths
+    fixed = span <= 0
+
+    u = torch.rand(batch_size, param_dim, device=device, dtype=dtype)
+
+    lam_t = torch.as_tensor(lam, device=device, dtype=dtype)
+
+    # y in [0, 1] with density proportional to exp(-y / lam)
+    y = -torch.log(1 - u * (1 - torch.exp(-1.0 / lam_t))) * lam_t
+
+    widths = min_widths + y * span
+    widths = torch.where(fixed, min_widths, widths)
+    return widths
+
+
+def exp_uniform_mixture_width_sampler(
+    min_widths: Tensor,
+    max_widths: Tensor,
+    batch_size: int,
+    param_dim: int,
+    weight: float = 0.5,
+    lam: float = 0.05,
+    device=None,
+    dtype=None,
+) -> Tensor:
+    """
+    Mixture of:
+      - uniform width sampling on [min_widths, max_widths]
+      - truncated-exponential-like width sampling favoring narrow widths
+
+    weight = probability of using the exponential-like component.
+    """
+    min_widths = min_widths.expand(batch_size, param_dim)
+    max_widths = max_widths.expand(batch_size, param_dim)
+
+    uniform_widths = torch.rand(
+        batch_size, param_dim, device=device, dtype=dtype
+    ) * (max_widths - min_widths) + min_widths
+
+    exp_widths = truncated_exponential_width_sampler(
+        min_widths=min_widths,
+        max_widths=max_widths,
+        batch_size=batch_size,
+        param_dim=param_dim,
+        lam=lam,
+        device=device,
+        dtype=dtype,
+    )
+
+    choose_exp = torch.rand(batch_size, param_dim, device=device, dtype=dtype) < weight
+    return torch.where(choose_exp, exp_widths, uniform_widths)

@@ -197,13 +197,12 @@ class GaussianNoiseGenerator(IntensityNoiseGenerator):
                 relative_errors = torch.stack([uniform_sampler(*item, curves.shape[0], curves.shape[-1], device=curves.device, dtype=curves.dtype) for item in relative_errors], dim=1)
 
         sigmas = relative_errors * curves
-        noise = torch.normal(mean=0., std=sigmas).clamp_min_(0.0)
-
+        
         if self.add_to_context and context is not None:
             context['relative_errors'] = relative_errors
             context['sigmas'] = sigmas
             
-        return curves + noise
+        return torch.normal(mean=curves, std=sigmas).clamp_min_(0.0)
 
 class PoissonNoiseGenerator(IntensityNoiseGenerator):
     """Noise generator which applies Poisson noise to the reflectivity curves

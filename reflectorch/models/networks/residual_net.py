@@ -25,6 +25,8 @@ class ResidualMLP(nn.Module):
             conditioning: str = 'glu',
             concat_condition_first_layer: bool = True,
             film_with_tanh: bool = False,
+            zero_init_last: bool = False,
+            zero_init_blocks: bool = False,
     ):
         super().__init__()
 
@@ -47,12 +49,18 @@ class ResidualMLP(nn.Module):
                     adaptive_activation=adaptive_activation,
                     conditioning = conditioning,
                     film_with_tanh = film_with_tanh,
+                    zero_initialization=zero_init_blocks,
                 )
                 for _ in range(num_blocks)
             ]
         )
 
         self.last_layer = nn.Linear(layer_width, dim_out)
+
+        if zero_init_last:
+            init.zeros_(self.last_layer.weight)
+            if self.last_layer.bias is not None:
+                init.zeros_(self.last_layer.bias)
 
     def forward(self, x, condition=None):
         if self.concat_condition_first_layer and condition is not None:
@@ -84,6 +92,7 @@ class ResidualBlock(nn.Module):
             adaptive_activation: bool = False,
             conditioning: str = 'glu',
             film_with_tanh: bool = False,
+            zero_initialization: bool = False,
     ):
         super().__init__()
          
@@ -124,6 +133,10 @@ class ResidualBlock(nn.Module):
 
         if self.dropout_rate > 0:
             self.dropout = nn.Dropout(p=dropout_rate)
+
+        if zero_initialization:
+            init.uniform_(self.linear_layers[-1].weight, -1e-3, 1e-3)
+            init.uniform_(self.linear_layers[-1].bias, -1e-3, 1e-3)
 
     def forward(self, x, condition=None):
         x0 = x

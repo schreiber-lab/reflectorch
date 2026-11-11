@@ -13,4 +13,5 @@ __all__ = [
     "NetworkWithPriors",
     "NetworkWithPriorsConvEmb",
     "NetworkWithPriorsFnoEmb",
+    "NFNetwork",
 ]

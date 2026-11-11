@@ -1,5 +1,6 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from math import sqrt, pi, log10
+import warnings
 
 import torch
 from torch import Tensor
@@ -155,8 +156,26 @@ def get_density_profiles(
     assert slds.shape == (bs, n + 1), (
         f"SLDs must be (batch_size, num_layers+1). Found {slds.shape} instead."
     )
-    assert torch.all(thicknesses >= 0), "Negative thickness encountered."
-    assert torch.all(roughnesses >= 0), "Negative roughness encountered."
+    
+    neg_thickness = torch.any(thicknesses < 0)
+    neg_roughness = torch.any(roughnesses < 0)
+
+    if neg_thickness or neg_roughness:
+        msg_parts = []
+        if neg_thickness:
+            min_t = thicknesses.min().item()
+            msg_parts.append(f"negative thicknesses encountered (min={min_t:.3e})")
+        if neg_roughness:
+            min_r = roughnesses.min().item()
+            msg_parts.append(f"negative roughnesses encountered (min={min_r:.3e})")
+
+        warnings.warn(
+            "get_density_profiles(): " + "; ".join(msg_parts) + ". Clamping to 0.",
+            stacklevel=2,
+        )
+
+    thicknesses = torch.clamp(thicknesses, min=0.0)
+    roughnesses = torch.clamp(roughnesses, min=0.0)
 
     if ambient_sld is None:
         ambient_sld = torch.zeros((bs, 1), device=thicknesses.device)
@@ -220,4 +239,61 @@ def get_param_labels(
         imag_sld_labels = [f'{imag_sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{imag_sld_name} {substrate_name}']
         all_labels = all_labels + imag_sld_labels
         
+    return all_labels
+
+def get_param_labels_latex(
+    num_layers: int,
+    *,
+    thickness_name: str = 'd',
+    roughness_name: str = r'\sigma',
+    sld_superscript: Optional[str] = None,
+    sld_name: Optional[str] = None,
+    imag_sld_name: Optional[str] = None,
+    substrate_name: str = 'B',
+    parameterization_type: str = 'standard',
+    number_top_to_bottom: bool = True,
+):
+    """
+    Generates LaTeX-formatted parameter labels for plotting.
+    """
+
+    def pos(i: int) -> int:
+        return i + 1 if number_top_to_bottom else num_layers - i
+
+    def latex_label(base: str, subscript: str) -> str:
+        return rf"${base}_{{{subscript}}}$"
+
+    if sld_superscript is None:
+        sld_sup = ""
+    else:
+        sld_sup = rf"^{{{sld_superscript}}}"
+
+    if sld_name is None:
+        if parameterization_type == "absorption":
+            sld_name_eff = rf"\mathrm{{Re}}\,\rho{sld_sup}"
+        else:
+            sld_name_eff = rf"\rho{sld_sup}"
+    else:
+        sld_name_eff = sld_name
+
+    if imag_sld_name is None:
+        imag_sld_name_eff = rf"\mathrm{{Im}}\,\rho{sld_sup}"
+    else:
+        imag_sld_name_eff = imag_sld_name
+
+    thickness_labels = [latex_label(thickness_name, pos(i)) for i in range(num_layers)]
+
+    roughness_labels = [latex_label(roughness_name, pos(i)) for i in range(num_layers)]
+    roughness_labels.append(latex_label(roughness_name, substrate_name))
+
+    sld_labels = [latex_label(sld_name_eff, pos(i)) for i in range(num_layers)]
+    sld_labels.append(latex_label(sld_name_eff, substrate_name))
+
+    all_labels = thickness_labels + roughness_labels + sld_labels
+
+    if parameterization_type == 'absorption':
+        imag_sld_labels = [latex_label(imag_sld_name_eff, pos(i)) for i in range(num_layers)]
+        imag_sld_labels.append(latex_label(imag_sld_name_eff, substrate_name))
+        all_labels += imag_sld_labels
+
     return all_labels

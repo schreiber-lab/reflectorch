@@ -320,6 +320,7 @@ class CosineAnnealingWithWarmup(TrainerCallback):
     
     def start_training(self, trainer: Trainer) -> None:
         self.max_lr = trainer.lr()
+        trainer.set_lr(self.get_lr(0))
 
     def end_batch(self, trainer: Trainer, batch_num: int):
         """
@@ -329,7 +330,7 @@ class CosineAnnealingWithWarmup(TrainerCallback):
             trainer (Trainer): The trainer object.
             batch_num (int): The current batch number.
         """
-        lr = self.get_lr(batch_num)
+        lr = self.get_lr(batch_num + 1)
         trainer.set_lr(lr)
 
     def simulate_and_plot(self, total_steps: int = None, log_scale: bool = False):
