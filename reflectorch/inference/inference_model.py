@@ -9,7 +9,7 @@ from huggingface_hub import hf_hub_download
 from reflectorch.data_generation.priors import BasicParams
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ, MaskedVariableQ
-from reflectorch.inference.inference_result import PointInferenceResult, PosteriorInferenceResult
+from reflectorch.inference.inference_result import PointInferenceResult, PosteriorInferenceResult, MultiChannelPosteriorInferenceResult
 from reflectorch.inference.data import ReflectivityData, MultiChannelReflectivityData
 from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
 from reflectorch.paths import CONFIG_DIR, SAVED_MODELS_DIR
