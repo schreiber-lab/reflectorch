@@ -9,6 +9,7 @@ from reflectorch.inference.preprocess_exp import (
 )
 from reflectorch.inference.torch_fitter import ReflGradientFit
 from reflectorch.inference.input_interface import Layer, Backing, Structure
+from reflectorch.inference.inference_result import PointInferenceResult, PosteriorInferenceResult
 from reflectorch.inference.data import ReflectivityData
 from reflectorch.inference.log_posterior import ReflectivityLogPosterior
 
@@ -24,6 +25,8 @@ __all__ = [
     "Structure",
     "ReflectivityData",
     "ReflectivityLogPosterior",
+    "PointInferenceResult",
+    "PosteriorInferenceResult",
     "interp_reflectivity",
     "apply_attenuation_correction",
     "apply_footprint_correction",
