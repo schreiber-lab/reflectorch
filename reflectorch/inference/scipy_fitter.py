@@ -1,6 +1,5 @@
 import warnings
-import joblib
-from joblib import Parallel, delayed
+
 import numpy as np
 from scipy.optimize import minimize, curve_fit
 import torch
@@ -25,6 +24,7 @@ def refl_fit(
     reflectivity_kwargs: dict = None,
     curve_func=None,
     return_param_errors: bool = False,
+    print_polishing_nfev: bool = False,
     **kwargs
 ):
     """
@@ -113,6 +113,7 @@ def refl_fit(
         sigma=scaled_error_bars,
         absolute_sigma=True,
         method=method,
+        full_output=True,
         **kwargs
     )
 
@@ -138,6 +139,9 @@ def refl_fit(
             fitted_param_errors = np.full_like(np.asarray(res[0]), np.nan, dtype=np.float64)
     else:
         fitted_param_errors = None
+
+    if print_polishing_nfev:
+        print("Polishing function evaluations:", res[2]["nfev"])
 
     return res[0], fitted_param_errors, fitted_curve
 
@@ -320,89 +324,3 @@ def _growth_curve_func(d_idx: int = 0):
         return fitted_curve_tensor.reshape(-1).cpu().numpy()
 
     return curve_func
-
-
-
-def batch_refl_fit(
-        q: np.ndarray, 
-        curves: np.ndarray,
-        init_params: np.ndarray, # (n_curves, n_params)
-        prior_sampler: PriorSampler,
-        bounds: np.ndarray = None,
-        error_bars: np.ndarray = None,
-        scale_curve_func=np.log10,
-        method: str = 'trf', #'lm', 'trf'
-        polishing_max_steps: int = None,
-        reflectivity_kwargs: dict = None,
-        n_jobs: int = -1,
-        verbose: int = 5,
-        **kwargs
-):
-    """
-    Fit (polished fit) multiple reflectivity curves in parallel using joblib.
-
-    Parameters
-    ----------
-    q : np.ndarray
-        1D array of momentum transfer values (same for all curves).
-    curves : np.ndarray
-        2D array of reflectivity curves with shape (n_curves, n_q).
-    init_params : np.ndarray
-        2D array of initial parameter guesses (n_curves, n_params).
-    prior_sampler : PriorSampler
-        The prior sampler.
-    bounds : np.ndarray, optional
-        Bounds for the parameters, shape (2, n_params). Shared by all the curves. Default: None.
-    error_bars : np.ndarray, optional
-        Error bars for the curves, shape (n_curves, n_q). Default: None.
-    scale_curve_func : callable, optional
-        Function to scale the curves. Default: `np.log10`.
-    method : str, optional
-        The method to use for the fitting. Default: 'trf'.
-    polishing_max_steps : int, optional
-        The maximum number of function evaluations for the polishing step. Default: None.
-    reflectivity_kwargs : dict, optional
-        Keyword arguments for the reflectivity function. Default: None.
-    n_jobs : int, optional
-        The number of jobs to run in parallel. Default: -1 (all CPUs).
-    verbose : int, optional
-        The verbosity level for joblib. Default: 5.
-    **kwargs : dict
-        Extra keyword arguments passed to `scipy.optimize.curve_fit`.
-
-    Returns
-    -------
-    params_array : np.ndarray
-        Array of fitted parameter values for each curve, shape (n_curves, n_params).
-    error_bars_array : np.ndarray
-        Array of error bars for the fitted parameter values, shape (n_curves, n_params).
-    curves_array : np.ndarray
-        Array of fitted reflectivity curves, shape (n_curves, n_q).
-    """
-    if bounds is not None:
-        if bounds.ndim == 2:
-            bounds = bounds[None].repeat(curves.shape[0], 0)
-        elif bounds.ndim == 3:
-            assert bounds.shape[0] == curves.shape[0], f"Bounds must have the same number of curves as the number of curves, got {bounds.shape[0]} and {curves.shape[0]}"
-        else:
-            raise ValueError(f"Bounds must be a 2D or 3D array, got {bounds.ndim}D array")
-    else:
-        bounds = [None] * curves.shape[0]
-    
-    results = Parallel(n_jobs=n_jobs, verbose=verbose)(
-        delayed(refl_fit)(
-            q=q, curve=curve, init_params=init_params,
-            bounds=bound,
-            prior_sampler=prior_sampler,
-            error_bars=error_bars,
-            method=method,
-            scale_curve_func=scale_curve_func,
-            polishing_max_steps=polishing_max_steps,
-            reflectivity_kwargs=reflectivity_kwargs,
-            **kwargs
-        )
-        for curve, init_params, bound in zip(curves, init_params, bounds)
-    )
-
-    params_array, error_bars, curves_array = zip(*results)
-    return np.array(params_array), np.array(error_bars), np.array(curves_array)
