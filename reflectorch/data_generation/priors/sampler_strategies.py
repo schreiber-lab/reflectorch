@@ -237,6 +237,69 @@ class ConstrainedRoughnessAndImgSldSamplerStrategy(BasicSamplerStrategy):
             coef_isld=self.max_sld_share,
             max_total_thickness=self.max_total_thickness,
         )
+    
+class LipidBilayerSamplerStrategy(BasicSamplerStrategy):
+    """Sampler strategy for lipid bilayers
+
+    Args:
+    """
+    def __init__(self,
+                 V_h_mask: Tensor,
+                 V_t_mask: Tensor,
+                 A_pm_mask: Tensor,
+                 d_ih_mask: Tensor,
+                 d_oh_mask: Tensor,
+                 d_t_mask: Tensor,
+                 logdist: bool = False,
+                 width_distribution: str = None,
+                 exp_width_weight: float = 0.5,
+                 exp_width_lam: float = 0.05,
+                 ):
+        super().__init__(
+            logdist=logdist,
+            width_distribution=width_distribution,
+            exp_width_weight=exp_width_weight,
+            exp_width_lam=exp_width_lam,
+        )
+        self.V_h_mask = V_h_mask
+        self.V_t_mask = V_t_mask
+        self.A_pm_mask = A_pm_mask
+        self.d_ih_mask = d_ih_mask
+        self.d_oh_mask = d_oh_mask
+        self.d_t_mask = d_t_mask
+
+    def sample(self, batch_size: int,
+               total_min_bounds: Tensor,
+               total_max_bounds: Tensor,
+               total_min_delta: Tensor,
+               total_max_delta: Tensor,
+               ):
+        """
+        Args:
+            batch_size (int): the batch size
+            total_min_bounds (Tensor): mimimum values of the parameters
+            total_max_bounds (Tensor): maximum values of the parameters
+            total_min_delta (Tensor): minimum widths of the subprior intervals
+            total_max_delta (Tensor): maximum widths of the subprior intervals
+
+        Returns:
+            tuple(Tensor): samples the values of the parameters and their prior bounds *(params, min_bounds, max_bounds)*, the roughnesses being constrained. The widths **W** of the subprior interval are sampled first, then the centers **C** of the subprior interval, such that the prior bounds are **C** - **W** / 2 and **C** + **W** / 2, then the parameters are sampled from [**C** - **W** / 2, **C** + **W** / 2] )
+        """
+        device = total_min_bounds.device
+        return lipid_bilayer_sampler(
+            batch_size,
+            total_min_bounds,
+            total_max_bounds,
+            total_min_delta,
+            total_max_delta,
+            V_h_mask=self.V_h_mask.to(device),
+            V_t_mask=self.V_t_mask.to(device),
+            A_pm_mask=self.A_pm_mask.to(device),
+            d_ih_mask=self.d_ih_mask.to(device),
+            d_oh_mask=self.d_oh_mask.to(device),
+            d_t_mask=self.d_t_mask.to(device),
+            widths_sampler_func=self.widths_sampler_func,
+        )
 
 def basic_sampler(
         batch_size: int,
@@ -426,6 +489,85 @@ def constrained_roughness_and_isld_sampler(
 
     min_bounds[..., isld_mask], max_bounds[..., isld_mask] = min_isld_bounds, max_isld_bounds
     params[..., isld_mask] = islds
+
+
+    return params, min_bounds, max_bounds
+
+def lipid_bilayer_sampler(
+        batch_size: int,
+        total_min_bounds: Tensor,
+        total_max_bounds: Tensor,
+        total_min_delta: Tensor,
+        total_max_delta: Tensor,
+        V_h_mask: Tensor,
+        V_t_mask: Tensor,
+        A_pm_mask: Tensor,
+        d_ih_mask: Tensor,
+        d_oh_mask: Tensor,
+        d_t_mask: Tensor,
+        widths_sampler_func,
+):
+    params, min_bounds, max_bounds = basic_sampler(
+        batch_size, total_min_bounds, total_max_bounds, total_min_delta, total_max_delta,
+        widths_sampler_func=widths_sampler_func,
+    )
+    
+    ###d_t
+    min_d_t = torch.maximum(
+        params[..., V_t_mask] / params[..., A_pm_mask],
+        total_min_bounds[..., d_t_mask]
+    )
+    max_d_t = total_max_bounds[..., d_t_mask]
+    assert torch.all(min_d_t <= max_d_t)
+    
+    min_d_t_delta = total_min_delta[..., d_t_mask]
+    max_d_t_delta = torch.minimum(total_max_delta[..., d_t_mask], max_d_t - min_d_t)
+    d_t, min_d_t_bounds, max_d_t_bounds = basic_sampler(
+        batch_size, min_d_t, max_d_t,
+        min_d_t_delta, max_d_t_delta,
+        widths_sampler_func=widths_sampler_func
+    )
+
+    min_bounds[..., d_t_mask], max_bounds[..., d_t_mask] = min_d_t_bounds, max_d_t_bounds
+    params[..., d_t_mask] = d_t
+
+    ###d_ih
+    min_d_ih = torch.maximum(
+        params[..., V_h_mask] / params[..., A_pm_mask],
+        total_min_bounds[..., d_ih_mask]
+    )
+    max_d_ih = total_max_bounds[..., d_ih_mask]
+    assert torch.all(min_d_ih <= max_d_ih)
+    
+    min_d_ih_delta = total_min_delta[..., d_ih_mask]
+    max_d_ih_delta = torch.minimum(total_max_delta[..., d_ih_mask], max_d_ih - min_d_ih)
+    d_ih, min_d_ih_bounds, max_d_ih_bounds = basic_sampler(
+        batch_size, min_d_ih, max_d_ih,
+        min_d_ih_delta, max_d_ih_delta,
+        widths_sampler_func=widths_sampler_func
+    )
+
+    min_bounds[..., d_ih_mask], max_bounds[..., d_ih_mask] = min_d_ih_bounds, max_d_ih_bounds
+    params[..., d_ih_mask] = d_ih
+
+    ###d_oh
+    min_d_oh = torch.maximum(
+        params[..., V_h_mask] / params[..., A_pm_mask],
+        total_min_bounds[..., d_oh_mask]
+    )
+    max_d_oh = total_max_bounds[..., d_oh_mask]
+    assert torch.all(min_d_oh <= max_d_oh)
+    
+    min_d_oh_delta = total_min_delta[..., d_oh_mask]
+    max_d_oh_delta = torch.minimum(total_max_delta[..., d_oh_mask], max_d_oh - min_d_oh)
+    d_oh, min_d_oh_bounds, max_d_oh_bounds = basic_sampler(
+        batch_size, min_d_oh, max_d_oh,
+        min_d_oh_delta, max_d_oh_delta,
+        widths_sampler_func=widths_sampler_func
+    )
+
+    min_bounds[..., d_oh_mask], max_bounds[..., d_oh_mask] = min_d_oh_bounds, max_d_oh_bounds
+    params[..., d_oh_mask] = d_oh
 
 
     return params, min_bounds, max_bounds
