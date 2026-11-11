@@ -5,7 +5,7 @@ from torch import Tensor
 
 
 class ScalerMixin:
-    """Provides functionality to multiple inheritance classes for scaling the parameters to a specified range and restoring them to the original range."""
+    """Provides functionality to multiple inheritance classes for scaling the parameters to a specified range and restoring them to the original range."""    
     @staticmethod
     def _get_delta_vector(min_vector: Tensor, max_vector: Tensor):
         delta_vector = max_vector - min_vector
@@ -26,11 +26,21 @@ class ScalerMixin:
             min_vector = torch.atleast_2d(min_vector)
             max_vector = torch.atleast_2d(max_vector)
 
-        delta_vector = max_vector - min_vector
-        delta_vector[delta_vector == 0.] = 1.
+        #fixed = (max_vector == min_vector)
+        FIXED_TOL = 1e-7
+        fixed = (max_vector - min_vector).abs() <= FIXED_TOL
+
         scaled_params = (
-                                params_t - min_vector
-                        ) / self._get_delta_vector(min_vector, max_vector) * self._length + self._bias
+            (params_t - min_vector) / self._get_delta_vector(min_vector, max_vector) * self._length
+            + self._bias
+        )
+
+        scaled_params = torch.where(
+            fixed.expand_as(scaled_params),
+            torch.as_tensor(self._init_bias, device=scaled_params.device, dtype=scaled_params.dtype),
+            scaled_params,
+        )
+
         return scaled_params
 
     def _restore(self, scaled_params: Tensor, min_vector: Tensor, max_vector: Tensor):
@@ -47,9 +57,15 @@ class ScalerMixin:
             min_vector = torch.atleast_2d(min_vector)
             max_vector = torch.atleast_2d(max_vector)
 
+        fixed = (max_vector == min_vector)
+
         params_t = (
-                           scaled_params - self._bias
-                   ) / self._length * self._get_delta_vector(min_vector, max_vector) + min_vector
+            (scaled_params - self._bias) / self._length * self._get_delta_vector(min_vector, max_vector)
+            + min_vector
+        )
+
+        params_t = torch.where(fixed.expand_as(params_t), min_vector, params_t)
+
         return params_t
 
     @property

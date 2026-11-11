@@ -199,6 +199,8 @@ class FastIntegralKernel(nn.Module):
         return z, indices
 
     def forward(self, x: Tensor, y: Tensor, drop_mask=None):
+        if drop_mask is not None:
+            x = x.masked_fill(~drop_mask, self.z[0])
         z, indices = self._get_z(x)
         xz = torch.stack([x, z], -1)
         kernel_input = torch.cat([xz, y], -1)

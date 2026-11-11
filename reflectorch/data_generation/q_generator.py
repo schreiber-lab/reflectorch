@@ -213,6 +213,7 @@ class MaskedVariableQ:
                  shuffle_mask=False,
                  total_thickness_constraint=True,
                  min_points_per_fringe=4,
+                 preserve_effective_q_range=True,
                  device=DEFAULT_DEVICE,
                  dtype=DEFAULT_DTYPE):
         self.q_min_range = q_min_range
@@ -224,55 +225,143 @@ class MaskedVariableQ:
         self.shuffle_mask = shuffle_mask
         self.total_thickness_constraint = total_thickness_constraint
         self.min_points_per_fringe = min_points_per_fringe
+        self.preserve_effective_q_range = preserve_effective_q_range
     
     def get_batch(self, batch_size, context):
-        assert context is not None
-
-        q_min = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_min_range[1] - self.q_min_range[0]) + self.q_min_range[0]
-        q_max = torch.rand(batch_size, device=self.device, dtype=self.dtype) * (self.q_max_range[1] - self.q_max_range[0]) + self.q_max_range[0]
+        q_min = (
+            torch.rand(batch_size, device=self.device, dtype=self.dtype)
+            * (self.q_min_range[1] - self.q_min_range[0])
+            + self.q_min_range[0]
+        )
+        q_max = (
+            torch.rand(batch_size, device=self.device, dtype=self.dtype)
+            * (self.q_max_range[1] - self.q_max_range[0])
+            + self.q_max_range[0]
+        )
 
         max_n_q = self.n_q_range[1]
 
-        if self.mode == 'equidistant':
-            positions = torch.linspace(0, 1, max_n_q, device=self.device, dtype=self.dtype).expand(batch_size, max_n_q)
-        elif self.mode == 'random':
-            positions = torch.rand(batch_size, max_n_q, device=self.device, dtype=self.dtype)
-            positions, _ = positions.sort(dim=-1)
-        elif self.mode == 'mixed':
-            positions = torch.empty(batch_size, max_n_q, device=self.device, dtype=self.dtype)
+        n_qs = torch.randint(
+            self.n_q_range[0],
+            self.n_q_range[1] + 1,
+            (batch_size,),
+            device=self.device,
+        )
 
-            half = batch_size // 2 # half batch gets equidistant
-            eq_pos = torch.linspace(0, 1, max_n_q, device=self.device, dtype=self.dtype).expand(half, max_n_q)
-            positions[:half] = eq_pos
+        if 'params' in context and self.total_thickness_constraint:  ### N_points > 1 + (Q_spread * total_thickness * min_np_per_kiessing_fringe) / (2*pi)
+            d_total = context['params'].thicknesses.sum(-1)
+            limit = 1 + ((q_max - q_min) * d_total * self.min_points_per_fringe) / (2 * np.pi)
+            limit = limit.ceil().long()
+            n_qs = torch.maximum(n_qs, limit)
 
-            rand_pos = torch.rand(batch_size - half, max_n_q, device=self.device, dtype=self.dtype) # other half gets sorted random
-            rand_pos, _ = rand_pos.sort(dim=-1)
-            positions[half:] = rand_pos
+        n_qs = torch.clamp(n_qs, min=2, max=max_n_q)
+
+        indices = torch.arange(max_n_q, device=self.device).expand(batch_size, max_n_q)
+        valid_mask = indices < n_qs[:, None]
+
+        if not self.preserve_effective_q_range:
+            positions = self._build_positions_legacy(batch_size, max_n_q)
         else:
-            raise ValueError(f"Unknown spacing mode: {self.mode}")
+            positions = self._build_positions_preserve_range(indices, n_qs)
 
         q = q_min[:, None] + positions * (q_max - q_min)[:, None]
 
-        n_qs = torch.randint(self.n_q_range[0], self.n_q_range[1] + 1, (batch_size,), device=self.device)
-
-        if 'params' in context and self.total_thickness_constraint: ### N_points > 1 + (Q_spread * total_thickness * min_np_per_kiessing_fringe) / (2*pi)
-            d_total = context['params'].thicknesses.sum(-1)
-            limit = 1 + ((q_max - q_min) * d_total * self.min_points_per_fringe) / (2*np.pi)
-            limit = limit.ceil().int()
-            n_qs = torch.maximum(n_qs, limit)
-            n_qs = torch.clamp(n_qs, max=self.n_q_range[1])
-
-        indices = torch.arange(max_n_q, device=self.device).expand(batch_size, max_n_q)
-        valid_mask = indices < n_qs[:, None] # right side padding
-        
-        if self.shuffle_mask: # shuffle valid positions (inter-spread padding)
-            perm = torch.argsort(torch.rand(batch_size, max_n_q, device=self.device), dim=-1)
+        if self.shuffle_mask:
+            perm = torch.argsort(
+                torch.rand(batch_size, max_n_q, device=self.device), dim=-1
+            )
             valid_mask = torch.gather(valid_mask, dim=1, index=perm)
 
         context['key_padding_mask'] = valid_mask
         context['n_points'] = valid_mask.sum(dim=-1)
 
         return q
+    
+    def _build_positions_legacy(self, batch_size, max_n_q):
+        if self.mode == 'equidistant':
+            positions = torch.linspace(
+                0, 1, max_n_q, device=self.device, dtype=self.dtype
+            ).expand(batch_size, max_n_q)
+
+        elif self.mode == 'random':
+            positions = torch.rand(
+                batch_size, max_n_q, device=self.device, dtype=self.dtype
+            )
+            positions, _ = positions.sort(dim=-1)
+
+        elif self.mode == 'mixed':
+            positions = torch.empty(
+                batch_size, max_n_q, device=self.device, dtype=self.dtype
+            )
+
+            half = batch_size // 2
+
+            eq_pos = torch.linspace(
+                0, 1, max_n_q, device=self.device, dtype=self.dtype
+            ).expand(half, max_n_q)
+            positions[:half] = eq_pos
+
+            rand_pos = torch.rand(
+                batch_size - half, max_n_q, device=self.device, dtype=self.dtype
+            )
+            rand_pos, _ = rand_pos.sort(dim=-1)
+            positions[half:] = rand_pos
+
+        else:
+            raise ValueError(f"Unknown spacing mode: {self.mode}")
+
+        return positions
+
+    def _build_positions_preserve_range(self, indices, n_qs):
+        _, max_n_q = indices.shape
+
+        def build_equidistant_rows(idxs, nqs):
+            denom = torch.clamp(nqs - 1, min=1).to(self.dtype)[:, None]
+            return idxs.to(self.dtype) / denom
+
+        def build_random_rows(idxs, nqs):
+            local_batch_size, local_max_n_q = idxs.shape
+
+            denom_invalid = torch.clamp(local_max_n_q - nqs, min=1).to(self.dtype)[:, None]
+            invalid_offset = (idxs - nqs[:, None] + 1).clamp(min=1).to(self.dtype)
+            positions = 1.0 + invalid_offset / (denom_invalid + 1.0)
+
+            rand_vals = torch.rand(
+                local_batch_size, local_max_n_q, device=self.device, dtype=self.dtype
+            )
+            rand_vals, _ = rand_vals.sort(dim=-1)
+
+            valid_mask_local = idxs < nqs[:, None]
+
+            first_valid = rand_vals[:, 0:1]
+            last_valid_idx = (nqs - 1).clamp(min=0)
+            last_valid = torch.gather(rand_vals, 1, last_valid_idx[:, None])
+
+            span = (last_valid - first_valid).clamp_min(torch.finfo(self.dtype).eps)
+            rand_vals_rescaled = (rand_vals - first_valid) / span
+
+            positions[valid_mask_local] = rand_vals_rescaled[valid_mask_local]
+            return positions
+
+        if self.mode == 'equidistant':
+            return build_equidistant_rows(indices, n_qs)
+
+        elif self.mode == 'random':
+            return build_random_rows(indices, n_qs)
+
+        elif self.mode == 'mixed':
+            batch_size = indices.shape[0]
+            positions = torch.empty(
+                batch_size, max_n_q, device=self.device, dtype=self.dtype
+            )
+            half = batch_size // 2
+
+            positions[:half] = build_equidistant_rows(indices[:half], n_qs[:half])
+            positions[half:] = build_random_rows(indices[half:], n_qs[half:])
+            return positions
+
+        else:
+            raise ValueError(f"Unknown spacing mode: {self.mode}")
     
     def scale_q(self, q):
         scaled_q_01 = (q - self.q_min_range[0]) / (self.q_max_range[1] - self.q_min_range[0]) 
