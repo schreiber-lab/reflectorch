@@ -41,9 +41,9 @@ dependencies = [
     "safetensors",
     "tensorboard",
     "anywidget",
-    "joblib",
     "nflows",
     "torchdiffeq",
+    "chainconsumer",
 ]
 
 [project.optional-dependencies]
