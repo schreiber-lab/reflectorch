@@ -17,7 +17,6 @@ from reflectorch.inference.reflectorch_nexus_saver import (
     download_file,
     PARAM_SPECS,
 )
-
 from reflectorch.inference.data import ReflectivityData
 from reflectorch.inference.log_posterior import ReflectivityLogPosterior
 
