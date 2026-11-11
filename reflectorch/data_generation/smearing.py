@@ -87,7 +87,12 @@ class Smearing(object):
         else:
             reflectivity_smeared = None
 
-        curves = torch.empty(params.batch_size, q_values.shape[-1], device=params.device, dtype=params.dtype)
+        n_dims = reflectivity_not_smeared.ndim if reflectivity_not_smeared is not None else reflectivity_smeared.ndim
+        if n_dims == 2:
+            curves = torch.empty(params.batch_size, q_values.shape[-1], device=params.device, dtype=params.dtype)
+        elif n_dims == 3:
+            n_channels = reflectivity_not_smeared.shape[1] if reflectivity_not_smeared is not None else reflectivity_smeared.shape[1]
+            curves = torch.empty(params.batch_size, n_channels, q_values.shape[-1], device=params.device, dtype=params.dtype)
         
         if (~indices).sum().item():
             curves[~indices] = reflectivity_not_smeared

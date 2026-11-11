@@ -3,7 +3,7 @@
 import torch
 from torch import Tensor
 
-from reflectorch.data_generation.reflectivity.abeles import abeles_compiled, abeles
+from reflectorch.data_generation.reflectivity.abeles import abeles, abeles_older_a
 from reflectorch.data_generation.reflectivity.memory_eff import abeles_memory_eff
 from reflectorch.data_generation.reflectivity.numpy_implementations import (
     kinematical_approximation_np,
@@ -12,6 +12,7 @@ from reflectorch.data_generation.reflectivity.numpy_implementations import (
 from reflectorch.data_generation.reflectivity.smearing import abeles_constant_smearing
 from reflectorch.data_generation.reflectivity.smearing_pointwise import abeles_pointwise_smearing
 from reflectorch.data_generation.reflectivity.kinematical import kinematical_approximation
+from reflectorch.data_generation.reflectivity.magnetic import abeles_magnetic_nonspinflip, abeles_magnetic_spinflip
 
 
 def reflectivity(

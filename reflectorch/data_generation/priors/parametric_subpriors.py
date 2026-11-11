@@ -98,7 +98,7 @@ class BasicParams(AbstractParams):
         """gets the slds"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['sld']
-        
+    
     @property
     def real_slds(self):
         """gets the real part of the slds"""
@@ -110,6 +110,24 @@ class BasicParams(AbstractParams):
         """gets the imaginary part of the slds (only for complex dtypes)"""
         params = self.param_model.to_standard_params(self.parameters)
         return params['sld'].imag
+    
+    @property
+    def magnetic_slds(self):
+        """gets the magnetic slds"""
+        params = self.param_model.to_standard_params(self.parameters)
+        return params['sld_magnetic']
+    
+    @property
+    def magnetization_angles(self):
+        """gets the magnetization angles"""
+        params = self.param_model.to_standard_params(self.parameters)
+        return params['magnetization_angle']
+    
+    @property
+    def vf(self):
+        """gets the solvent volume fraction in the top layer"""
+        params = self.param_model.to_standard_params(self.parameters)
+        return params['vf']
 
     @staticmethod
     def rearrange_context_from_params(

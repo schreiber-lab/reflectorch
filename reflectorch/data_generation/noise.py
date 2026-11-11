@@ -309,6 +309,10 @@ class ShiftNoise(IntensityNoiseGenerator):
             *self.shift_range, curves.shape[0], 1,
             device=curves.device, dtype=curves.dtype
         )
+
+        if curves.dim() == 3:
+            intensity_shifts = intensity_shifts.unsqueeze(1)
+        
         if self.add_to_context and context is not None:
             context['intensity_shifts'] = intensity_shifts
 
@@ -316,6 +320,7 @@ class ShiftNoise(IntensityNoiseGenerator):
 
         return curves
     
+
 class BackgroundNoise(IntensityNoiseGenerator):
     """
     Noise generator which adds a constant background to reflectivity curves.
@@ -323,20 +328,35 @@ class BackgroundNoise(IntensityNoiseGenerator):
     Args:
         background_range (tuple, optional): The range from which the background value is sampled. Defaults to (1.0e-10, 1.0e-8).
         add_to_context (bool, optional): If True, adds generated noise parameters to the context dictionary. Defaults to False.
+        same_across_channels (bool, optional): If True, applies the same background noise across all channels. Defaults to False.
     """
     def __init__(self,
-                 background_range: tuple = (1.0e-10, 1.0e-8),
-                 add_to_context: bool = False,
-                 ):
+                background_range: tuple = (1.0e-10, 1.0e-8),
+                same_across_channels: bool = False,
+                add_to_context: bool = False):
         self.background_range = background_range
         self.add_to_context = add_to_context
+        self.same_across_channels = same_across_channels
 
     def apply(self, curves: Tensor, context: dict = None) -> Tensor:
-        """applies background noise to the curves"""
-        backgrounds = logdist_sampler(
-            *self.background_range, curves.shape[0], 1,
-            device=curves.device, dtype=curves.dtype
-        )
+        """Applies background noise to the curves."""
+        if self.same_across_channels and curves.dim() == 3:
+            # Generate one background per batch and broadcast across channels, shape: [batch_size, 1, 1]
+            backgrounds = logdist_sampler(
+                *self.background_range, curves.shape[0], 1,
+                device=curves.device, dtype=curves.dtype
+            )
+            backgrounds = backgrounds.unsqueeze(1)  # 
+        else:
+            # Generate one background per batch-channel combination, shape: [batch_size, n_channels, 1] or [batch_size, 1]
+            num_channels = curves.shape[1] if curves.dim() == 3 else 1
+            backgrounds = logdist_sampler(
+                *self.background_range, curves.shape[0], num_channels,
+                device=curves.device, dtype=curves.dtype
+            )
+            if num_channels > 1:
+                backgrounds = backgrounds.unsqueeze(-1)
+
         if self.add_to_context and context is not None:
             context['backgrounds'] = backgrounds
 
@@ -385,7 +405,7 @@ class GaussianExpIntensityNoise(IntensityNoiseGenerator):
         ) if apply_shift else None
 
         self.background_noise = BackgroundNoise(
-            background_range=background_range, add_to_context=add_to_context
+            background_range=background_range, same_across_channels=same_background_across_channels,  add_to_context=add_to_context
         ) if apply_background else None
 
     def apply(self, curves: Tensor, context: dict = None):

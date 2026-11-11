@@ -193,6 +193,7 @@ class FastIntegralKernel(nn.Module):
         # x.shape == (batch_size, num_x)
         dz = self.z[1] - self.z[0]
         indices = torch.ceil((x - self.z[0] - dz / 2) / dz).to(torch.int64)
+        indices = indices.clamp(0, self.z.numel() - 1) ###added to prevent potential index error
 
         z = torch.index_select(self.z, 0, indices.flatten()).view(*x.shape)
 

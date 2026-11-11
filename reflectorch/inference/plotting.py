@@ -1265,6 +1265,550 @@ def plot_sampled_sld_profiles(
     return fig, ax
 
 
+def _resolve_obs_colors(n_obs, colors=None):
+    if colors is not None:
+        colors = list(colors)
+        if len(colors) != n_obs:
+            raise ValueError(f"Expected {n_obs} colors, got {len(colors)}.")
+        return colors
+
+    cycle = plt.rcParams.get("axes.prop_cycle", None)
+    if cycle is not None:
+        cycle_colors = cycle.by_key().get("color", [])
+    else:
+        cycle_colors = []
+
+    if not cycle_colors:
+        cycle_colors = ["C0", "C1", "C2", "C3", "C4", "C5"]
+
+    return [cycle_colors[i % len(cycle_colors)] for i in range(n_obs)]
+
+
+def _resolve_obs_scales(
+    n_obs,
+    offset_curves=False,
+    offset_factor=10.0,
+    offset_mode="obs",
+):
+    if not offset_curves:
+        return [1.0] * n_obs
+
+    if offset_factor <= 0:
+        raise ValueError("offset_factor must be positive.")
+
+    if offset_mode == "obs":
+        return [float(offset_factor) ** i for i in range(n_obs)]
+
+    if offset_mode == "reverse_obs":
+        return [float(offset_factor) ** (n_obs - 1 - i) for i in range(n_obs)]
+
+    raise ValueError("offset_mode must be 'obs' or 'reverse_obs'")
+
+def _apply_offset_scale(arr, scale, operation):
+    arr = np.asarray(arr)
+    if operation == "multiply":
+        return arr * scale
+    if operation == "divide":
+        return arr / scale
+    raise ValueError("offset_operation must be 'multiply' or 'divide'")
+
+def plot_multi_sampled_reflectivity_collections(
+    q_exp_list,
+    curve_exp_list,
+    q_sampled_list,
+    sampled_curves_list,
+    yerr_list=None,
+    xerr_list=None,
+    obs_labels=None,
+
+    exp_label_prefix='exp. data',
+    sample_label_prefix='sampled curves',
+
+    exp_style='auto',
+    exp_colors=None,
+    exp_marker='o',
+    exp_facecolor='none',
+    exp_ms=5.0,
+    exp_alpha=1.0,
+    exp_errcolors=None,
+    exp_elinewidth=0.8,
+    exp_capsize=0.0,
+    exp_capthick=0.8,
+    exp_zorder=3,
+
+    sample_colors=None,
+    sample_lw=1.0,
+    sample_alpha_scale=120,
+    sample_zorder=1,
+    sample_proxy_labels=None,
+
+    highlight_curves_list=None,
+    highlight_colors=None,
+    highlight_labels=None,
+    highlight_lw=1.5,
+    highlight_alpha=1.0,
+    highlight_ls='-',
+
+    offset_curves=False,
+    offset_factor=10.0,
+    offset_mode='obs',
+    offset_labels=False,
+    offset_operation='multiply',
+
+    q_label=r'q [$\mathrm{\AA^{-1}}$]',
+    r_label='R(q)',
+    logy=True,
+    logx=False,
+    xlim=None,
+    ylim=None,
+    legend=True,
+    legend_fontsize=14,
+    legend_loc='best',
+    legend_grouping='paired',   # 'paired' | 'by_kind'
+    axis_label_size=18,
+    tick_label_size=14,
+    figsize=(8, 6),
+    tight_layout=True,
+):
+    n_obs = len(q_exp_list)
+    if not (len(curve_exp_list) == len(q_sampled_list) == len(sampled_curves_list) == n_obs):
+        raise ValueError("All observation lists must have the same length.")
+
+    if yerr_list is None:
+        yerr_list = [None] * n_obs
+    if xerr_list is None:
+        xerr_list = [None] * n_obs
+
+    if obs_labels is None:
+        obs_labels = [str(i) for i in range(n_obs)]
+    else:
+        obs_labels = list(obs_labels)
+        if len(obs_labels) != n_obs:
+            raise ValueError(f"Expected {n_obs} obs_labels, got {len(obs_labels)}.")
+
+    sample_colors = _resolve_obs_colors(n_obs, sample_colors)
+
+    if exp_colors is None:
+        exp_colors = sample_colors
+    exp_colors = _resolve_obs_colors(n_obs, exp_colors)
+
+    if exp_errcolors is None:
+        exp_errcolors = exp_colors
+    else:
+        exp_errcolors = _resolve_obs_colors(n_obs, exp_errcolors)
+
+    if sample_proxy_labels is None:
+        sample_proxy_labels = [f"{sample_label_prefix} {lab}" for lab in obs_labels]
+    else:
+        sample_proxy_labels = list(sample_proxy_labels)
+        if len(sample_proxy_labels) != n_obs:
+            raise ValueError(f"Expected {n_obs} sample_proxy_labels, got {len(sample_proxy_labels)}.")
+
+    if highlight_curves_list is None:
+        highlight_curves_list = [None] * n_obs
+    elif len(highlight_curves_list) != n_obs:
+        raise ValueError(f"Expected {n_obs} highlight_curves_list entries, got {len(highlight_curves_list)}.")
+
+    if highlight_colors is None:
+        highlight_colors = sample_colors
+    else:
+        highlight_colors = _resolve_obs_colors(n_obs, highlight_colors)
+
+    if highlight_labels is None:
+        highlight_labels = [None] * n_obs
+    elif len(highlight_labels) != n_obs:
+        raise ValueError(f"Expected {n_obs} highlight_labels, got {len(highlight_labels)}.")
+
+    obs_scales = _resolve_obs_scales(
+        n_obs=n_obs,
+        offset_curves=offset_curves,
+        offset_factor=offset_factor,
+        offset_mode=offset_mode,
+    )
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if logy:
+        ax.set_yscale('log')
+    if logx:
+        ax.set_xscale('log')
+
+    ax.set_xlabel(q_label, fontsize=axis_label_size)
+    ax.set_ylabel(r_label, fontsize=axis_label_size)
+    ax.tick_params(axis='both', which='both', labelsize=tick_label_size)
+
+    exp_handles = []
+    sample_handles = []
+    highlight_handles = []
+
+    for i in range(n_obs):
+        q_exp = q_exp_list[i]
+        curve_exp = curve_exp_list[i]
+        q_sampled = q_sampled_list[i]
+        sampled_curves = sampled_curves_list[i]
+        yerr = yerr_list[i]
+        xerr = xerr_list[i]
+
+        exp_color = exp_colors[i]
+        exp_errcolor = exp_errcolors[i]
+        sample_color = sample_colors[i]
+        scale_i = obs_scales[i]
+
+        exp_label = f"{exp_label_prefix} {obs_labels[i]}"
+        proxy_label = sample_proxy_labels[i]
+
+        if offset_curves and offset_labels:
+            if offset_operation == "multiply":
+                suffix = rf" ($\times {scale_i:g}$)"
+            else:
+                suffix = rf" ($\div {scale_i:g}$)"
+            exp_label += suffix
+            proxy_label += suffix
+
+        curve_exp_plot = _apply_offset_scale(curve_exp, scale_i, offset_operation)
+        yerr_plot = None if yerr is None else _apply_offset_scale(yerr, scale_i, offset_operation)
+
+        style = exp_style if exp_style != 'auto' else (
+            'errorbar' if (yerr is not None or xerr is not None) else 'scatter'
+        )
+
+        if style == 'errorbar' and (yerr is not None or xerr is not None):
+            exp_handle = ax.errorbar(
+                q_exp,
+                curve_exp_plot + 1e-10,
+                yerr=yerr_plot,
+                xerr=xerr,
+                fmt=exp_marker,
+                label=exp_label,
+                color=exp_color,
+                ecolor=exp_errcolor,
+                elinewidth=exp_elinewidth,
+                capsize=exp_capsize,
+                capthick=exp_capthick,
+                markersize=exp_ms,
+                markerfacecolor=exp_facecolor,
+                alpha=exp_alpha,
+                zorder=exp_zorder,
+            )
+        elif style == 'scatter':
+            ax.scatter(
+                q_exp,
+                curve_exp_plot + 1e-10,
+                s=exp_ms**2,
+                marker=exp_marker,
+                facecolors=exp_facecolor,
+                edgecolors=exp_color,
+                alpha=exp_alpha,
+                zorder=exp_zorder,
+                label=None,
+            )
+            exp_handle = Line2D(
+                [0], [0],
+                color=exp_color,
+                marker=exp_marker,
+                linestyle='none',
+                markersize=exp_ms,
+                markerfacecolor=exp_facecolor,
+                markeredgecolor=exp_color,
+                alpha=exp_alpha,
+                label=exp_label,
+            )
+        else:
+            exp_handle = ax.plot(
+                q_exp,
+                curve_exp_plot + 1e-10,
+                color=exp_color,
+                lw=1.0,
+                ls='-',
+                alpha=exp_alpha,
+                zorder=exp_zorder,
+                label=exp_label,
+            )[0]
+
+        q_np = q_sampled.cpu().numpy() if hasattr(q_sampled, 'cpu') else np.asarray(q_sampled)
+        sampled_np = _apply_offset_scale(sampled_curves, scale_i, offset_operation)
+
+        segments = [np.column_stack((q_np, y)) for y in sampled_np]
+        alpha = min(sample_alpha_scale / max(len(sampled_np), 1), 1.0)
+
+        line_collection = LineCollection(
+            segments,
+            colors=sample_color,
+            linewidths=sample_lw,
+            alpha=alpha,
+            zorder=sample_zorder,
+        )
+        ax.add_collection(line_collection)
+
+        exp_handles.append(exp_handle)
+        sample_handles.append(
+            Line2D(
+                [0], [0],
+                color=sample_color,
+                lw=max(sample_lw, 2.0),
+                alpha=1.0,
+                label=proxy_label,
+            )
+        )
+
+        hcurve = highlight_curves_list[i]
+        if hcurve is not None:
+            hcurve_np = _apply_offset_scale(hcurve, scale_i, offset_operation)
+            hlabel = highlight_labels[i]
+            h = ax.plot(
+                q_np,
+                hcurve_np,
+                color=highlight_colors[i],
+                lw=highlight_lw,
+                alpha=highlight_alpha,
+                ls=highlight_ls,
+                zorder=exp_zorder + 1,
+                label=hlabel,
+            )[0]
+            if hlabel is not None:
+                highlight_handles.append(h)
+
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    else:
+        ax.autoscale(enable=True, axis='x')
+
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+    else:
+        ax.autoscale(enable=True, axis='y')
+
+    if legend:
+        handles = []
+        labels = []
+
+        if legend_grouping == 'paired':
+            for eh, sh in zip(exp_handles, sample_handles):
+                handles.extend([eh, sh])
+                labels.extend([eh.get_label(), sh.get_label()])
+        elif legend_grouping == 'by_kind':
+            handles.extend(exp_handles)
+            labels.extend([h.get_label() for h in exp_handles])
+            handles.extend(sample_handles)
+            labels.extend([h.get_label() for h in sample_handles])
+        else:
+            raise ValueError("legend_grouping must be 'paired' or 'by_kind'.")
+
+        if highlight_handles:
+            handles.extend(highlight_handles)
+            labels.extend([h.get_label() for h in highlight_handles])
+
+        ax.legend(handles=handles, labels=labels, loc=legend_loc, fontsize=legend_fontsize)
+
+    if tight_layout:
+        plt.tight_layout()
+
+    return fig, ax
+
+def plot_multi_sampled_sld_profile_collections(
+    z_sld_list,
+    sampled_slds_list,
+    obs_labels=None,
+
+    z_label=r'z [$\mathrm{\AA}$]',
+    sld_label=r'SLD [$10^{-6}\ \mathrm{\AA^{-2}}$]',
+    sample_colors=None,
+    sample_lw=1.0,
+    sample_alpha_scale=50,
+    sample_zorder=1,
+    proxy_labels=None,
+
+    highlight_profiles_list=None,
+    highlight_colors=None,
+    highlight_labels=None,
+    highlight_lw=1.5,
+    highlight_alpha=1.0,
+    highlight_ls='-',
+
+    legend=True,
+    legend_fontsize=14,
+    legend_loc='best',
+    legend_grouping='paired',
+    axis_label_size=18,
+    tick_label_size=14,
+    figsize=(8, 6),
+    tight_layout=True,
+    color_plot=False,
+    cmap='jet',
+    color_plot_alpha_scale=200,
+    colorbar=False,
+    colorbar_label=None,
+    sort_mode='pca',
+):
+    n_obs = len(z_sld_list)
+    if len(sampled_slds_list) != n_obs:
+        raise ValueError("z_sld_list and sampled_slds_list must have the same length.")
+
+    if obs_labels is None:
+        obs_labels = [str(i) for i in range(n_obs)]
+    else:
+        obs_labels = list(obs_labels)
+        if len(obs_labels) != n_obs:
+            raise ValueError(f"Expected {n_obs} obs_labels, got {len(obs_labels)}.")
+
+    if proxy_labels is None:
+        proxy_labels = [f"sampled profiles {lab}" for lab in obs_labels]
+    else:
+        proxy_labels = list(proxy_labels)
+        if len(proxy_labels) != n_obs:
+            raise ValueError(f"Expected {n_obs} proxy_labels, got {len(proxy_labels)}.")
+
+    if highlight_profiles_list is None:
+        highlight_profiles_list = [None] * n_obs
+    elif len(highlight_profiles_list) != n_obs:
+        raise ValueError(f"Expected {n_obs} highlight_profiles_list entries, got {len(highlight_profiles_list)}.")
+
+    sample_colors = _resolve_obs_colors(n_obs, sample_colors)
+
+    if highlight_colors is None:
+        highlight_colors = sample_colors
+    else:
+        highlight_colors = _resolve_obs_colors(n_obs, highlight_colors)
+
+    if highlight_labels is None:
+        highlight_labels = [None] * n_obs
+    elif len(highlight_labels) != n_obs:
+        raise ValueError(f"Expected {n_obs} highlight_labels, got {len(highlight_labels)}.")
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.set_xlabel(z_label, fontsize=axis_label_size)
+    ax.set_ylabel(sld_label, fontsize=axis_label_size)
+    ax.tick_params(axis='both', which='both', labelsize=tick_label_size)
+
+    proxy_handles = []
+    highlight_handles = []
+
+    for obs_idx in range(n_obs):
+        z_sld = z_sld_list[obs_idx]
+        sampled_slds = sampled_slds_list[obs_idx]
+
+        z_np = z_sld.cpu().numpy() if hasattr(z_sld, 'cpu') else np.asarray(z_sld)
+        sld_np = sampled_slds.cpu().numpy() if hasattr(sampled_slds, 'cpu') else np.asarray(sampled_slds)
+
+        if sld_np.ndim != 2:
+            raise ValueError(f"`sampled_slds` must have shape (N, n_z), got shape {sld_np.shape}")
+        if z_np.ndim != 1:
+            raise ValueError(f"`z_sld` must be 1-D, got shape {z_np.shape}")
+        if sld_np.shape[1] != z_np.shape[0]:
+            raise ValueError(
+                f"Incompatible shapes: sampled_slds has shape {sld_np.shape} but z_sld has shape {z_np.shape}"
+            )
+
+        num_profiles = sld_np.shape[0]
+        this_sort_mode = str(sort_mode).lower()
+
+        if this_sort_mode == 'pca':
+            X = sld_np - sld_np.mean(axis=0, keepdims=True)
+            if num_profiles <= 1 or np.allclose(X, 0.0):
+                ordered_profiles = sld_np
+            else:
+                try:
+                    _, _, vt = np.linalg.svd(X, full_matrices=False)
+                    scores = X @ vt[0]
+                    ordered_profiles = sld_np[np.argsort(scores)]
+                except np.linalg.LinAlgError:
+                    ordered_profiles = sld_np[np.argsort(X.mean(axis=1))]
+        elif this_sort_mode == 'mean':
+            ordered_profiles = sld_np[np.argsort(sld_np.mean(axis=1))]
+        elif this_sort_mode == 'none':
+            ordered_profiles = sld_np
+        elif this_sort_mode == 'pointwise':
+            ordered_profiles = np.sort(sld_np, axis=0)
+        else:
+            raise ValueError("sort_mode must be one of: 'pca', 'mean', 'none', 'pointwise'")
+
+        segments = [np.column_stack((z_np, profile)) for profile in ordered_profiles]
+
+        if not color_plot:
+            alpha = min(sample_alpha_scale / max(num_profiles, 1), 1.0)
+            collection = LineCollection(
+                segments,
+                colors=sample_colors[obs_idx],
+                linewidths=sample_lw,
+                alpha=alpha,
+                zorder=sample_zorder,
+            )
+            ax.add_collection(collection)
+
+            proxy_handles.append(
+                Line2D(
+                    [0], [0],
+                    color=sample_colors[obs_idx],
+                    lw=sample_lw,
+                    alpha=1.0,
+                    label=proxy_labels[obs_idx],
+                )
+            )
+        else:
+            cmap_obj = plt.get_cmap(cmap)
+            base_colors = cmap_obj(np.linspace(0, 1, num_profiles))
+            per_line_alpha = min(color_plot_alpha_scale / max(num_profiles, 1), 1.0)
+            base_colors[:, -1] = per_line_alpha
+
+            collection = LineCollection(
+                segments,
+                colors=base_colors,
+                linewidths=sample_lw,
+                zorder=sample_zorder,
+            )
+            ax.add_collection(collection)
+
+            proxy_handles.append(
+                Line2D(
+                    [0], [0],
+                    color='gray',
+                    lw=sample_lw,
+                    alpha=1.0,
+                    label=proxy_labels[obs_idx],
+                )
+            )
+
+        hprof = highlight_profiles_list[obs_idx]
+        if hprof is not None:
+            hprof_np = hprof.cpu().numpy() if hasattr(hprof, 'cpu') else np.asarray(hprof)
+            hlabel = highlight_labels[obs_idx]
+            h = ax.plot(
+                z_np,
+                hprof_np,
+                color=highlight_colors[obs_idx],
+                lw=highlight_lw,
+                alpha=highlight_alpha,
+                ls=highlight_ls,
+                zorder=sample_zorder + 1,
+                label=hlabel,
+            )[0]
+            if hlabel is not None:
+                highlight_handles.append(h)
+
+    ax.autoscale()
+
+    if color_plot and colorbar:
+        cmap_obj = plt.get_cmap(cmap)
+        sm = ScalarMappable(norm=Normalize(vmin=0, vmax=1), cmap=cmap_obj)
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=ax)
+        if colorbar_label is not None:
+            cbar.set_label(colorbar_label)
+
+    if legend:
+        handles = list(proxy_handles)
+        labels = [h.get_label() for h in proxy_handles]
+        if highlight_handles:
+            handles.extend(highlight_handles)
+            labels.extend([h.get_label() for h in highlight_handles])
+        ax.legend(handles=handles, labels=labels, loc=legend_loc, fontsize=legend_fontsize)
+
+    if tight_layout:
+        plt.tight_layout()
+
+    return fig, ax
+
 def plot_sampled_profiles_multi_type(
     z_axis: np.ndarray,
     sampled_profiles_list: Sequence[np.ndarray],

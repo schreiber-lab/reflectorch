@@ -32,6 +32,7 @@ from reflectorch.data_generation.priors.sampler_strategies import (
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
     ConstrainedRoughnessAndImgSldSamplerStrategy,
+    LipidBilayerSamplerStrategy,
 )
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "BasicSamplerStrategy",
     "ConstrainedRoughnessSamplerStrategy",
     "ConstrainedRoughnessAndImgSldSamplerStrategy",
+    "LipidBilayerSamplerStrategy",
 ]

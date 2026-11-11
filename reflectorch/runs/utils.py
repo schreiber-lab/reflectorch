@@ -136,6 +136,7 @@ def get_callbacks_from_config(config: dict, folder_paths: dict = None) -> Tuple[
             path=folder_paths['model'],
             freq=snapshot_conf['freq'],
             save_last=snapshot_conf.get('save_last', True),
+            include_ema=snapshot_conf.get('include_ema', True),
             subdir=snapshot_conf.get('subdir', 'checkpoints'),
         )
         callbacks.append(snapshot_cb)
@@ -187,9 +188,6 @@ def get_trainer_from_config(config: dict, folder_paths: dict = None):
         **trainer_kwargs
     )
 
-    if train_conf.get('train_with_q_input', False) and getattr(trainer, 'train_with_q_input', None) is not None: #only for back-compatibility with configs in older versions
-        trainer.train_with_q_input = True
-
     return trainer
 
 
@@ -239,6 +237,10 @@ def get_trainer_by_name(config_name, config_dir=None, model_path=None, load_weig
             trainer.model.load_state_dict(state_dict['model'])
         else:
             trainer.model.load_state_dict(state_dict)
+
+        if 'model_ema' in state_dict:
+            trainer.model_ema.load_state_dict(state_dict['model_ema'])
+            trainer.model_ema.to(next(trainer.model.parameters()).device)
 
     elif str(model_path).endswith('.safetensors'):
         try:
@@ -313,6 +315,8 @@ def init_dset(config: dict):
     curves_scaler = init_from_conf(config['curves_scaler']) if 'curves_scaler' in config else None
     smearing = init_from_conf(config['smearing']) if 'smearing' in config else None
     q_noise = init_from_conf(config['q_noise']) if 'q_noise' in config else None
+    conditioning_ambient_sld_generator = init_from_conf(config['conditioning_ambient_sld_generator']) if 'conditioning_ambient_sld_generator' in config else None
+    time_generator = init_from_conf(config['time_generator']) if 'time_generator' in config else None
 
     dset = dset_cls(
         q_generator=q_generator,
@@ -321,6 +325,8 @@ def init_dset(config: dict):
         curves_scaler=curves_scaler,
         smearing=smearing,
         q_noise=q_noise,
+        conditioning_ambient_sld_generator=conditioning_ambient_sld_generator,
+        time_generator=time_generator,
         **dset_kwargs,
     )
 
