@@ -9,6 +9,8 @@ from reflectorch.data_generation.noise import QNoiseGenerator, IntensityNoiseGen
 from reflectorch.data_generation.q_generator import QGenerator
 from reflectorch.data_generation.scale_curves import CurvesScaler, LogAffineCurvesScaler
 from reflectorch.data_generation.smearing import Smearing
+from reflectorch.data_generation.conditioning_amb_sld_generator import ConditioningAmbientSLDGenerator
+from reflectorch.data_generation.time_generator import TimeGenerator
 
 BATCH_DATA_TYPE = Dict[str, Union[Tensor, BasicParams]]
 
@@ -39,6 +41,8 @@ class BasicDataset(object):
                  calc_nonsmeared_curves: bool = False,
                  add_noisy_curves: bool = False,
                  smearing: Smearing = None,
+                 conditioning_ambient_sld_generator: ConditioningAmbientSLDGenerator = None,
+                 time_generator: TimeGenerator = None,
                  use_q_params_transform: bool = False,
                  q_fixed_transform : float = 0.2,
                  ):
@@ -48,6 +52,8 @@ class BasicDataset(object):
         self.curves_scaler = curves_scaler or LogAffineCurvesScaler()
         self.prior_sampler = prior_sampler
         self.smearing = smearing
+        self.conditioning_ambient_sld_generator = conditioning_ambient_sld_generator
+        self.time_generator = time_generator
         self.calc_denoised_curves = calc_denoised_curves
         self.calc_nonsmeared_curves = calc_nonsmeared_curves
         self.add_noisy_curves = add_noisy_curves
@@ -81,7 +87,6 @@ class BasicDataset(object):
         batch_data = {}
 
         params, scaled_params = self._sample_from_prior(batch_size)
-
         batch_data['params'] = params
         batch_data['scaled_params'] = scaled_params
 
@@ -113,6 +118,12 @@ class BasicDataset(object):
             batch_data['q_transform_ratio'] = k
 
         refl_kwargs = {}
+
+        if self.conditioning_ambient_sld_generator is not None:
+            conditioning_ambient_sld = self.conditioning_ambient_sld_generator.get_batch(batch_size)
+            batch_data['conditioning_ambient_sld'] = conditioning_ambient_sld
+            batch_data['scaled_conditioning_ambient_sld'] = self.conditioning_ambient_sld_generator.scale(conditioning_ambient_sld)
+            refl_kwargs['conditioning_ambient_sld'] = conditioning_ambient_sld
 
         curves, q_resolutions, nonsmeared_curves = self._calc_curves(q_values, params, refl_kwargs)
 
@@ -153,6 +164,9 @@ class BasicDataset(object):
         is_finite = torch.all(torch.isfinite(batch_data['scaled_noisy_curves']), -1)
         assert torch.all(is_finite).item()
 
+        if self.time_generator:
+            batch_data['t'] = self.time_generator.get_batch(batch_size)
+
         self.update_batch_data(batch_data)
 
         return batch_data
@@ -170,7 +184,7 @@ class BasicDataset(object):
 
         curves = curves.to(q_values)
         return curves, q_resolutions, nonsmeared_curves
-
+    
 
 def _insert_batch_data(tgt_batch_data, add_batch_data, indices):
     for key in tuple(tgt_batch_data.keys()):
