@@ -38,9 +38,22 @@ def abeles_constant_smearing(
     padding = (kernels.shape[-1] - 1) // 2
     padded_curves = pad(curves, (padding, padding), 'reflect')
 
-    smeared_curves = conv1d(
-        padded_curves, kernels[:, None], groups=kernels.shape[0],
-    )
+    ndim = padded_curves.ndim
+    if ndim == 2:
+        smeared_curves = conv1d(
+            padded_curves, kernels[:, None], groups=kernels.shape[0],
+        )
+    else:
+        batch_size = padded_curves.shape[0]
+        n_channels = padded_curves.shape[1]
+        kernels = kernels[:, None, :].repeat(1, n_channels, 1)
+        kernels = kernels.reshape(kernels.shape[0]*n_channels, 1, -1)
+        padded_curves = padded_curves.reshape(padded_curves.shape[0]*padded_curves.shape[1], -1)
+        smeared_curves = conv1d(
+            padded_curves, kernels, groups=kernels.shape[0],
+        )
+        smeared_curves = smeared_curves.reshape(batch_size, n_channels, -1)
+
 
     if q.shape[0] != smeared_curves.shape[0]:
         repeat_factor = smeared_curves.shape[0] // q.shape[0]
@@ -126,13 +139,34 @@ def _batch_linspace_with_padding(start: Tensor, end: Tensor, nums: Tensor) -> Te
 def _batch_linear_interp1d(x: Tensor, y: Tensor, x_new: Tensor) -> Tensor:
     eps = torch.finfo(y.dtype).eps
 
-    ind = torch.searchsorted(x.contiguous(), x_new.contiguous())
+    ndim = y.ndim
 
-    ind = torch.clamp_(ind - 1, 0, x.shape[-1] - 2)
-    slopes = (y[..., 1:] - y[..., :-1]) / (eps + (x[..., 1:] - x[..., :-1]))
-    ind_y = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * y.shape[1]
-    ind_slopes = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * slopes.shape[1]
+    if ndim == 2:
+        ind = torch.searchsorted(x.contiguous(), x_new.contiguous())
 
-    y_new = y.flatten()[ind_y] + slopes.flatten()[ind_slopes] * (x_new - x.flatten()[ind_y])
+        ind = torch.clamp_(ind - 1, 0, x.shape[-1] - 2)
+        slopes = (y[..., 1:] - y[..., :-1]) / (eps + (x[..., 1:] - x[..., :-1]))
+        ind_y = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * y.shape[1]
+        ind_slopes = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * slopes.shape[1]
+
+        y_new = y.flatten()[ind_y] + slopes.flatten()[ind_slopes] * (x_new - x.flatten()[ind_y])
+    elif ndim == 3:
+        batch_size, n_channels, num_q_lin = y.shape
+        x_new = x_new[:, None, :]
+        x = x[:, None, :] 
+
+        y = y.reshape(batch_size * n_channels, num_q_lin)
+        x = x.expand(batch_size, n_channels, num_q_lin).reshape(batch_size * n_channels, num_q_lin)
+        x_new = x_new.expand(batch_size, n_channels, x_new.shape[-1]).reshape(batch_size * n_channels, -1)
+
+        ind = torch.searchsorted(x.contiguous(), x_new.contiguous())
+        ind = torch.clamp_(ind - 1, 0, x.shape[-1] - 2)
+        slopes = (y[..., 1:] - y[..., :-1]) / (eps + (x[..., 1:] - x[..., :-1]))
+
+        ind_y = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * y.shape[1]
+        ind_slopes = ind + torch.arange(slopes.shape[0], device=slopes.device)[:, None] * slopes.shape[1]
+
+        y_new = y.flatten()[ind_y] + slopes.flatten()[ind_slopes] * (x_new - x.flatten()[ind_y])
+        y_new = y_new.reshape(batch_size, n_channels, -1)
 
     return y_new

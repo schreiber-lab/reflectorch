@@ -9,12 +9,13 @@ from huggingface_hub import hf_hub_download
 from reflectorch.data_generation.priors import BasicParams
 from reflectorch.data_generation.priors.parametric_models import NuisanceParamsWrapper
 from reflectorch.data_generation.q_generator import ConstantQ, VariableQ, MaskedVariableQ
-from reflectorch.inference.inference_result import PointInferenceResult, PosteriorInferenceResult
-from reflectorch.inference.data import ReflectivityData
+from reflectorch.inference.inference_result import PointInferenceResult, PosteriorInferenceResult, MultiChannelPosteriorInferenceResult
+from reflectorch.inference.data import ReflectivityData, MultiChannelReflectivityData
 from reflectorch.inference.preprocess_exp.interpolation import interp_reflectivity
 from reflectorch.paths import CONFIG_DIR, SAVED_MODELS_DIR
 from reflectorch.runs.utils import get_trainer_by_name
-from reflectorch.ml.trainers import Trainer, PointEstimatorTrainer, NFlowTrainer
+
+from reflectorch.ml.trainers import Trainer, PointEstimatorTrainer, NFlowTrainer, FlowMatchingTrainer
 from reflectorch.inference.scipy_fitter import refl_fit, get_fit_with_growth
 from reflectorch.utils import get_filtering_mask, to_t
 
@@ -41,7 +42,11 @@ class PreparedInferenceInputs:
     ambient_sld: Optional[float]
     sld_indices: Optional[Any]
 
+    scaled_conditioning_ambient_sld: Optional[Tensor] = None
     applied_ambient_shift: bool = False
+    uses_ambient_as_conditioning: bool = False
+
+
 class InferenceModel(object):
     """Facilitates the inference process using pretrained models
     
@@ -198,6 +203,7 @@ class InferenceModel(object):
             use_sigmas_for_polishing: bool = False,
             polishing_max_nfev: Optional[int] = None,
             calc_polishing_param_errors: bool = False,
+            print_polishing_nfev: bool = False,
             fit_growth: bool = False, 
             max_d_change: float = 5.0,
             calc_pred_curve: bool = False,
@@ -392,6 +398,7 @@ class InferenceModel(object):
                 fit_growth=fit_growth,
                 max_d_change=max_d_change,
                 calc_polishing_param_errors=calc_polishing_param_errors,
+                print_polishing_nfev=print_polishing_nfev,
             )
 
             prediction_dict.update(polished_dict)
@@ -443,6 +450,7 @@ class InferenceModel(object):
             polishing_kwargs_reflectivity: Optional[Dict[str, Any]] = None,
             polishing_max_nfev: Optional[int] = None,
             calc_polishing_param_errors: bool = False,
+            print_polishing_nfev: bool = False,
             fit_growth: bool = False,
             max_d_change: float = 5.0,
             calc_pred_curve: bool = True,
@@ -623,6 +631,7 @@ class InferenceModel(object):
                 polishing_max_nfev=polishing_max_nfev,
                 polishing_kwargs_reflectivity=polishing_kwargs_reflectivity,
                 calc_polishing_param_errors=calc_polishing_param_errors,
+                print_polishing_nfev=print_polishing_nfev,
             )
             prediction_dict.update(polished_dict)
 
@@ -700,7 +709,7 @@ class InferenceModel(object):
             clip_prediction: bool = False,
             enable_importance_sampling: bool = False,
             rel_err_factor: float = 0.2,
-            return_result_as_dict: bool = True,
+            return_result_as_dict: bool = False,
             original_data_in_inference_result: bool = True,
             truncate_index_left: Optional[int] = None,
             truncate_index_right: Optional[int] = None,
@@ -710,6 +719,16 @@ class InferenceModel(object):
             filter_remove_consecutives: bool = True,
             filter_consecutive: int = 3,
             filter_q_start_trunc: float = 0.1,
+            inference_with_ema: bool = False,
+            sampler: str = "ode",
+            method: str = "dopri5",
+            rtol: float = 1.0e-6,
+            atol: float = 1.0e-6,
+            num_steps_fixed: Optional[int] = None,
+            sde_num_steps: int = 200,
+            sde_variant: str = "zero_ends",
+            sde_alpha: float = 0.5,
+            sde_eps: float = 1e-3,
     ) -> Union[Dict[str, Any], PosteriorInferenceResult]:
         """
         Preprocess experimental reflectivity data and run posterior sampling.
@@ -785,6 +804,26 @@ class InferenceModel(object):
                 Minimum run length used for consecutive-point filtering.
             filter_q_start_trunc:
                 Lower-q threshold below which filtering is not applied.
+            inference_with_ema:
+                If ``True``, use the EMA model parameters when supported by the trainer.
+            sampler:
+                Sampling backend for flow-matching models.
+            method:
+                Numerical integration method used by the sampler.
+            rtol:
+                Relative tolerance for adaptive solvers.
+            atol:
+                Absolute tolerance for adaptive solvers.
+            num_steps_fixed:
+                Optional number of fixed solver steps.
+            sde_num_steps:
+                Number of steps for SDE-based sampling.
+            sde_variant:
+                Variant name for the SDE sampler.
+            sde_alpha:
+                Alpha parameter for the SDE sampler.
+            sde_eps:
+                Endpoint cutoff used by the SDE sampler.
 
         Returns:
             Either a dictionary of sampling outputs or a ``PosteriorInferenceResult``,
@@ -848,6 +887,17 @@ class InferenceModel(object):
             calc_log_likelihoods=calc_log_likelihoods,
             clip_prediction=clip_prediction,
             kwargs_param_labels=kwargs_param_labels,
+
+            inference_with_ema=inference_with_ema,
+            sampler=sampler,
+            method=method,
+            rtol=rtol,
+            atol=atol,
+            num_steps_fixed=num_steps_fixed,
+            sde_num_steps=sde_num_steps,
+            sde_variant=sde_variant,
+            sde_alpha=sde_alpha,
+            sde_eps=sde_eps,
         )
 
         prediction_dict['q_model'] = q_model
@@ -908,12 +958,22 @@ class InferenceModel(object):
             enable_importance_sampling: bool = False,
             rel_err_factor: float = 0.2,
             kwargs_param_labels: Optional[Dict[str, Any]] = None,
+            inference_with_ema: bool = False,
+            sampler: str = "ode",
+            method: str = "dopri5",
+            rtol: float = 1.0e-6,
+            atol: float = 1.0e-6,
+            num_steps_fixed: Optional[int] = None,
+            sde_num_steps: int = 200,
+            sde_variant: str = "zero_ends",
+            sde_alpha: float = 0.5,
+            sde_eps: float = 1e-3,
     ) -> Dict[str, Any]:
         """
         Draw posterior parameter samples from a neural posterior model.
 
         This method performs posterior sampling using a model trained with
-        ``NFlowTrainer``.
+        ``NFlowTrainer`` or ``FlowMatchingTrainer``.
         It supports optional conditioning on prior bounds, q-values, q-resolution,
         uncertainties, and can additionally compute derived quantities
         such as simulated reflectivity curves, SLD profiles, and proposal
@@ -968,6 +1028,27 @@ class InferenceModel(object):
                 likelihood evaluation.
             kwargs_param_labels:
                 Optional keyword arguments forwarded to parameter-label generation.
+                        inference_with_ema:
+                If ``True``, use the EMA model parameters when supported by the trainer.
+            sampler:
+                Sampling backend for flow-matching models, for example ``"ode"`` or
+                ``"sde"``.
+            method:
+                Numerical integration method used by the sampler.
+            rtol:
+                Relative tolerance for adaptive solvers.
+            atol:
+                Absolute tolerance for adaptive solvers.
+            num_steps_fixed:
+                Optional number of fixed solver steps.
+            sde_num_steps:
+                Number of steps for SDE-based sampling.
+            sde_variant:
+                Variant name for the SDE sampler.
+            sde_alpha:
+                Alpha parameter for the SDE sampler.
+            sde_eps:
+                Endpoint cutoff used by the SDE sampler.
 
         Returns:
             A dictionary containing sampled parameters and, depending on the chosen
@@ -1010,6 +1091,33 @@ class InferenceModel(object):
                         )
                         scaled_predicted_params = scaled_predicted_params.squeeze(0)
 
+                    elif isinstance(self.trainer, FlowMatchingTrainer):
+                        out = self.trainer.sample(
+                            num_samples=n,
+                            scaled_curves=prepared.scaled_curve,
+                            scaled_bounds=prepared.scaled_prior_bounds,
+                            scaled_q_values=prepared.scaled_q_values,
+                            scaled_conditioning_params=prepared.scaled_conditioning_params,
+                            scaled_sigmas=prepared.scaled_sigmas,
+                            key_padding_mask=prepared.key_padding_mask,
+                            unscaled_q_values=prepared.q_values,
+                            device=self.device,
+                            sampler=sampler,
+                            method=method,
+                            rtol=rtol,
+                            atol=atol,
+                            inference_with_ema=inference_with_ema,
+                            num_steps_fixed=num_steps_fixed,
+                            sde_num_steps=sde_num_steps,
+                            sde_variant=sde_variant,
+                            sde_alpha=sde_alpha,
+                            sde_eps=sde_eps,
+                        )
+                        print(f'Neural function evaluations: {self.trainer.model.nfe}')
+                        self.trainer.model.nfe = 0
+
+                        scaled_predicted_params = out.squeeze(1)
+
                     else:
                         raise RuntimeError("Unsupported trainer type.")
 
@@ -1045,10 +1153,34 @@ class InferenceModel(object):
                         # shapes [1, n, d], [1, n]
                         scaled_predicted_params = scaled_predicted_params.squeeze(0)
                         scaled_log_prob = scaled_log_prob.squeeze(0)
+
+                    elif isinstance(self.trainer, FlowMatchingTrainer):
+                        scaled_predicted_params, scaled_log_prob = self.trainer.sample_and_log_prob(
+                            num_samples=n,
+                            scaled_curves=prepared.scaled_curve,
+                            scaled_bounds=prepared.scaled_prior_bounds,
+                            scaled_q_values=prepared.scaled_q_values,
+                            scaled_conditioning_params=prepared.scaled_conditioning_params,
+                            scaled_sigmas=prepared.scaled_sigmas,
+                            key_padding_mask=prepared.key_padding_mask,
+                            unscaled_q_values=prepared.q_values,
+                            device=self.device,
+                            method=method,
+                            rtol=rtol,
+                            atol=atol,
+                            inference_with_ema=inference_with_ema,
+                            num_steps_fixed=num_steps_fixed,
+                        )
+                        # shapes [n, 1, d], [n, 1]
+                        print(f'Neural function evaluations: {self.trainer.model.nfe}')
+                        self.trainer.model.nfe = 0
+                        scaled_predicted_params = scaled_predicted_params.squeeze(1)
+                        scaled_log_prob = scaled_log_prob.squeeze(1)
+
                     else:
                         raise RuntimeError(
                             "Importance sampling is currently supported here for "
-                            "NFlowTrainer."
+                            "NFlowTrainer and FlowMatchingTrainer."
                         )
 
                 return scaled_predicted_params, scaled_log_prob
@@ -1147,12 +1279,22 @@ class InferenceModel(object):
             if q_resolution_tensor is not None and q_resolution_tensor.shape[0] == 1:
                 q_resolution_tensor = q_resolution_tensor.expand(num_samples, -1)
 
+            conditioning_ambient_sld_t = None
+            if prepared.uses_ambient_as_conditioning:
+                conditioning_ambient_sld_t = torch.atleast_2d(
+                    torch.as_tensor(
+                        ambient_sld,
+                        device=prepared.q_values.device,
+                        dtype=prepared.q_values.dtype,
+                    )
+                )
 
             predicted_curves = self._batched_reflectivity(
                 predicted_params,
                 prepared.q_values,
                 q_resolution_tensor,
                 max_batch=maximum_sim_batch_size,
+                conditioning_ambient_sld=conditioning_ambient_sld_t,
             )
 
             prediction_dict["sampled_curves"] = (
@@ -1238,6 +1380,7 @@ class InferenceModel(object):
             key_padding_mask: Optional[Union[np.ndarray, Tensor]] = None,
             q_resolution: Optional[Union[np.ndarray, Tensor, float]] = None,
             ambient_sld: Optional[float] = None,
+            conditioning_ambient_sld: Optional[float] = None,
         ) -> PreparedInferenceInputs:
         """
         Prepare and normalize all common inputs used by both point prediction
@@ -1256,10 +1399,13 @@ class InferenceModel(object):
         supports_shift = self._supports_zero_ambient_sld_shift()
         sld_indices = None
         applied_ambient_shift = False
+        uses_ambient_as_conditioning = False
 
         if ambient_sld is not None and supports_shift:
             sld_indices = self._shift_slds_by_ambient(prior_bounds_array, ambient_sld)
             applied_ambient_shift = True
+        elif ambient_sld is not None and not supports_shift:
+            uses_ambient_as_conditioning = True
 
         # q-values
         if isinstance(self.trainer.loader.q_generator, ConstantQ):
@@ -1322,6 +1468,24 @@ class InferenceModel(object):
         else:
             q_resolution_tensor = None
 
+        # ambient-SLD conditioning input for models trained with it
+        scaled_conditioning_ambient_sld = None
+        if uses_ambient_as_conditioning:
+            if not getattr(self.trainer, "condition_on_ambient_sld", False):
+                raise ValueError(
+                    "This model does not support ambient shifting, so ambient_sld must be used "
+                    "as a conditioning input. But trainer.condition_on_ambient_sld is False."
+                )
+
+            ambient_t = torch.atleast_2d(
+                torch.as_tensor(ambient_sld, device=self.device, dtype=torch.float32)
+            )
+            scaled_conditioning_ambient_sld = (
+                self.trainer.loader.conditioning_ambient_sld_generator.scale(ambient_t)
+                .to(device=self.device, dtype=torch.float32)
+            )
+            conditioning_params_list.append(scaled_conditioning_ambient_sld)
+
         scaled_conditioning_params = torch.cat(conditioning_params_list, dim=-1) if len(conditioning_params_list) > 0 else None
 
         return PreparedInferenceInputs(
@@ -1337,7 +1501,9 @@ class InferenceModel(object):
             prior_bounds_array=prior_bounds_array,
             ambient_sld=ambient_sld,
             sld_indices=sld_indices,
+            scaled_conditioning_ambient_sld=scaled_conditioning_ambient_sld,
             applied_ambient_shift=applied_ambient_shift,  
+            uses_ambient_as_conditioning=uses_ambient_as_conditioning,
         )
 
     def _validate_point_trainer(self) -> None:
@@ -1348,10 +1514,10 @@ class InferenceModel(object):
             )
 
     def _validate_posterior_trainer(self) -> None:
-        if not isinstance(self.trainer, NFlowTrainer):
+        if not isinstance(self.trainer, (FlowMatchingTrainer, NFlowTrainer)):
             raise RuntimeError(
                 "`sample()` is only supported for models trained with "
-                "`NFlowTrainer`."
+                "`FlowMatchingTrainer` or `NFlowTrainer`."
             )
 
     def _polish_prediction(
@@ -1371,6 +1537,7 @@ class InferenceModel(object):
             polishing_max_nfev: Optional[int] = None,
             polishing_kwargs_reflectivity: Optional[Dict[str, Any]] = None,
             calc_polishing_param_errors: bool = False,
+            print_polishing_nfev: bool = False,
     ) -> Dict[str, Any]:
         params = predicted_params.parameters.squeeze().cpu().numpy()
 
@@ -1411,6 +1578,7 @@ class InferenceModel(object):
                     polishing_max_nfev=polishing_max_nfev,
                     reflectivity_kwargs=polishing_kwargs_reflectivity,
                     return_param_errors=calc_polishing_param_errors,
+                    print_polishing_nfev=print_polishing_nfev,
                 )
                 polished_params = BasicParams(
                     torch.from_numpy(polished_params_arr[None]),
@@ -1593,6 +1761,10 @@ class InferenceModel(object):
     ) -> np.ndarray:
         """
         Compute Gaussian log-likelihoods for sampled curves.
+
+        Works for both:
+        - single-channel sampled_curves of shape (n_samples, n_q)
+        - multichannel sampled_curves of shape (n_samples, n_channels, n_q)
         """
         sampled_t = torch.as_tensor(sampled_curves, device=self.device, dtype=torch.float32)
         curve_t = torch.as_tensor(curve_exp, device=self.device, dtype=torch.float32)
@@ -1623,6 +1795,7 @@ class InferenceModel(object):
             q_values: Tensor,
             q_resolution_tensor: Optional[Tensor],
             max_batch: Optional[int] = None,
+            conditioning_ambient_sld: Optional[Tensor] = None,
     ) -> np.ndarray:
         N = params_obj.parameters.shape[0]
 
@@ -1630,6 +1803,11 @@ class InferenceModel(object):
             refl_kwargs = {}
             if q_resolution_tensor is not None:
                 refl_kwargs["dq"] = q_resolution_tensor
+            if conditioning_ambient_sld is not None:
+                if conditioning_ambient_sld.shape[0] == 1 and N > 1:
+                    refl_kwargs["conditioning_ambient_sld"] = conditioning_ambient_sld.expand(N, -1)
+                else:
+                    refl_kwargs["conditioning_ambient_sld"] = conditioning_ambient_sld
 
             curves = params_obj.reflectivity(q=q_values, **refl_kwargs).cpu().numpy()
             return curves
@@ -1645,6 +1823,13 @@ class InferenceModel(object):
             refl_kwargs = {}
             if q_resolution_tensor_slice is not None:
                 refl_kwargs["dq"] = q_resolution_tensor_slice
+            if conditioning_ambient_sld is not None:
+                cond_slice = (
+                    conditioning_ambient_sld[sl]
+                    if conditioning_ambient_sld.shape[0] > 1
+                    else conditioning_ambient_sld.expand(stop - start, -1)
+                )
+                refl_kwargs["conditioning_ambient_sld"] = cond_slice
 
             curves_b = params_obj[sl].reflectivity(q=q_values, **refl_kwargs)
             pieces.append(curves_b.cpu())
@@ -1716,6 +1901,7 @@ class InferenceModel(object):
         return (q_values, reflectivity_curve, sigmas, q_resolution,
                 q_values_original, reflectivity_curve_original,
                 sigmas_original, q_resolution_original)
+
     
     def interpolate_data_to_model_q(
             self,
@@ -1851,6 +2037,862 @@ class InferenceModel(object):
 
         else:
             raise TypeError(f"Unsupported QGenerator type: {type(q_generator)}")
+        
+    def _normalize_multichannel_inputs(
+        self,
+        *,
+        reflectivity_curve: Union[np.ndarray, Sequence[np.ndarray]],
+        q_values: Union[np.ndarray, Sequence[np.ndarray]],
+        sigmas: Optional[Union[np.ndarray, Sequence[Optional[np.ndarray]]]] = None,
+        q_resolution: Optional[Union[float, np.ndarray, Sequence[Optional[Union[np.ndarray, float]]]]] = None,
+    ):
+        """
+        Normalize one multichannel observation into per-channel lists.
+
+        Supported input forms
+        ---------------------
+        1) Common q-grid:
+        - q_values: array of shape (n_q,)
+        - reflectivity_curve: array of shape (n_channels, n_q)
+        - sigmas: optional array of shape (n_channels, n_q)
+
+        2) Per-channel grids:
+        - q_values: sequence of length n_channels
+        - reflectivity_curve: sequence of length n_channels
+        - sigmas: optional matching sequence
+        """
+        # Common-grid representation
+        if isinstance(q_values, np.ndarray) and q_values.ndim == 1:
+            q_common = np.asarray(q_values)
+            R = np.asarray(reflectivity_curve)
+
+            if R.ndim != 2:
+                raise ValueError(
+                    "For common-grid multichannel input, reflectivity_curve must have shape (n_channels, n_q)."
+                )
+            if R.shape[1] != len(q_common):
+                raise ValueError(
+                    f"reflectivity_curve.shape[1] must equal len(q_values), got {R.shape[1]} and {len(q_common)}."
+                )
+
+            n_channels = R.shape[0]
+
+            q_list = [q_common.copy() for _ in range(n_channels)]
+            R_list = [np.asarray(R[i]).copy() for i in range(n_channels)]
+
+            if sigmas is None:
+                s_list = [None] * n_channels
+            else:
+                s_arr = np.asarray(sigmas)
+                if s_arr.shape != R.shape:
+                    raise ValueError(
+                        f"For common-grid multichannel input, sigmas must match reflectivity_curve shape, "
+                        f"got {s_arr.shape} vs {R.shape}."
+                    )
+                s_list = [np.asarray(s_arr[i]).copy() for i in range(n_channels)]
+
+            if q_resolution is None:
+                dq_list = [None] * n_channels
+            elif np.isscalar(q_resolution):
+                dq_list = [float(q_resolution)] * n_channels
+            elif isinstance(q_resolution, np.ndarray) and q_resolution.ndim == 1:
+                if len(q_resolution) != len(q_common):
+                    raise ValueError(
+                        f"Common-grid q_resolution array must have length len(q_values)={len(q_common)}, "
+                        f"got {len(q_resolution)}."
+                    )
+                dq_list = [np.asarray(q_resolution).copy() for _ in range(n_channels)]
+            else:
+                qres_seq = list(q_resolution)
+                if len(qres_seq) != n_channels:
+                    raise ValueError(
+                        f"Expected {n_channels} q_resolution entries, got {len(qres_seq)}."
+                    )
+                dq_list = []
+                for dq in qres_seq:
+                    if dq is None or np.isscalar(dq):
+                        dq_list.append(dq)
+                    else:
+                        dq = np.asarray(dq)
+                        if dq.ndim != 1 or len(dq) != len(q_common):
+                            raise ValueError(
+                                "Per-channel q_resolution arrays must be 1D and match the common q-grid length."
+                            )
+                        dq_list.append(dq.copy())
+
+            return q_list, R_list, s_list, dq_list
+
+        # Per-channel representation
+        q_list = [np.asarray(q).copy() for q in q_values]
+        R_list = [np.asarray(r).copy() for r in reflectivity_curve]
+
+        if len(q_list) != len(R_list):
+            raise ValueError("q_values and reflectivity_curve must contain the same number of channels.")
+
+        n_channels = len(q_list)
+
+        for i, (q_i, r_i) in enumerate(zip(q_list, R_list)):
+            if q_i.ndim != 1:
+                raise ValueError(f"Channel {i}: q-values must be 1D, got shape {q_i.shape}.")
+            if r_i.ndim != 1:
+                raise ValueError(f"Channel {i}: reflectivity must be 1D, got shape {r_i.shape}.")
+            if len(q_i) != len(r_i):
+                raise ValueError(
+                    f"Channel {i}: q-values and reflectivity must have the same length, got {len(q_i)} and {len(r_i)}."
+                )
+
+        if sigmas is None:
+            s_list = [None] * n_channels
+        else:
+            sig_seq = list(sigmas)
+            if len(sig_seq) != n_channels:
+                raise ValueError(f"Expected {n_channels} sigmas entries, got {len(sig_seq)}.")
+            s_list = []
+            for i, s in enumerate(sig_seq):
+                if s is None:
+                    s_list.append(None)
+                else:
+                    s = np.asarray(s)
+                    if s.ndim != 1 or len(s) != len(q_list[i]):
+                        raise ValueError(
+                            f"Channel {i}: sigma array must be 1D and match q-values length."
+                        )
+                    s_list.append(s.copy())
+
+        if q_resolution is None:
+            dq_list = [None] * n_channels
+        elif np.isscalar(q_resolution):
+            dq_list = [float(q_resolution)] * n_channels
+        elif isinstance(q_resolution, np.ndarray) and q_resolution.ndim == 1:
+            # one common pointwise dq array only valid if all channels share same q length
+            dq_arr = np.asarray(q_resolution)
+            dq_list = []
+            for i, q_i in enumerate(q_list):
+                if len(dq_arr) != len(q_i):
+                    raise ValueError(
+                        "A shared 1D q_resolution array can only be used when it matches each channel q-grid."
+                    )
+                dq_list.append(dq_arr.copy())
+        else:
+            dq_seq = list(q_resolution)
+            if len(dq_seq) != n_channels:
+                raise ValueError(f"Expected {n_channels} q_resolution entries, got {len(dq_seq)}.")
+            dq_list = []
+            for i, dq in enumerate(dq_seq):
+                if dq is None or np.isscalar(dq):
+                    dq_list.append(dq)
+                else:
+                    dq = np.asarray(dq)
+                    if dq.ndim != 1 or len(dq) != len(q_list[i]):
+                        raise ValueError(
+                            f"Channel {i}: q_resolution array must be 1D and match q-values length."
+                        )
+                    dq_list.append(dq.copy())
+
+        return q_list, R_list, s_list, dq_list
+
+    def _all_channels_share_same_q(self, q_list: Sequence[np.ndarray]) -> bool:
+        if len(q_list) <= 1:
+            return True
+        q0 = np.asarray(q_list[0])
+        return all(np.array_equal(q0, np.asarray(qi)) for qi in q_list[1:])
+
+
+    def _build_overlap_q_grid(
+        self,
+        q_list: Sequence[np.ndarray],
+        n_q: int,
+        *,
+        clip_to_model_ranges: bool = True,
+    ) -> np.ndarray:
+        q_min = max(float(np.min(q)) for q in q_list)
+        q_max = min(float(np.max(q)) for q in q_list)
+
+        q_generator = self.trainer.loader.q_generator
+
+        if clip_to_model_ranges:
+            if hasattr(q_generator, "q_min_range"):
+                q_min = max(q_min, float(q_generator.q_min_range[0]))
+            if hasattr(q_generator, "q_max_range"):
+                q_max = min(q_max, float(q_generator.q_max_range[1]))
+
+        if q_max <= q_min:
+            raise ValueError(
+                "No valid overlap between the channel q-ranges and the model q-range."
+            )
+
+        return np.linspace(q_min, q_max, int(n_q))
+
+
+    def _interp_optional_1d(
+        self,
+        q_target: np.ndarray,
+        q_source: np.ndarray,
+        arr: Optional[Union[np.ndarray, float]],
+    ):
+        if arr is None:
+            return None
+        if np.isscalar(arr):
+            return float(arr)
+        arr = np.asarray(arr)
+        if arr.ndim != 1:
+            raise ValueError(f"Expected 1D array or scalar, got shape {arr.shape}")
+        return np.interp(q_target, q_source, arr)
+
+
+    def _pad_optional_1d(
+        self,
+        arr: Optional[Union[np.ndarray, float]],
+        pad_to: int,
+        value: float = 0.0,
+    ):
+        if arr is None:
+            return None
+        if np.isscalar(arr):
+            return float(arr)
+        arr = np.asarray(arr)
+        if arr.ndim != 1:
+            raise ValueError(f"Expected 1D array or scalar, got shape {arr.shape}")
+        return np.pad(arr, (0, pad_to - len(arr)), constant_values=value)
+
+
+    def _combine_multichannel_q_resolution(
+        self,
+        *,
+        q_target: np.ndarray,
+        q_list: Sequence[np.ndarray],
+        dq_list: Sequence[Optional[Union[np.ndarray, float]]],
+        pad_to: Optional[int] = None,
+    ):
+        """
+        Combine per-channel q-resolution info into one common q-resolution input.
+
+        Rules
+        -----
+        - all None -> None
+        - all scalars -> one scalar (mean if close, otherwise still mean)
+        - otherwise -> interpolate each channel to q_target, then average pointwise
+        """
+        present = [dq for dq in dq_list if dq is not None]
+        if len(present) == 0:
+            return None
+
+        if len(present) != len(dq_list):
+            raise ValueError(
+                "Either all or none of the multichannel q_resolution entries must be provided."
+            )
+
+        if all(np.isscalar(dq) for dq in present):
+            out = float(np.mean([float(dq) for dq in present]))
+            return out
+
+        dq_arrays = []
+        for q_i, dq_i in zip(q_list, dq_list):
+            if np.isscalar(dq_i):
+                dq_arrays.append(np.full_like(q_target, float(dq_i), dtype=float))
+            else:
+                dq_arrays.append(np.interp(q_target, q_i, np.asarray(dq_i)))
+
+        dq_mean = np.mean(np.stack(dq_arrays, axis=0), axis=0)
+
+        if pad_to is not None:
+            dq_mean = np.pad(dq_mean, (0, pad_to - len(dq_mean)), constant_values=0.0)
+
+        return dq_mean
+
+    def _preprocess_multichannel_observation(
+        self,
+        *,
+        reflectivity_curve: Union[np.ndarray, Sequence[np.ndarray]],
+        q_values: Union[np.ndarray, Sequence[np.ndarray]],
+        sigmas: Optional[Union[np.ndarray, Sequence[Optional[np.ndarray]]]] = None,
+        q_resolution: Optional[Union[float, np.ndarray, Sequence[Optional[Union[np.ndarray, float]]]]] = None,
+        truncate_index_left: Optional[int] = None,
+        truncate_index_right: Optional[int] = None,
+        enable_error_bars_filtering: bool = True,
+        filter_threshold: float = 0.3,
+        filter_remove_singles: bool = True,
+        filter_remove_consecutives: bool = True,
+        filter_consecutive: int = 3,
+        filter_q_start_trunc: float = 0.1,
+    ):
+        """
+        Preprocess one multichannel observation channel-by-channel.
+
+        Returns
+        -------
+        q_proc_list, R_proc_list, s_proc_list, dq_proc_list,
+        q_orig_list, R_orig_list, s_orig_list, dq_orig_list
+        """
+        q_list, R_list, s_list, dq_list = self._normalize_multichannel_inputs(
+            reflectivity_curve=reflectivity_curve,
+            q_values=q_values,
+            sigmas=sigmas,
+            q_resolution=q_resolution,
+        )
+
+        n_channels = len(q_list)
+
+        q_proc_list = []
+        R_proc_list = []
+        s_proc_list = []
+        dq_proc_list = []
+
+        q_orig_list = []
+        R_orig_list = []
+        s_orig_list = []
+        dq_orig_list = []
+
+        for i in range(n_channels):
+            (
+                q_proc,
+                R_proc,
+                s_proc,
+                dq_proc,
+                q_orig,
+                R_orig,
+                s_orig,
+                dq_orig,
+            ) = self._preprocess_input_data(
+                reflectivity_curve=R_list[i],
+                q_values=q_list[i],
+                sigmas=s_list[i],
+                q_resolution=dq_list[i],
+                truncate_index_left=truncate_index_left,
+                truncate_index_right=truncate_index_right,
+                enable_error_bars_filtering=enable_error_bars_filtering,
+                filter_threshold=filter_threshold,
+                filter_remove_singles=filter_remove_singles,
+                filter_remove_consecutives=filter_remove_consecutives,
+                filter_consecutive=filter_consecutive,
+                filter_q_start_trunc=filter_q_start_trunc,
+            )
+
+            q_proc_list.append(np.asarray(q_proc))
+            R_proc_list.append(np.asarray(R_proc))
+            s_proc_list.append(None if s_proc is None else np.asarray(s_proc))
+            dq_proc_list.append(dq_proc)
+
+            q_orig_list.append(np.asarray(q_orig))
+            R_orig_list.append(np.asarray(R_orig))
+            s_orig_list.append(None if s_orig is None else np.asarray(s_orig))
+            dq_orig_list.append(dq_orig)
+
+        return (
+            q_proc_list,
+            R_proc_list,
+            s_proc_list,
+            dq_proc_list,
+            q_orig_list,
+            R_orig_list,
+            s_orig_list,
+            dq_orig_list,
+        )
+
+    def interpolate_multichannel_data_to_model_q(
+        self,
+        q_exp: Union[np.ndarray, Sequence[np.ndarray]],
+        refl_exp: Union[np.ndarray, Sequence[np.ndarray]],
+        sigmas_exp: Optional[Union[np.ndarray, Sequence[Optional[np.ndarray]]]] = None,
+        q_res_exp: Optional[Union[np.ndarray, float, Sequence[Optional[Union[np.ndarray, float]]]]] = None,
+        as_dict: bool = False,
+    ) -> Union[Dict[str, Any], Tuple[Any, ...]]:
+        """
+        Multichannel analogue of `interpolate_data_to_model_q(...)`.
+
+        Supports both:
+        - common-grid multichannel input:
+            q_exp: shape (n_q,)
+            refl_exp: shape (n_channels, n_q)
+        - per-channel q-grids:
+            q_exp: sequence of length n_channels
+            refl_exp: sequence of length n_channels
+
+        Returns a shared model q-representation suitable for one multichannel observation.
+        """
+        q_list, R_list, s_list, dq_list = self._normalize_multichannel_inputs(
+            reflectivity_curve=refl_exp,
+            q_values=q_exp,
+            sigmas=sigmas_exp,
+            q_resolution=q_res_exp,
+        )
+
+        n_channels = len(q_list)
+        q_generator = self.trainer.loader.q_generator
+        shared_q_input = self._all_channels_share_same_q(q_list)
+
+        def _prepare_return(q, refl, sigmas=None, q_res=None, mask=None):
+            if as_dict:
+                out = {
+                    "q_model": q,
+                    "reflectivity": refl,
+                }
+                if sigmas is not None:
+                    out["sigmas"] = sigmas
+                if q_res is not None:
+                    out["q_resolution"] = q_res
+                if mask is not None:
+                    out["key_padding_mask"] = mask
+                return out
+
+            items = [q, refl]
+            if sigmas is not None:
+                items.append(sigmas)
+            if q_res is not None:
+                items.append(q_res)
+            if mask is not None:
+                items.append(mask)
+            return tuple(items)
+
+        # ConstantQ
+        if isinstance(q_generator, ConstantQ):
+            q_model = q_generator.q.detach().cpu().numpy()
+
+            R_out = np.stack(
+                [interp_reflectivity(q_model, q_list[i], R_list[i]) for i in range(n_channels)],
+                axis=0,
+            )
+
+            if all(s is None for s in s_list):
+                s_out = None
+            else:
+                if any(s is None for s in s_list):
+                    raise ValueError("Either all or none of sigmas_exp must be provided for multichannel input.")
+                s_out = np.stack(
+                    [np.interp(q_model, q_list[i], s_list[i]) for i in range(n_channels)],
+                    axis=0,
+                )
+
+            q_res_out = self._combine_multichannel_q_resolution(
+                q_target=q_model,
+                q_list=q_list,
+                dq_list=dq_list,
+                pad_to=None,
+            )
+
+            return _prepare_return(q_model, R_out, s_out, q_res_out, None)
+
+        # VariableQ
+        elif isinstance(q_generator, VariableQ):
+            min_n, max_n = q_generator.n_q_range
+
+            # fixed-length VariableQ -> always interpolate to shared fixed-size grid
+            if min_n == max_n:
+                q_model = self._build_overlap_q_grid(q_list, n_q=min_n, clip_to_model_ranges=True)
+
+                R_out = np.stack(
+                    [interp_reflectivity(q_model, q_list[i], R_list[i]) for i in range(n_channels)],
+                    axis=0,
+                )
+
+                if all(s is None for s in s_list):
+                    s_out = None
+                else:
+                    if any(s is None for s in s_list):
+                        raise ValueError("Either all or none of sigmas_exp must be provided for multichannel input.")
+                    s_out = np.stack(
+                        [np.interp(q_model, q_list[i], s_list[i]) for i in range(n_channels)],
+                        axis=0,
+                    )
+
+                q_res_out = self._combine_multichannel_q_resolution(
+                    q_target=q_model,
+                    q_list=q_list,
+                    dq_list=dq_list,
+                    pad_to=None,
+                )
+
+                return _prepare_return(q_model, R_out, s_out, q_res_out, None)
+
+            # variable-length VariableQ -> keep shared q as-is if possible, otherwise
+            # interpolate to a shared q-grid with valid length
+            if shared_q_input:
+                q_shared = np.asarray(q_list[0])
+                n_shared = len(q_shared)
+
+                if min_n <= n_shared <= max_n:
+                    R_out = np.stack(R_list, axis=0)
+                    s_out = None if all(s is None for s in s_list) else np.stack(s_list, axis=0)
+
+                    q_res_out = self._combine_multichannel_q_resolution(
+                        q_target=q_shared,
+                        q_list=q_list,
+                        dq_list=dq_list,
+                        pad_to=None,
+                    )
+
+                    return _prepare_return(q_shared, R_out, s_out, q_res_out, None)
+
+            n_target = int(np.clip(max(len(q) for q in q_list), min_n, max_n))
+            q_model = self._build_overlap_q_grid(q_list, n_q=n_target, clip_to_model_ranges=True)
+
+            R_out = np.stack(
+                [interp_reflectivity(q_model, q_list[i], R_list[i]) for i in range(n_channels)],
+                axis=0,
+            )
+
+            if all(s is None for s in s_list):
+                s_out = None
+            else:
+                if any(s is None for s in s_list):
+                    raise ValueError("Either all or none of sigmas_exp must be provided for multichannel input.")
+                s_out = np.stack(
+                    [np.interp(q_model, q_list[i], s_list[i]) for i in range(n_channels)],
+                    axis=0,
+                )
+
+            q_res_out = self._combine_multichannel_q_resolution(
+                q_target=q_model,
+                q_list=q_list,
+                dq_list=dq_list,
+                pad_to=None,
+            )
+
+            return _prepare_return(q_model, R_out, s_out, q_res_out, None)
+
+        # MaskedVariableQ
+        elif isinstance(q_generator, MaskedVariableQ):
+            min_n, max_n = q_generator.n_q_range
+
+            # If all channels already share one valid q-grid, just pad
+            if shared_q_input:
+                q_shared = np.asarray(q_list[0])
+                n_shared = len(q_shared)
+
+                if min_n <= n_shared <= max_n:
+                    q_model = np.pad(q_shared, (0, max_n - n_shared), constant_values=0.0)
+
+                    R_active = np.stack(R_list, axis=0)
+                    R_out = np.pad(R_active, ((0, 0), (0, max_n - n_shared)), constant_values=0.0)
+
+                    if all(s is None for s in s_list):
+                        s_out = None
+                    else:
+                        if any(s is None for s in s_list):
+                            raise ValueError("Either all or none of sigmas_exp must be provided for multichannel input.")
+                        s_active = np.stack(s_list, axis=0)
+                        s_out = np.pad(s_active, ((0, 0), (0, max_n - n_shared)), constant_values=0.0)
+
+                    q_res_active = self._combine_multichannel_q_resolution(
+                        q_target=q_shared,
+                        q_list=q_list,
+                        dq_list=dq_list,
+                        pad_to=None,
+                    )
+                    q_res_out = self._pad_optional_1d(q_res_active, max_n, value=0.0)
+
+                    key_padding_mask = np.zeros(max_n, dtype=bool)
+                    key_padding_mask[:n_shared] = True
+
+                    return _prepare_return(q_model, R_out, s_out, q_res_out, key_padding_mask)
+
+            # Otherwise: interpolate to shared active grid, then pad
+            n_active = int(np.clip(max(len(q) for q in q_list), min_n, max_n))
+            q_active = self._build_overlap_q_grid(q_list, n_q=n_active, clip_to_model_ranges=True)
+
+            R_active = np.stack(
+                [interp_reflectivity(q_active, q_list[i], R_list[i]) for i in range(n_channels)],
+                axis=0,
+            )
+
+            if all(s is None for s in s_list):
+                s_active = None
+            else:
+                if any(s is None for s in s_list):
+                    raise ValueError("Either all or none of sigmas_exp must be provided for multichannel input.")
+                s_active = np.stack(
+                    [np.interp(q_active, q_list[i], s_list[i]) for i in range(n_channels)],
+                    axis=0,
+                )
+
+            q_res_active = self._combine_multichannel_q_resolution(
+                q_target=q_active,
+                q_list=q_list,
+                dq_list=dq_list,
+                pad_to=None,
+            )
+
+            q_model = np.pad(q_active, (0, max_n - n_active), constant_values=0.0)
+            R_out = np.pad(R_active, ((0, 0), (0, max_n - n_active)), constant_values=0.0)
+            s_out = None if s_active is None else np.pad(
+                s_active,
+                ((0, 0), (0, max_n - n_active)),
+                constant_values=0.0,
+            )
+            q_res_out = self._pad_optional_1d(q_res_active, max_n, value=0.0)
+
+            key_padding_mask = np.zeros(max_n, dtype=bool)
+            key_padding_mask[:n_active] = True
+
+            return _prepare_return(q_model, R_out, s_out, q_res_out, key_padding_mask)
+
+        else:
+            raise TypeError(f"Unsupported QGenerator type: {type(q_generator)}")
+        
+    @torch.inference_mode()
+    def preprocess_and_sample_multichannel(
+        self,
+        *,
+        reflectivity_curve: Union[np.ndarray, Sequence[np.ndarray]],
+        q_values: Union[np.ndarray, Sequence[np.ndarray]],
+        prior_bounds: Union[np.ndarray, Sequence[Tuple[float, float]]],
+        sigmas: Optional[Union[np.ndarray, Sequence[Optional[np.ndarray]]]] = None,
+        q_resolution: Optional[Union[float, np.ndarray, Sequence[Optional[Union[np.ndarray, float]]]]] = None,
+        ambient_sld: Optional[float] = None,
+        num_samples: int = 1000,
+        sampling_batch_size: Optional[int] = None,
+        channel_labels: Optional[Sequence[str]] = None,
+        sld_profile_padding_left: float = 0.4,
+        sld_profile_padding_right: float = 1.3,
+        kwargs_param_labels: Optional[Dict[str, Any]] = None,
+        calc_sampled_curves: bool = False,
+        maximum_sim_batch_size: Optional[int] = None,
+        calc_sampled_sld_profiles: bool = False,
+        calc_log_likelihoods: bool = False,
+        clip_prediction: bool = False,
+        enable_importance_sampling: bool = False,
+        rel_err_factor: float = 0.2,
+        return_result_as_dict: bool = True,
+        original_data_in_inference_result: bool = True,
+        truncate_index_left: Optional[int] = None,
+        truncate_index_right: Optional[int] = None,
+        enable_error_bars_filtering: bool = True,
+        filter_threshold: float = 0.3,
+        filter_remove_singles: bool = True,
+        filter_remove_consecutives: bool = True,
+        filter_consecutive: int = 3,
+        filter_q_start_trunc: float = 0.1,
+        inference_with_ema: bool = False,
+        sampler: str = "ode",
+        method: str = "dopri5",
+        rtol: float = 1.0e-6,
+        atol: float = 1.0e-6,
+        num_steps_fixed: Optional[int] = None,
+        sde_num_steps: int = 200,
+        sde_variant: str = "zero_ends",
+        sde_alpha: float = 0.5,
+        sde_eps: float = 1e-3,
+    ) -> Union[Dict[str, Any], MultiChannelPosteriorInferenceResult]:
+        """
+        Multichannel posterior inference entry point.
+
+        This is the multichannel analogue of `preprocess_and_sample(...)`.
+        It supports:
+        - common-grid stacked input
+        - per-channel q-grids
+        and automatically maps the observation to the q-representation expected by the model.
+        """
+        kwargs_param_labels = kwargs_param_labels or {}
+
+        (
+            q_proc_list,
+            R_proc_list,
+            s_proc_list,
+            dq_proc_list,
+            q_orig_list,
+            R_orig_list,
+            s_orig_list,
+            dq_orig_list,
+        ) = self._preprocess_multichannel_observation(
+            reflectivity_curve=reflectivity_curve,
+            q_values=q_values,
+            sigmas=sigmas,
+            q_resolution=q_resolution,
+            truncate_index_left=truncate_index_left,
+            truncate_index_right=truncate_index_right,
+            enable_error_bars_filtering=enable_error_bars_filtering,
+            filter_threshold=filter_threshold,
+            filter_remove_singles=filter_remove_singles,
+            filter_remove_consecutives=filter_remove_consecutives,
+            filter_consecutive=filter_consecutive,
+            filter_q_start_trunc=filter_q_start_trunc,
+        )
+
+        interp_data = self.interpolate_multichannel_data_to_model_q(
+            q_exp=q_proc_list,
+            refl_exp=R_proc_list,
+            sigmas_exp=s_proc_list,
+            q_res_exp=dq_proc_list,
+            as_dict=True,
+        )
+
+        q_model = interp_data["q_model"]
+        curve_model = interp_data["reflectivity"]
+        sigmas_model = interp_data.get("sigmas")
+        q_resolution_model = interp_data.get("q_resolution")
+        key_padding_mask = interp_data.get("key_padding_mask")
+
+        original_prior_bounds = np.asarray(prior_bounds).copy()
+
+        prediction_dict = self.sample(
+            num_samples=num_samples,
+            reflectivity_curve=curve_model,
+            q_values=q_model,
+            prior_bounds=prior_bounds,
+            sigmas=sigmas_model,
+            key_padding_mask=key_padding_mask,
+            q_resolution=q_resolution_model,
+            ambient_sld=ambient_sld,
+            clip_prediction=clip_prediction,
+            sld_profile_padding_left=sld_profile_padding_left,
+            sld_profile_padding_right=sld_profile_padding_right,
+            calc_sampled_curves=calc_sampled_curves,
+            maximum_sim_batch_size=maximum_sim_batch_size,
+            calc_sampled_sld_profiles=calc_sampled_sld_profiles,
+            calc_log_likelihoods=calc_log_likelihoods,
+            sampling_batch_size=sampling_batch_size,
+            enable_importance_sampling=enable_importance_sampling,
+            rel_err_factor=rel_err_factor,
+            kwargs_param_labels=kwargs_param_labels,
+            inference_with_ema=inference_with_ema,
+            sampler=sampler,
+            method=method,
+            rtol=rtol,
+            atol=atol,
+            num_steps_fixed=num_steps_fixed,
+            sde_num_steps=sde_num_steps,
+            sde_variant=sde_variant,
+            sde_alpha=sde_alpha,
+            sde_eps=sde_eps,
+        )
+
+        prediction_dict["q_model"] = q_model
+        prediction_dict["reflectivity_curve_interp"] = curve_model
+        if sigmas_model is not None:
+            prediction_dict["sigmas_interp"] = sigmas_model
+        if q_resolution_model is not None:
+            prediction_dict["q_resolution_interp"] = q_resolution_model
+        if key_padding_mask is not None:
+            prediction_dict["key_padding_mask"] = key_padding_mask
+        if channel_labels is not None:
+            prediction_dict["channel_labels"] = list(channel_labels)
+
+        if return_result_as_dict:
+            return prediction_dict
+
+        n_channels = int(np.asarray(curve_model).shape[0])
+
+        if channel_labels is not None:
+            channel_labels = list(channel_labels)
+            if len(channel_labels) != n_channels:
+                raise ValueError(f"Expected {n_channels} channel_labels, got {len(channel_labels)}.")
+
+        def _all_equal_q(q_list: Sequence[np.ndarray]) -> bool:
+            if len(q_list) <= 1:
+                return True
+            q0 = np.asarray(q_list[0])
+            return all(np.array_equal(q0, np.asarray(qi)) for qi in q_list[1:])
+
+        def _stack_optional_list(arr_list: Sequence[Optional[np.ndarray]]) -> Optional[np.ndarray]:
+            if all(a is None for a in arr_list):
+                return None
+            if any(a is None for a in arr_list):
+                raise ValueError("Either all or none of the channel arrays must be present.")
+            return np.stack([np.asarray(a) for a in arr_list], axis=0)
+
+        def _combine_dq_original(
+            dq_list: Sequence[Optional[Union[np.ndarray, float]]],
+            q_list: Sequence[np.ndarray],
+        ):
+            if all(dq is None for dq in dq_list):
+                return None
+
+            if any(dq is None for dq in dq_list):
+                return None
+
+            if all(np.isscalar(dq) for dq in dq_list):
+                dq_vals = [float(dq) for dq in dq_list]
+                return dq_vals[0] if np.allclose(dq_vals, dq_vals[0]) else float(np.mean(dq_vals))
+
+            if all(isinstance(dq, np.ndarray) for dq in dq_list):
+                if _all_equal_q(q_list):
+                    dq0 = np.asarray(dq_list[0])
+                    if all(np.array_equal(dq0, np.asarray(dq)) for dq in dq_list[1:]):
+                        return dq0
+                return None
+
+            return None
+
+        def _trim_model_grid_with_mask(
+            q_model_in,
+            curve_model_in,
+            sigmas_model_in,
+            q_resolution_model_in,
+            key_padding_mask_in,
+        ):
+            if key_padding_mask_in is None:
+                return (
+                    np.asarray(q_model_in),
+                    np.asarray(curve_model_in),
+                    None if sigmas_model_in is None else np.asarray(sigmas_model_in),
+                    q_resolution_model_in,
+                )
+
+            active = np.asarray(key_padding_mask_in, dtype=bool)
+
+            q_trim = np.asarray(q_model_in)[active]
+            R_trim = np.asarray(curve_model_in)[..., active]
+
+            if sigmas_model_in is None:
+                dR_trim = None
+            else:
+                dR_trim = np.asarray(sigmas_model_in)[..., active]
+
+            if q_resolution_model_in is None:
+                dq_trim = None
+            elif np.isscalar(q_resolution_model_in):
+                dq_trim = q_resolution_model_in
+            else:
+                dq_trim = np.asarray(q_resolution_model_in)[active]
+
+            return q_trim, R_trim, dR_trim, dq_trim
+
+        if original_data_in_inference_result:
+            # Store original per-channel data when possible, mirroring single-channel behavior.
+            if _all_equal_q(q_orig_list):
+                q_store = np.asarray(q_orig_list[0])
+                R_store = np.stack([np.asarray(r) for r in R_orig_list], axis=0)
+                dR_store = _stack_optional_list(s_orig_list)
+                dq_store = _combine_dq_original(dq_orig_list, q_orig_list)
+            else:
+                # Fallback: store trimmed model-grid data, but keep original raw lists.
+                q_store, R_store, dR_store, dq_store = _trim_model_grid_with_mask(
+                    q_model,
+                    curve_model,
+                    sigmas_model,
+                    q_resolution_model,
+                    key_padding_mask,
+                )
+        else:
+            # Store preprocessed/model-grid data, but never keep padded entries.
+            q_store, R_store, dR_store, dq_store = _trim_model_grid_with_mask(
+                q_model,
+                curve_model,
+                sigmas_model,
+                q_resolution_model,
+                key_padding_mask,
+            )
+
+        data = MultiChannelReflectivityData(
+            q=q_store,
+            R=R_store,
+            dR=dR_store,
+            dq=dq_store,
+            q_raw_list=[np.asarray(q) for q in q_orig_list],
+            R_raw_list=[np.asarray(r) for r in R_orig_list],
+            dR_raw_list=[None if s is None else np.asarray(s) for s in s_orig_list],
+            dq_raw_list=list(dq_orig_list),
+            channel_labels=(None if channel_labels is None else list(channel_labels)),
+        )
+
+        return MultiChannelPosteriorInferenceResult(
+            inference_model=self,
+            prediction_dict=prediction_dict,
+            data=data,
+            ambient_sld=ambient_sld,
+            prior_bounds=original_prior_bounds,
+            device=self.device,
+        )
 
     def _uses_q_params_transform(self) -> bool:
         """

@@ -17,12 +17,14 @@ class ReflectivityLogPosterior:
         ambient_sld: Optional[Union[float, torch.Tensor]] = None,
         sld_indices: Optional[Union[slice, np.ndarray, list]] = None,
         eps_inside: float = 1e-10,
+        uses_ambient_as_conditioning: bool = False,
     ):
         self.param_model = param_model
         self.device = torch.device(device)
 
         self.eps_inside = eps_inside
         self.rel_err_fallback = rel_err_fallback
+        self.uses_ambient_as_conditioning = uses_ambient_as_conditioning
 
         self.q_exp_t = torch.as_tensor(q_exp, dtype=torch.float64, device=self.device)
         self.curve_exp_t = torch.as_tensor(curve_exp, device=self.device)
@@ -69,7 +71,6 @@ class ReflectivityLogPosterior:
         self.rel_err_fallback = rel_err_fallback
         self.sigmas_t = self.curve_exp_t * self.rel_err_fallback + 1e-11
 
-    @torch.inference_mode()
     def _apply_ambient_shift(self, theta: torch.Tensor) -> torch.Tensor:
         if self.ambient_sld_t is None or self.sld_indices is None:
             return theta
@@ -77,7 +78,6 @@ class ReflectivityLogPosterior:
         theta_sim[..., self.sld_indices] = theta_sim[..., self.sld_indices] - self.ambient_sld_t
         return theta_sim
 
-    @torch.inference_mode()
     def log_prior(self, theta: torch.Tensor) -> torch.Tensor:
         """Uniform box prior, ignoring fixed parameters."""
         if theta.ndim == 1:
@@ -109,7 +109,6 @@ class ReflectivityLogPosterior:
 
         return lp
 
-    @torch.inference_mode()
     def log_likelihood(self, theta: torch.Tensor) -> torch.Tensor:
         """Gaussian log-likelihood with fixed parameters clamped."""
         if theta.ndim == 1:
@@ -119,7 +118,10 @@ class ReflectivityLogPosterior:
         if self.fixed_mask.any():
             theta_full[..., self.fixed_mask] = self.min_bounds[self.fixed_mask]
 
-        theta_sim = self._apply_ambient_shift(theta_full)
+        if self.uses_ambient_as_conditioning:
+            theta_sim = theta_full
+        else:
+            theta_sim = self._apply_ambient_shift(theta_full)
 
         dq_used = None
         if self.dq_t is not None:
@@ -131,6 +133,12 @@ class ReflectivityLogPosterior:
         refl_kwargs = {}
         if dq_used is not None:
             refl_kwargs["dq"] = dq_used
+
+        if self.uses_ambient_as_conditioning and self.ambient_sld_t is not None:
+            if self.ambient_sld_t.shape[0] == 1 and theta_full.shape[0] > 1:
+                refl_kwargs["conditioning_ambient_sld"] = self.ambient_sld_t.expand(theta_full.shape[0], -1)
+            else:
+                refl_kwargs["conditioning_ambient_sld"] = self.ambient_sld_t
 
         curves_sim = self.param_model.reflectivity(
             q=self.q_exp_t,
@@ -149,7 +157,6 @@ class ReflectivityLogPosterior:
 
         return ll
 
-    @torch.inference_mode()
     def __call__(self, theta: torch.Tensor) -> torch.Tensor:
         """log-posterior = log-likelihood + log-prior"""
         return self.log_likelihood(theta) + self.log_prior(theta)

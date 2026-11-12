@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-from reflectorch.inference.data import ReflectivityData
+from reflectorch.inference.data import ReflectivityData, MultiChannelReflectivityData
 from reflectorch.inference.importance_sampling import ImportanceSampling, SNISBackend
 from reflectorch.inference.log_posterior import ReflectivityLogPosterior
 from reflectorch.inference.mcmc import run_mcmc
@@ -16,6 +16,7 @@ from reflectorch.inference.plotting import (
     plot_reflectivity_v2, 
     plot_sld_profile, 
     plot_sampled_reflectivity_curves, 
+    plot_multi_sampled_reflectivity_collections,
     plot_sampled_sld_profiles,
     plot_sampled_profiles_multi_type,
 )
@@ -32,9 +33,21 @@ PROFILE_PLOT_SPECS = {
         "ylabel": r"Imag. SLD [$10^{-6}\ \mathrm{\AA^{-2}}$]",
         "sample_proxy_label": "sampled imaginary SLDs",
     },
+    "magnetic_sld": {
+        "ylabel": r"Magnetic SLD [$10^{-6}\ \mathrm{\AA^{-2}}$]",
+        "sample_proxy_label": "sampled magnetic SLDs",
+    },
+    "magnetization_angle": {
+        "ylabel": r"Magnetization angle [deg]",
+        "sample_proxy_label": "sampled magnetization angles",
+    },
     "solvent_vf": {
         "ylabel": r"Solvent volume fraction",
         "sample_proxy_label": "sampled solvent volume fractions",
+    },
+    "polymer_vf": {
+        "ylabel": r"Polymer volume fraction",
+        "sample_proxy_label": "sampled polymer volume fractions",
     },
 }
 
@@ -533,7 +546,8 @@ class InferenceResultBase:
 
         Despite the historical method name, this method is not limited to the
         real SLD profile. Any profile type supported by the underlying
-        parameter model may be requested, for example ``"sld"`` or ``"imag_sld"``.
+        parameter model may be requested, for example ``"sld"``,
+        ``"imag_sld"``, or ``"magnetic_sld"``.
 
         Args:
             which:
@@ -860,7 +874,7 @@ class InferenceResultBase:
             if len(profile_types) == 1:
                 ylabel_left = self._get_profile_plot_spec(profile_types[0]).get("ylabel")
             else:
-                ylabel_left = "Profile value"
+                ylabel_left = "Profile value [$10^{-6}\ \mathrm{\AA^{-2}}$]"
 
         return plot_sampled_profiles_multi_type(
             z_axis=z_axis_ref,
@@ -2347,7 +2361,6 @@ class PointInferenceResult(InferenceResultBase):
         """
         plot_multilayer_sketch(self, **kwargs)
 
-    @torch.inference_mode()
     def run_sampling_mcmc(self, num_chains: int = 4096, init_radius: float = 0.1, **kwargs):
         """
         Run MCMC sampling initialized around the current main point estimate.
@@ -2647,6 +2660,11 @@ class PointInferenceResult(InferenceResultBase):
         dR = z["dR"] if "dR" in z.files else None
         dq = z["dq"] if "dq" in z.files else None
 
+        if dq is not None:
+            dq = np.asarray(dq)
+            if dq.ndim == 0:
+                dq = dq.item()
+
         data = ReflectivityData(q=q, R=R, dR=dR, dq=dq)
 
         pred = dict(
@@ -2771,7 +2789,6 @@ class PosteriorInferenceResult(InferenceResultBase):
         """
         return self._get_samples(which).cpu().numpy()
 
-    @torch.inference_mode()
     def run_mcmc_refinement(
         self,
         num_chains: int = 512,
@@ -2844,7 +2861,6 @@ class PosteriorInferenceResult(InferenceResultBase):
         self.mcmc_samples = mcmc_result[0].get_chain(flat=True).cpu().numpy()
         return mcmc_result
     
-    @torch.inference_mode()
     def run_mcmc_from_prior(
         self,
         num_chains: int = 512,
@@ -2893,6 +2909,17 @@ class PosteriorInferenceResult(InferenceResultBase):
         batch_size: int = 4096,
         verbose: bool = True,
         resample: bool = True,
+
+        sampler: str = "ode",
+        method: str = "dopri5",
+        rtol: float = 1e-4,
+        atol: float = 1e-4,
+        num_steps_fixed: int = None,
+        inference_with_ema: bool = False,
+        sde_num_steps: int = 200,
+        sde_variant: str = 'zero_ends',
+        sde_alpha: float = 0.5,
+        sde_eps: float = 1e-3,
     ) -> None:
         """
         Run self-normalized importance sampling (SNIS) using the neural
@@ -2920,6 +2947,28 @@ class PosteriorInferenceResult(InferenceResultBase):
             resample:
                 If ``True``, call :meth:`resample_snis` at the end of the run
                 and store an approximately unweighted SNIS sample set.
+            sampler:
+                Sampling backend used when drawing proposal samples from the
+                neural posterior.
+            method:
+                Numerical integration method used by the proposal sampler when
+                applicable.
+            rtol:
+                Relative tolerance for adaptive proposal samplers.
+            atol:
+                Absolute tolerance for adaptive proposal samplers.
+            num_steps_fixed:
+                Optional number of fixed steps for the proposal sampler.
+            inference_with_ema:
+                If ``True``, use EMA model weights when supported.
+            sde_num_steps:
+                Number of SDE steps when using an SDE proposal sampler.
+            sde_variant:
+                Variant name for the SDE proposal sampler.
+            sde_alpha:
+                Alpha parameter for the SDE proposal sampler.
+            sde_eps:
+                Endpoint cutoff for the SDE proposal sampler.
 
         Raises:
             RuntimeError:
@@ -2959,6 +3008,16 @@ class PosteriorInferenceResult(InferenceResultBase):
                 ambient_sld=(float(self.ambient_sld.squeeze().cpu().item()) if self.ambient_sld is not None else None),
 
                 num_samples=batch_size,
+                sampler=sampler,
+                method=method,
+                rtol=rtol,
+                atol=atol,
+                num_steps_fixed=num_steps_fixed,
+                inference_with_ema=inference_with_ema,
+                sde_num_steps=sde_num_steps,
+                sde_variant=sde_variant,
+                sde_alpha=sde_alpha,
+                sde_eps=sde_eps,
 
                 enable_importance_sampling=True,
                 clip_prediction=False,
@@ -3144,6 +3203,7 @@ class PosteriorInferenceResult(InferenceResultBase):
         from tqdm.notebook import tqdm
 
         n_done = 0
+        neff_prev = 0.0
 
         pbar = tqdm(
             total=num_samples,
@@ -3290,6 +3350,11 @@ class PosteriorInferenceResult(InferenceResultBase):
         dR = z["dR"] if "dR" in z.files else None
         dq = z["dq"] if "dq" in z.files else None
 
+        if dq is not None:
+            dq = np.asarray(dq)
+            if dq.ndim == 0:
+                dq = dq.item()
+
         data = ReflectivityData(q=q, R=R, dR=dR, dq=dq)
 
         pred = {
@@ -3325,3 +3390,603 @@ def _npbytes_to_json(arr: np.ndarray) -> dict:
     else:
         b = bytes(arr.tolist()) if arr.ndim else bytes(arr)
     return json.loads(b.decode("utf-8"))
+
+class MultiChannelPosteriorInferenceResult(InferenceResultBase):
+    """
+    Posterior result for one multichannel observation on a common processed q-grid.
+
+    Typical use case:
+    - polarized neutron reflectometry with 2 or 4 spin channels
+    - channels have been interpolated to one common q-grid before inference
+
+    Stored sample spaces:
+      - raw samples: physical parameter samples drawn from the neural posterior
+      - optional MCMC samples: physical parameter samples after MCMC refinement
+      - optional SNIS samples: physical parameter samples after importance resampling
+    """
+    KIND = "multi_channel_posterior"
+
+    def __init__(
+        self,
+        inference_model: Any,
+        prediction_dict: Dict[str, Any],
+        data: MultiChannelReflectivityData,
+        prior_bounds: np.ndarray,
+        ambient_sld: Optional[float],
+        device: Union[str, torch.device],
+        snis_backend: Optional[SNISBackend] = None,
+    ):
+        # InferenceResultBase expects `.q`, `.R`, `.dR`, `.dq`, which this class provides.
+        super().__init__(
+            inference_model=inference_model,
+            data=data,
+            prior_bounds=prior_bounds,
+            ambient_sld=ambient_sld,
+            device=device,
+        )
+
+        raw = prediction_dict.get("predicted_params_array", None)
+        if raw is None:
+            raise ValueError("prediction_dict must contain 'predicted_params_array'.")
+
+        raw = np.asarray(raw)
+        if raw.ndim == 1:
+            raw = raw[None, :]
+
+        self.raw_samples_array = raw
+        self.param_names = prediction_dict.get("param_names", None) or self.param_model.get_param_labels()
+
+        self.mcmc_samples: Optional[np.ndarray] = None
+
+        self.importance_sampling = ImportanceSampling(backend=snis_backend)
+        self.snis_samples: Optional[np.ndarray] = None
+        self.snis_log_weights: Optional[np.ndarray] = None
+
+        self.ode_ts = prediction_dict.get("ode_ts", None)
+        self.ode_states = prediction_dict.get("ode_states", None)
+
+        if getattr(self.data, "channel_labels", None) is None:
+            n_channels = int(np.asarray(self.data.R).shape[0])
+            self.data.channel_labels = [f"channel {i}" for i in range(n_channels)]
+
+    @torch.inference_mode()
+    def _get_samples(self, which: str) -> torch.Tensor:
+        which = str(which).lower()
+        if which == "raw":
+            return torch.as_tensor(self.raw_samples_array, device="cpu")
+        if which == "mcmc":
+            if self.mcmc_samples is None:
+                raise RuntimeError("No MCMC samples. Run `run_mcmc_refinement()` first.")
+            return torch.as_tensor(self.mcmc_samples, device="cpu")
+        if which in ("snis", "sir", "is"):
+            if self.snis_samples is None:
+                raise RuntimeError("No SNIS samples. Run `run_neural_snis()` then `resample_snis()`.")
+            return torch.as_tensor(self.snis_samples, device="cpu")
+        raise ValueError("'which' must be one of: 'raw', 'mcmc', 'snis'")
+
+    def get_samples(self, which: str = "raw") -> np.ndarray:
+        """Return parameter samples as a NumPy array of shape ``(N, dim)``."""
+        return self._get_samples(which).cpu().numpy()
+
+    @torch.inference_mode()
+    def get_sampled_curves(
+        self,
+        which: str = "raw",
+        max_sim_batch: int = 2048,
+        max_plot_samples: Optional[int] = 5000,
+        seed: Optional[int] = 0,
+        selection: str = "random",
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Simulate multichannel reflectivity curves from the selected sample set.
+
+        Returns:
+            q_sampled:
+                Common q-grid of shape ``(n_q,)``.
+            sampled_curves:
+                Array of shape ``(N, n_channels, n_q)``.
+        """
+        samples_cpu, _ = self._select_samples(
+            which=which,
+            max_rows=max_plot_samples,
+            seed=seed,
+            selection=selection,
+            return_logp=False,
+        )
+        samples = samples_cpu.to(self.device)
+
+        theta_sim = self._prepare_theta_sim(samples)
+
+        q = torch.as_tensor(self.data.q, device=self.device, dtype=torch.float64)
+
+        dq = None
+        if self.data.dq is not None:
+            dq_raw = self.data.dq
+            if np.isscalar(dq_raw):
+                dq = torch.atleast_2d(
+                    torch.as_tensor(dq_raw, device=self.device, dtype=torch.float64)
+                )
+            else:
+                dq = torch.atleast_2d(
+                    torch.as_tensor(dq_raw, device=self.device, dtype=torch.float64)
+                )
+
+        supports_shift = self.param_model.supports_zero_ambient_sld_shift()
+
+        conditioning_ambient_sld_t = None
+        if self.ambient_sld is not None and not supports_shift:
+            conditioning_ambient_sld_t = self.ambient_sld
+
+        curves = self._batched_reflectivity(
+            theta_sim=theta_sim,
+            q=q,
+            dq=dq,
+            max_batch=max_sim_batch,
+            conditioning_ambient_sld=conditioning_ambient_sld_t,
+        )
+
+        return np.asarray(self.data.q), curves.numpy()
+
+    @torch.inference_mode()
+    def plot_sampled_curves(
+        self,
+        which: str = "raw",
+        max_sim_batch: int = 2048,
+        max_plot_samples: Optional[int] = 5000,
+        seed: Optional[int] = 0,
+        selection: str = "random",
+        plot_kwargs: Optional[Dict[str, Any]] = None,
+        channel_labels: Optional[Sequence[str]] = None,
+
+        exp_label_prefix: str = "exp. data",
+        sample_label_prefix: str = "sampled curves",
+
+        legend_grouping: str = "paired",
+        offset_curves: bool = False,
+        offset_factor: float = 10.0,
+        offset_mode: str = "obs",
+        offset_labels: bool = False,
+        offset_operation: str = "divide",
+
+        channel_sample_colors: Optional[Sequence[str]] = None,
+        channel_exp_colors: Optional[Sequence[str]] = None,
+        sample_proxy_labels: Optional[Sequence[str]] = None,
+
+        representative_mode: str = "none",
+        representative_indices: Optional[Sequence[Optional[int]]] = None,
+        representative_colors: Optional[Sequence[str]] = None,
+        representative_labels: Optional[Sequence[Optional[str]]] = None,
+
+        **kwargs,
+    ):
+        if kwargs:
+            plot_kwargs = dict(plot_kwargs or {})
+            plot_kwargs.update(kwargs)
+
+        merged = self._merge_kwargs(self._default_plot_kwargs_sampled_curves(), plot_kwargs)
+
+        data = self.data
+        R_exp = np.asarray(data.R)
+        if R_exp.ndim != 2:
+            raise ValueError(f"Expected data.R with shape (n_channels, n_q), got {R_exp.shape}.")
+
+        n_channels = R_exp.shape[0]
+
+        # labels
+        if channel_labels is None:
+            channel_labels = self._default_multichannel_channel_labels(n_channels)
+        else:
+            channel_labels = [str(x) for x in channel_labels]
+            if len(channel_labels) != n_channels:
+                raise ValueError(f"Expected {n_channels} channel_labels, got {len(channel_labels)}.")
+
+        # colors
+        exp_defaults, sample_defaults = self._default_multichannel_curve_colors(n_channels)
+
+        if channel_exp_colors is None:
+            channel_exp_colors = exp_defaults
+        else:
+            channel_exp_colors = list(channel_exp_colors)
+            if len(channel_exp_colors) != n_channels:
+                raise ValueError(f"Expected {n_channels} channel_exp_colors, got {len(channel_exp_colors)}.")
+
+        if channel_sample_colors is None:
+            channel_sample_colors = sample_defaults
+        else:
+            channel_sample_colors = list(channel_sample_colors)
+            if len(channel_sample_colors) != n_channels:
+                raise ValueError(f"Expected {n_channels} channel_sample_colors, got {len(channel_sample_colors)}.")
+
+        if representative_indices is None:
+            representative_indices = [None] * n_channels
+        elif len(representative_indices) != n_channels:
+            raise ValueError(f"Expected {n_channels} representative_indices, got {len(representative_indices)}.")
+
+        if representative_labels is None:
+            representative_labels = [None] * n_channels
+        elif len(representative_labels) != n_channels:
+            raise ValueError(f"Expected {n_channels} representative_labels, got {len(representative_labels)}.")
+
+        q_sampled, sampled_curves = self.get_sampled_curves(
+            which=which,
+            max_sim_batch=max_sim_batch,
+            max_plot_samples=max_plot_samples,
+            seed=seed,
+            selection=selection,
+        )
+        sampled_curves = np.asarray(sampled_curves)
+
+        if sampled_curves.ndim != 3:
+            raise ValueError(
+                f"Expected sampled_curves with shape (n_samples, n_channels, n_q), got {sampled_curves.shape}."
+            )
+
+        q_exp_list = []
+        curve_exp_list = []
+        yerr_list = []
+        q_sampled_list = []
+        sampled_curves_list = []
+        highlight_curves_list = []
+
+        dR_exp = None if getattr(data, "dR", None) is None else np.asarray(data.dR)
+
+        for ch in range(n_channels):
+            q_exp_list.append(np.asarray(data.q))
+            curve_exp_list.append(R_exp[ch])
+            yerr_list.append(None if dR_exp is None else dR_exp[ch])
+            q_sampled_list.append(np.asarray(q_sampled))
+            sampled_curves_list.append(sampled_curves[:, ch, :])
+
+            hcurve = self._select_representative_curve(
+                curves=sampled_curves[:, ch, :],
+                mode=representative_mode,
+                index=representative_indices[ch],
+            )
+            highlight_curves_list.append(hcurve)
+
+        if sample_proxy_labels is None:
+            sample_proxy_labels = [f"{sample_label_prefix} {lab}" for lab in channel_labels]
+        else:
+            sample_proxy_labels = list(sample_proxy_labels)
+            if len(sample_proxy_labels) != n_channels:
+                raise ValueError(f"Expected {n_channels} sample_proxy_labels, got {len(sample_proxy_labels)}.")
+
+        fig, ax = plot_multi_sampled_reflectivity_collections(
+            q_exp_list=q_exp_list,
+            curve_exp_list=curve_exp_list,
+            q_sampled_list=q_sampled_list,
+            sampled_curves_list=sampled_curves_list,
+            yerr_list=yerr_list,
+            obs_labels=channel_labels,
+
+            exp_colors=channel_exp_colors,
+            sample_colors=channel_sample_colors,
+            sample_proxy_labels=sample_proxy_labels,
+
+            highlight_curves_list=highlight_curves_list,
+            highlight_colors=representative_colors,
+            highlight_labels=representative_labels,
+            highlight_lw=merged.get("highlight_lw", 1.5),
+            highlight_alpha=merged.get("highlight_alpha", 1.0),
+            highlight_ls=merged.get("highlight_ls", "-"),
+
+            offset_curves=offset_curves,
+            offset_factor=offset_factor,
+            offset_mode=offset_mode,
+            offset_labels=offset_labels,
+            offset_operation=offset_operation,
+
+            q_label=merged.get("q_label", r'q [$\mathrm{\AA^{-1}}$]'),
+            r_label=merged.get("r_label", "R(q)"),
+            logy=merged.get("logy", True),
+            logx=merged.get("logx", False),
+            xlim=merged.get("xlim", None),
+            ylim=merged.get("ylim", None),
+            legend=merged.get("legend", True),
+            legend_fontsize=merged.get("legend_fontsize", 14),
+            legend_loc=merged.get("legend_loc", "best"),
+            legend_grouping=legend_grouping,
+            axis_label_size=merged.get("axis_label_size", 18),
+            tick_label_size=merged.get("tick_label_size", 14),
+            figsize=merged.get("figsize", (8, 6)),
+            tight_layout=merged.get("tight_layout", True),
+
+            exp_label_prefix=exp_label_prefix,
+            sample_label_prefix=sample_label_prefix,
+
+            exp_style=merged.get("exp_style", "auto"),
+            exp_marker=merged.get("exp_marker", "o"),
+            exp_facecolor=merged.get("exp_facecolor", "none"),
+            exp_ms=merged.get("exp_ms", 5.0),
+            exp_alpha=merged.get("exp_alpha", 1.0),
+            exp_elinewidth=merged.get("exp_elinewidth", 0.8),
+            exp_capsize=merged.get("exp_capsize", 0.0),
+            exp_capthick=merged.get("exp_capthick", 0.8),
+            exp_zorder=merged.get("exp_zorder", 3),
+
+            sample_lw=merged.get("sample_lw", 1.0),
+            sample_alpha_scale=merged.get("sample_alpha_scale", 120),
+            sample_zorder=merged.get("sample_zorder", 1),
+        )
+
+        return fig, ax
+
+    def _default_multichannel_curve_colors(
+        self,
+        n_channels: int,
+    ) -> Tuple[List[str], List[str]]:
+        """
+        Return default per-channel colors for multichannel curve plots.
+
+        Returns:
+            exp_colors, sample_colors
+        """
+        if n_channels == 2:
+            # non-spin-flip default
+            exp_colors = ["blue", "cyan"]
+            sample_colors = ["lightgreen", "lightgreen"]
+            return exp_colors, sample_colors
+
+        if n_channels == 4:
+            # spin-flip default channel order:
+            # [up_up, up_down, down_up, down_down]
+            exp_colors = ["blue", "purple", "deepskyblue", "cyan"]
+            sample_colors = ["lightgreen"] * 4
+            return exp_colors, sample_colors
+
+        # generic fallback for unexpected channel counts
+        exp_fallback = ["blue", "cyan", "magenta", "purple", "black", "orange"]
+        exp_colors = [exp_fallback[i % len(exp_fallback)] for i in range(n_channels)]
+        sample_colors = ["lightgreen"] * n_channels
+        return exp_colors, sample_colors
+
+
+    def _default_multichannel_channel_labels(
+        self,
+        n_channels: int,
+    ) -> List[str]:
+        """
+        Return default channel labels for multichannel reflectivity plots.
+        """
+        stored = getattr(self.data, "channel_labels", None)
+        if stored is not None:
+            stored = list(stored)
+            if len(stored) == n_channels:
+                return stored
+
+        if n_channels == 2:
+            return [r"$\uparrow$", r"$\downarrow$"]
+
+        if n_channels == 4:
+            return [
+                r"$\uparrow\uparrow$",
+                r"$\uparrow\downarrow$",
+                r"$\downarrow\uparrow$",
+                r"$\downarrow\downarrow$",
+            ]
+
+        return [f"ch{i}" for i in range(n_channels)]
+
+    def _select_representative_curve(
+        self,
+        curves: np.ndarray,
+        mode: str = "closest_to_mean",
+        index: Optional[int] = None,
+    ) -> Optional[np.ndarray]:
+        if curves is None or len(curves) == 0:
+            return None
+
+        mode = str(mode).lower()
+        if mode == "none":
+            return None
+        if mode == "first":
+            return curves[0]
+        if mode == "index":
+            if index is None:
+                raise ValueError("Representative mode 'index' requires an explicit index.")
+            return curves[int(index)]
+        if mode == "closest_to_mean":
+            mean_curve = curves.mean(axis=0)
+            d2 = ((curves - mean_curve[None, :]) ** 2).sum(axis=1)
+            return curves[np.argmin(d2)]
+
+        raise ValueError("mode must be one of: 'none', 'first', 'index', 'closest_to_mean'")
+
+    def run_mcmc_refinement(
+        self,
+        num_chains: int = 512,
+        seed: Optional[int] = 0,
+        init_strategy: str = "random",
+        **mcmc_kwargs,
+    ):
+        """
+        Run MCMC refinement initialized from the raw posterior sample set.
+        """
+        raw = torch.as_tensor(self.raw_samples_array, device=self.device)
+
+        if str(init_strategy).lower() == "random":
+            init = self._subsample_rows(raw, max_rows=num_chains, seed=seed)
+        elif str(init_strategy).lower() in ("topn", "top_num_chains"):
+            logp_raw = self.log_prob_fn(raw)
+            logp = logp_raw.clone()
+            bad = ~torch.isfinite(logp)
+            if bad.any():
+                logp[bad] = -float("inf")
+
+            k = min(int(num_chains), int(raw.shape[0]))
+            top_idx = torch.topk(logp, k=k, largest=True).indices
+            init = raw[top_idx]
+        else:
+            raise ValueError("init_strategy must be 'random' or 'topn'.")
+        
+        pb = torch.as_tensor(self.prior_bounds, device=self.device, dtype=init.dtype)
+        fixed_mask = (pb[:, 1] - pb[:, 0]).abs() <= 1e-7
+        if fixed_mask.any():
+            init[:, fixed_mask] = pb[fixed_mask, 0]
+
+        mcmc_result = run_mcmc(
+            init_coords=init,
+            log_prob_fn=self.log_prob_fn,
+            **mcmc_kwargs,
+        )
+
+        self.mcmc_samples = mcmc_result[0].get_chain(flat=True).cpu().numpy()
+        return mcmc_result
+
+    def run_mcmc_from_prior(
+        self,
+        num_chains: int = 512,
+        **mcmc_kwargs,
+    ):
+        pb = torch.as_tensor(self.prior_bounds, device=self.device, dtype=torch.float32)
+        min_bounds = pb[:, 0]
+        max_bounds = pb[:, 1]
+
+        u = torch.rand(num_chains, min_bounds.numel(), device=self.device, dtype=torch.float32)
+        init = u * (max_bounds - min_bounds) + min_bounds
+
+        mcmc_result = run_mcmc(
+            init_coords=init,
+            log_prob_fn=self.log_prob_fn,
+            **mcmc_kwargs,
+        )
+
+        self.mcmc_samples = mcmc_result[0].get_chain(flat=True).cpu().numpy()
+        return mcmc_result
+
+    @torch.inference_mode()
+    def map_estimate_raw(
+        self,
+        return_logp: bool = False,
+    ) -> Union[np.ndarray, Tuple[np.ndarray, float]]:
+        params = torch.as_tensor(self.raw_samples_array, device=self.device, dtype=torch.float32)
+        logp = self.log_prob_fn(params)
+        idx = torch.argmax(logp)
+        theta = params[idx].detach().cpu().numpy()
+        lp = float(logp[idx].detach().cpu().item())
+        return (theta, lp) if return_logp else theta
+
+    def __repr__(self):
+        raw_n = int(self.raw_samples_array.shape[0])
+        dim = int(self.raw_samples_array.shape[1])
+        n_channels = int(np.asarray(self.data.R).shape[0])
+        mcmc = None if self.mcmc_samples is None else int(self.mcmc_samples.shape[0])
+        dq_str = "None" if self.data.dq is None else ("float" if np.isscalar(self.data.dq) else "pointwise")
+        return (
+            f"MultiChannelPosteriorInferenceResult(dim={dim}, N_raw={raw_n}, N_mcmc={mcmc}, "
+            f"channels={n_channels}, dq={dq_str}, ambient_sld={'yes' if self.ambient_sld is not None else 'no'})"
+        )
+
+    def summary(self):
+        """Print a short textual summary of the multichannel posterior result."""
+        print(self.__repr__())
+
+    def _serialize_for_npz(self):
+        arrays = {}
+
+        arrays["q"] = np.asarray(self.data.q)
+        arrays["R"] = np.asarray(self.data.R)
+        if self.data.dR is not None:
+            arrays["dR"] = np.asarray(self.data.dR)
+        if self.data.dq is not None:
+            arrays["dq"] = np.asarray(self.data.dq)
+
+        arrays["prior_bounds"] = np.asarray(self.prior_bounds)
+        arrays["raw_samples_array"] = np.asarray(self.raw_samples_array)
+
+        if getattr(self.data, "q_raw_list", None) is not None:
+            for i, q_raw in enumerate(self.data.q_raw_list):
+                arrays[f"q_raw_{i}"] = np.asarray(q_raw)
+        if getattr(self.data, "R_raw_list", None) is not None:
+            for i, R_raw in enumerate(self.data.R_raw_list):
+                arrays[f"R_raw_{i}"] = np.asarray(R_raw)
+        if getattr(self.data, "dR_raw_list", None) is not None:
+            for i, dR_raw in enumerate(self.data.dR_raw_list):
+                if dR_raw is not None:
+                    arrays[f"dR_raw_{i}"] = np.asarray(dR_raw)
+        if getattr(self.data, "dq_raw_list", None) is not None:
+            for i, dq_raw in enumerate(self.data.dq_raw_list):
+                if dq_raw is not None:
+                    arrays[f"dq_raw_{i}"] = np.asarray(dq_raw)
+
+        if self.mcmc_samples is not None:
+            arrays["mcmc_samples"] = np.asarray(self.mcmc_samples)
+        if self.snis_samples is not None:
+            arrays["snis_samples"] = np.asarray(self.snis_samples)
+        if self.snis_log_weights is not None:
+            arrays["snis_log_weights"] = np.asarray(self.snis_log_weights)
+
+        meta = {
+            "ambient_sld": None if self.ambient_sld is None else float(self.ambient_sld.squeeze().cpu().item()),
+            "param_names": list(self.param_names) if self.param_names is not None else None,
+            "channel_labels": list(getattr(self.data, "channel_labels", [])),
+            "num_raw_channels": int(np.asarray(self.data.R).shape[0]),
+            "model_info": {
+                "config_name": getattr(self.inference_model, "config_name", None),
+                "model_name": getattr(self.inference_model, "model_name", None),
+                "root_dir": getattr(self.inference_model, "root_dir", None),
+                "weights_format": getattr(self.inference_model, "weights_format", None),
+                "repo_id": getattr(self.inference_model, "repo_id", None),
+            },
+        }
+        return meta, arrays
+
+    @staticmethod
+    def _construct_from_npz(meta, z, inference_model=None, device="cpu"):
+        q = z["q"]
+        R = z["R"]
+        dR = z["dR"] if "dR" in z.files else None
+        dq = z["dq"] if "dq" in z.files else None
+
+        if dq is not None:
+            dq = np.asarray(dq)
+            if dq.ndim == 0:
+                dq = dq.item()
+
+        q_raw_list = []
+        R_raw_list = []
+        dR_raw_list = []
+        dq_raw_list = []
+
+        i = 0
+        while f"q_raw_{i}" in z.files:
+            q_raw_list.append(z[f"q_raw_{i}"])
+            R_raw_list.append(z[f"R_raw_{i}"] if f"R_raw_{i}" in z.files else None)
+            dR_raw_list.append(z[f"dR_raw_{i}"] if f"dR_raw_{i}" in z.files else None)
+            dq_raw_list.append(z[f"dq_raw_{i}"] if f"dq_raw_{i}" in z.files else None)
+            i += 1
+
+        data = MultiChannelReflectivityData(
+            q=q,
+            R=R,
+            dR=dR,
+            dq=dq,
+            q_raw_list=(q_raw_list if len(q_raw_list) > 0 else None),
+            R_raw_list=(R_raw_list if len(R_raw_list) > 0 else None),
+            dR_raw_list=(dR_raw_list if len(dR_raw_list) > 0 else None),
+            dq_raw_list=(dq_raw_list if len(dq_raw_list) > 0 else None),
+            channel_labels=meta.get("channel_labels", None),
+        )
+
+        pred = {
+            "predicted_params_array": z["raw_samples_array"],
+            "param_names": meta.get("param_names", None),
+        }
+
+        res = MultiChannelPosteriorInferenceResult(
+            inference_model=inference_model,
+            prediction_dict=pred,
+            data=data,
+            prior_bounds=z["prior_bounds"],
+            ambient_sld=meta.get("ambient_sld", None),
+            device=device,
+        )
+
+        if "mcmc_samples" in z.files:
+            res.mcmc_samples = np.asarray(z["mcmc_samples"])
+        if "snis_samples" in z.files:
+            res.snis_samples = np.asarray(z["snis_samples"])
+        if "snis_log_weights" in z.files:
+            res.snis_log_weights = np.asarray(z["snis_log_weights"])
+
+        return res

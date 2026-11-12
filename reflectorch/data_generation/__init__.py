@@ -21,6 +21,7 @@ from reflectorch.data_generation.priors import (
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
     ConstrainedRoughnessAndImgSldSamplerStrategy,
+    LipidBilayerSamplerStrategy,
 )
 from reflectorch.data_generation.process_data import ProcessData, ProcessPipeline
 from reflectorch.data_generation.q_generator import (
@@ -31,6 +32,12 @@ from reflectorch.data_generation.q_generator import (
     EquidistantQ,
     MaskedVariableQ,
 )
+from reflectorch.data_generation.time_generator import (
+    TimeGenerator,
+    UniformTimeGenerator,
+    RescaledTimeGenerator,
+)
+from reflectorch.data_generation.conditioning_amb_sld_generator import ConditioningAmbientSLDGenerator
 from reflectorch.data_generation.noise import (
     QNoiseGenerator,
     IntensityNoiseGenerator,
@@ -125,4 +132,9 @@ __all__ = [
     "BasicSamplerStrategy",
     "ConstrainedRoughnessSamplerStrategy",
     "ConstrainedRoughnessAndImgSldSamplerStrategy",
+    "LipidBilayerSamplerStrategy",
+    "TimeGenerator",
+    "UniformTimeGenerator",
+    "RescaledTimeGenerator",
+    "ConditioningAmbientSLDGenerator",
 ]

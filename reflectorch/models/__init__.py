@@ -13,5 +13,6 @@ __all__ = [
     "NetworkWithPriors",
     "NetworkWithPriorsConvEmb",
     "NetworkWithPriorsFnoEmb",
+    "NeuralOdeNetwork",
     "NFNetwork",
 ]

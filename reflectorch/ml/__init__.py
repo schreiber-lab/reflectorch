@@ -4,6 +4,7 @@ from reflectorch.ml.trainers import *
 from reflectorch.ml.loggers import *
 from reflectorch.ml.schedulers import *
 from reflectorch.ml.dataloaders import *
+from reflectorch.ml.ema import *
 
 __all__ = [
     'Trainer',
@@ -30,5 +31,8 @@ __all__ = [
     'RealTimeSimTrainer',
     'DenoisingAETrainer',
     'PointEstimatorTrainer',
+    'NeuralOdeTrainer',
+    'FlowMatchingTrainer',
     'NFlowTrainer',
+    'ModelEma',
 ]

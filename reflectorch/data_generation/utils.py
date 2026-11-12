@@ -156,7 +156,7 @@ def get_density_profiles(
     assert slds.shape == (bs, n + 1), (
         f"SLDs must be (batch_size, num_layers+1). Found {slds.shape} instead."
     )
-    
+
     neg_thickness = torch.any(thicknesses < 0)
     neg_roughness = torch.any(roughnesses < 0)
 
@@ -222,6 +222,8 @@ def get_param_labels(
         roughness_name: str = 'Roughness',
         sld_name: str = 'SLD',
         imag_sld_name: str = 'SLD imag',
+        magnetic_sld_name: str = 'SLD magnetic',
+        magnetization_angle_name: str = 'Magnetization angle',
         substrate_name: str = 'sub',
         parameterization_type: str = 'standard',
         number_top_to_bottom: bool = True,
@@ -238,7 +240,14 @@ def get_param_labels(
     if parameterization_type == 'absorption':
         imag_sld_labels = [f'{imag_sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{imag_sld_name} {substrate_name}']
         all_labels = all_labels + imag_sld_labels
-        
+    elif parameterization_type == 'magnetic_nonspinflip':
+        magnetic_sld_labels = [f'{magnetic_sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{magnetic_sld_name} {substrate_name}']
+        all_labels = all_labels + magnetic_sld_labels
+    elif parameterization_type == 'magnetic_spinflip':
+        magnetic_sld_labels = [f'{magnetic_sld_name} L{pos(i)}' for i in range(num_layers)] + [f'{magnetic_sld_name} {substrate_name}']
+        magnetization_angle_labels = [f'{magnetization_angle_name} L{pos(i)}' for i in range(num_layers)] + [f'{magnetization_angle_name} {substrate_name}']
+        all_labels = all_labels + magnetic_sld_labels + magnetization_angle_labels
+
     return all_labels
 
 def get_param_labels_latex(
@@ -249,6 +258,8 @@ def get_param_labels_latex(
     sld_superscript: Optional[str] = None,
     sld_name: Optional[str] = None,
     imag_sld_name: Optional[str] = None,
+    magnetic_sld_name: str = r'\rho^{m}',
+    magnetization_angle_name: str = r'\psi^{m}',
     substrate_name: str = 'B',
     parameterization_type: str = 'standard',
     number_top_to_bottom: bool = True,
@@ -295,5 +306,19 @@ def get_param_labels_latex(
         imag_sld_labels = [latex_label(imag_sld_name_eff, pos(i)) for i in range(num_layers)]
         imag_sld_labels.append(latex_label(imag_sld_name_eff, substrate_name))
         all_labels += imag_sld_labels
+
+    elif parameterization_type == 'magnetic_nonspinflip':
+        magnetic_sld_labels = [latex_label(magnetic_sld_name, pos(i)) for i in range(num_layers)]
+        magnetic_sld_labels.append(latex_label(magnetic_sld_name, substrate_name))
+        all_labels += magnetic_sld_labels
+
+    elif parameterization_type == 'magnetic_spinflip':
+        magnetic_sld_labels = [latex_label(magnetic_sld_name, pos(i)) for i in range(num_layers)]
+        magnetic_sld_labels.append(latex_label(magnetic_sld_name, substrate_name))
+
+        angle_labels = [latex_label(magnetization_angle_name, pos(i)) for i in range(num_layers)]
+        angle_labels.append(latex_label(magnetization_angle_name, substrate_name))
+
+        all_labels += magnetic_sld_labels + angle_labels
 
     return all_labels

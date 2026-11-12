@@ -5,9 +5,11 @@ from torch import Tensor
 
 from reflectorch.data_generation.reflectivity import (
     reflectivity,
+    abeles,
     abeles_memory_eff,
     kinematical_approximation,
 )
+from reflectorch.data_generation.reflectivity.magnetic import abeles_magnetic_nonspinflip, abeles_magnetic_spinflip
 from reflectorch.data_generation.utils import (
     get_density_profiles,
     get_param_labels,
@@ -18,12 +20,34 @@ from reflectorch.data_generation.priors.sampler_strategies import (
     BasicSamplerStrategy,
     ConstrainedRoughnessSamplerStrategy,
     ConstrainedRoughnessAndImgSldSamplerStrategy,
+    LipidBilayerSamplerStrategy,
 )
 
 __all__ = [
     "MULTILAYER_MODELS",
     "ParametricModel",
 ]
+
+
+def _layer_suffixes(
+    num_layers: int,
+    *,
+    substrate_name: str = "sub",
+    number_top_to_bottom: bool = True,
+) -> Tuple[List[str], List[str]]:
+    def pos(i: int) -> int:
+        return i + 1 if number_top_to_bottom else num_layers - i
+
+    layers = [f"{pos(i)}" for i in range(num_layers)]
+    return layers, layers + [substrate_name]
+
+
+def _plain_block(name: str, suffixes: Sequence[str]) -> List[str]:
+    return [f"{name} {suffix}" for suffix in suffixes]
+
+
+def _latex_block(base: str, subscripts: Sequence[str]) -> List[str]:
+    return [rf"${base}_{{{sub}}}$" for sub in subscripts]
 
 
 class ParametricModel(object):
@@ -555,6 +579,502 @@ class ModelWithAbsorption(StandardModel):
     def available_profile_types(self) -> List[str]:
         return ["sld", "imag_sld"]
     
+class ModelWithNonspinflipMagnetization(StandardModel):
+    """Parameterization for the box model for the case of polarized neutron reflectometry (non spin-flip). 
+    The magnetic sld values of the layers are additional parameters. """
+    NAME = 'model_with_magnetization_nonspinflip'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "roughnesses",
+        "slds",
+        "magnetic_slds",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 4 * self.max_num_layers + 3
+    
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(
+            self.max_num_layers,
+            parameterization_type="magnetic_nonspinflip",
+            **kwargs,
+        )
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return get_param_labels_latex(
+            self.max_num_layers,
+            parameterization_type="magnetic_nonspinflip",
+            **kwargs,
+        )
+
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 3) // 4
+        assert num_layers * 4 + 3 == num_params
+
+        d, sigma, sld, msld = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers + 1], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=sigma,
+            sld=sld,
+            sld_magnetic=msld,
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(
+            q, **self._params2dict(parametrized_model), abeles_func=abeles_magnetic_nonspinflip, **kwargs
+        )
+    
+    def magnetic_sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld_magnetic = params["sld_magnetic"]
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld_magnetic,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "magnetic_sld"]
+    
+class ModelWithNonspinflipMagnetizationAlpha(StandardModel):
+    """Parameterization for the box model for the case of polarized neutron reflectometry (non spin-flip). 
+    The magnetic sld values of the layers are additional parameters. Nonideal polarization modelled using the alpha parameter."""
+    NAME = 'model_with_magnetization_nonspinflip'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "roughnesses",
+        "slds",
+        "magnetic_slds",
+        "alpha",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 4 * self.max_num_layers + 4
+    
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[4:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(self.max_num_layers, parameterization_type='magnetic_nonspinflip', **kwargs) + ['alpha']
+    
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return get_param_labels_latex(
+            self.max_num_layers,
+            parameterization_type="magnetic_nonspinflip",
+            **kwargs,
+        ) + [r"$\alpha$"]
+
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 4) // 4
+        assert num_layers * 4 + 4 == num_params
+
+        d, sigma, sld, msld, alpha = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers + 1, 1], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=sigma,
+            sld=sld,
+            sld_magnetic=msld,
+            alpha=alpha,
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        params_dict = self._params2dict(parametrized_model)
+        alpha = params_dict.pop('alpha')
+
+        refl_ideal = reflectivity(
+            q, **params_dict, abeles_func=abeles_magnetic_nonspinflip, **kwargs
+        )
+
+        refl_up = (1.0 - alpha) * refl_ideal[:, 0, :] + alpha * refl_ideal[:, 1, :]
+        refl_down = (1.0 - alpha) * refl_ideal[:, 1, :] + alpha * refl_ideal[:, 0, :]
+        
+        return torch.stack([refl_up, refl_down], dim=1)
+    
+    def magnetic_sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld_magnetic = params["sld_magnetic"]
+
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld_magnetic,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "magnetic_sld"]
+    
+class ModelWithSpinflipMagnetization(StandardModel):
+    """Parameterization for the box model for the case of polarized neutron reflectometry. 
+    The magnetic sld values of the layers and the angles of the magnetization vectors with respect to the reference magnetic field (H) are additional parameters.
+    """
+    NAME = 'model_with_magnetization_spinflip'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "roughnesses",
+        "slds",
+        "magnetic_slds",
+        "magnetization_angles",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 5 * self.max_num_layers + 4
+    
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[5:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[5:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetization_angles"]] * (self.max_num_layers + 1) +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["roughnesses"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetization_angles"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return get_param_labels(
+            self.max_num_layers,
+            parameterization_type="magnetic_spinflip",
+            **kwargs,
+        )
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return get_param_labels_latex(
+            self.max_num_layers,
+            parameterization_type="magnetic_spinflip",
+            **kwargs,
+        )
+
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 4) // 5
+        assert num_layers * 5 + 4 == num_params
+
+        d, sigma, sld, msld, m_angle = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers + 1, num_layers + 1], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=sigma,
+            sld=sld,
+            sld_magnetic=msld,
+            magnetization_angle=m_angle,
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(
+            q, **self._params2dict(parametrized_model), abeles_func=abeles_magnetic_spinflip, **kwargs
+        )
+    
+class ModelWithSpinflipMagnetizationNoRoughness(StandardModel):
+    NAME = 'model_with_magnetization_spinflip_no_roughness'
+
+    PARAMETER_NAMES = (
+        "thicknesses",
+        "slds",
+        "magnetic_slds",
+        "magnetization_angles",
+    )
+
+    @property
+    def param_dim(self) -> int:
+        return 4 * self.max_num_layers + 3
+    
+    def _init_sampler_strategy(self, nuisance_params_dim: int = 0, **kwargs):
+        return BasicSamplerStrategy(**kwargs)
+    
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        other_ranges = [param_ranges[k] for k in self.PARAMETER_NAMES[5:]]
+        other_delta_bounds = [bound_width_ranges[k] for k in self.PARAMETER_NAMES[5:]]
+
+        ordered_bounds = (
+                [param_ranges["thicknesses"]] * self.max_num_layers +
+                [param_ranges["slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                [param_ranges["magnetization_angles"]] * (self.max_num_layers + 1) +
+                other_ranges
+        )
+        delta_bounds = (
+                [bound_width_ranges["thicknesses"]] * self.max_num_layers +
+                [bound_width_ranges["slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetic_slds"]] * (self.max_num_layers + 1) +
+                [bound_width_ranges["magnetization_angles"]] * (self.max_num_layers + 1) +
+                other_delta_bounds
+        )
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(
+        self,
+        *,
+        thickness_name: str = "Thickness",
+        sld_name: str = "SLD",
+        magnetic_sld_name: str = "SLD magnetic",
+        magnetization_angle_name: str = "Magnetization angle",
+        substrate_name: str = "sub",
+        number_top_to_bottom: bool = True,
+        **kwargs,
+    ) -> List[str]:
+        layer_suffixes, layer_plus_sub = _layer_suffixes(
+            self.max_num_layers,
+            substrate_name=substrate_name,
+            number_top_to_bottom=number_top_to_bottom,
+        )
+
+        return (
+            _plain_block(thickness_name, layer_suffixes)
+            + _plain_block(sld_name, layer_plus_sub)
+            + _plain_block(magnetic_sld_name, layer_plus_sub)
+            + _plain_block(magnetization_angle_name, layer_plus_sub)
+        )
+
+    def get_param_labels_latex(
+        self,
+        *,
+        thickness_name: str = "d",
+        sld_name: str = r"\rho^{n}",
+        magnetic_sld_name: str = r"\rho^{m}",
+        magnetization_angle_name: str = r"\psi^{m}",
+        substrate_name: str = "B",
+        number_top_to_bottom: bool = True,
+        **kwargs,
+    ) -> List[str]:
+        layer_suffixes, layer_plus_sub = _layer_suffixes(
+            self.max_num_layers,
+            substrate_name=substrate_name,
+            number_top_to_bottom=number_top_to_bottom,
+        )
+
+        return (
+            _latex_block(thickness_name, layer_suffixes)
+            + _latex_block(sld_name, layer_plus_sub)
+            + _latex_block(magnetic_sld_name, layer_plus_sub)
+            + _latex_block(magnetization_angle_name, layer_plus_sub)
+        )
+
+    @staticmethod
+    def _params2dict(parametrized_model: Tensor):
+        num_params = parametrized_model.shape[-1]
+        num_layers = (num_params - 3) // 4
+        assert num_layers * 4 + 3 == num_params
+
+        d, sld, msld, m_angle = torch.split(
+            parametrized_model, [num_layers, num_layers + 1, num_layers + 1, num_layers + 1], -1
+        )
+        params = dict(
+            thickness=d,
+            roughness=torch.zeros_like(sld), #no roughness
+            sld=sld,
+            sld_magnetic=msld,
+            magnetization_angle=m_angle,
+        )
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        return reflectivity(
+            q, **self._params2dict(parametrized_model), abeles_func=abeles_magnetic_spinflip, **kwargs
+        )
+    
+    def magnetic_sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        sld_magnetic = params["sld_magnetic"]
+        roughness = torch.zeros_like(sld_magnetic)
+        
+        z, profile, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld_magnetic,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def magnetization_angle_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        magnetization_angle = params["magnetization_angle"]
+        roughness = torch.zeros_like(magnetization_angle)
+        
+        z, profile, _ = get_density_profiles(
+            thickness,
+            roughness,
+            magnetization_angle,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "magnetic_sld", "magnetization_angle"]
+    
 class ModelWithSolventBacking(StandardModel):
     """Parameterization for the box model in which the solvent volume fraction of the layers are additional parameters."""
     NAME = 'model_with_solvent_backing'
@@ -865,6 +1385,430 @@ class BasicMultilayerModel3(BasicMultilayerModel1):
     def to_standard_params(self, parametrized_model: Tensor) -> dict:
         return multilayer_model3(parametrized_model, self.max_num_layers)
     
+
+class PolymerBrushModel(ParametricModel):
+    """
+    Parametric model for an end-grafted polymer brush using a multi-slice approximation.
+    The brush volume fraction follows the power-law: 
+    phi(z) = phi0 * [1 - (z / L)^n], where phi0 is the volume fraction at z=0 (the grafting interface), L is the total brush thickness, and n is an exponent 
+    (often near 2 for a parabolic profile at high grafting density, Milner et al., 1988).
+    We approximate this brush by N = max_num_layers slices (each slice has thickness = L / N), then for the i-th slice we compute:
+        z_i = (i + 0.5)*(L/N),   phi_i = phi(z_i),
+        sld_i = phi_i * sld_polymer + (1 - phi_i)* sld_solvent.
+    Additionally, a thin reactive layer (e.g. water) can be included before the brush
+    """
+    NAME = "polymer_brush"
+
+    PARAMETER_NAMES = (
+        "brush_phi0",
+        "brush_length",
+        "brush_exponent",
+        "reactive_layer_thickness",
+        "sld_reactive_layer",
+        "sld_polymer",
+        "sld_solvent", #here the solvent is the backing!
+        "roughness_substrate",
+        "roughness_reactive_layer",
+    )
+
+    def __init__(self,
+                 max_num_layers: int,
+                 use_microslicing: bool = False,
+                 refl_func: str = 'abeles',
+                 **kwargs):
+        super().__init__(max_num_layers, **kwargs)
+        self.use_microslicing = use_microslicing
+        self.refl_func = globals().get(refl_func)
+
+    @property
+    def param_dim(self) -> int:
+        return len(self.PARAMETER_NAMES)
+
+    def _init_sampler_strategy(self, **kwargs):
+        return BasicSamplerStrategy(**kwargs)
+
+    def to_standard_params(self, parametrized_model: torch.Tensor, add_solvent_vf_to_dict: bool = False) -> dict:
+        (brush_phi0, 
+         brush_length, 
+         brush_exponent, 
+         thickness_reactive_layer,
+         #sld_substrate,
+         sld_reactive_layer,
+         sld_polymer,
+         sld_solvent,
+         roughness_substrate,
+         roughness_reactive_layer) = torch.split(parametrized_model, 1, dim=-1)
+
+        thickness_list = []
+        roughness_list = []
+        sld_list = []
+        solvent_vf_list = []
+
+        B = brush_phi0.shape[0]
+        device = brush_phi0.device
+
+        ### fronting / substrate
+        roughness_list.append(roughness_substrate)
+        #sld_list.append(sld_substrate)
+
+        ### reactive layer
+        thickness_list.append(thickness_reactive_layer)
+        roughness_list.append(roughness_reactive_layer)
+        sld_list.append(sld_reactive_layer)
+        solvent_vf_list.append(torch.zeros(B, 1, device=device))
+
+        ### Brush slices (we have N = max_num_layers slices). 
+        # For slice i, thickness = L/N, roughness = L/(2*N), midpoint z_i = (i+0.5)*(L/N), phi(z_i) = phi0 * [1 - (z_i/L)^n]
+        N = self.max_num_layers
+
+        i_slices = torch.arange(N, device=parametrized_model.device, dtype=parametrized_model.dtype).unsqueeze(0)
+        z_i = (i_slices + 0.5) * (brush_length / N)
+
+        # phi_i = phi0 * [1 - (z_i/L)^n]
+        ratio_i = (z_i / brush_length) ** brush_exponent 
+        phi_i = brush_phi0 * (1.0 - ratio_i)
+
+        # effective SLD of each slice: sld_pol * phi_i + sld_solvent * (1 - phi_i)
+        slice_slds = sld_polymer * phi_i + sld_solvent * (1.0 - phi_i)
+
+        slice_thicknesses = (brush_length / N) * torch.ones_like(slice_slds)
+        if self.use_microslicing:
+            slice_roughnesses = torch.zeros_like(slice_slds)
+        else:
+            slice_roughnesses = (brush_length / (2*N)) * torch.ones_like(slice_slds)
+
+        thickness_list.append(slice_thicknesses)
+        roughness_list.append(slice_roughnesses)
+        sld_list.append(slice_slds)
+        solvent_vf_list.append(1.0 - phi_i)
+
+        ### backing / solvent
+        sld_list.append(sld_solvent)
+        solvent_vf_list.append(torch.ones(B, 1, device=device))
+
+
+        thickness = torch.cat(thickness_list, dim=-1)
+        roughness = torch.cat(roughness_list, dim=-1)
+        sld = torch.cat(sld_list, dim=-1)
+        solvent_vf = torch.cat(solvent_vf_list, dim=-1)
+
+        params = {
+            "thickness": thickness,
+            "roughness": roughness,
+            "sld": sld,
+        }
+        if add_solvent_vf_to_dict:
+            params['solvent_vf'] = solvent_vf
+
+        return params
+
+    def reflectivity(self, q, parametrized_model: torch.Tensor, **kwargs) -> torch.Tensor:
+        params = self.to_standard_params(parametrized_model)
+        return reflectivity(q, **params, abeles_func=self.refl_func, **kwargs)
+    
+    def get_sld_indices(self):
+        return [4, 5, 6] # indices of (sld_reactive_layer, sld_polymer, sld_solvent)
+    
+    def solvent_vf_profile(
+        self, 
+        parametrized_model: torch.Tensor, 
+        z_axis: Optional[torch.Tensor] = None, 
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        params = self.to_standard_params(parametrized_model, add_solvent_vf_to_dict=True)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        solvent_vf = params["solvent_vf"]
+
+        z, profile, _ = get_density_profiles(
+            thickness,
+            roughness,
+            solvent_vf,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, profile
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "solvent_vf"]
+        
+
+    def init_bounds(self,
+                    param_ranges: Dict[str, Tuple[float, float]],
+                    bound_width_ranges: Dict[str, Tuple[float, float]],
+                    device=None,
+                    dtype=None,
+                    ) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        ordered_bounds = [param_ranges[k] for k in self.PARAMETER_NAMES]
+        delta_bounds   = [bound_width_ranges[k] for k in self.PARAMETER_NAMES]
+
+        min_bounds, max_bounds = torch.tensor(ordered_bounds, device=device, dtype=dtype).T[:, None]
+        min_deltas, max_deltas = torch.tensor(delta_bounds, device=device, dtype=dtype).T[:, None]
+
+        return min_bounds, max_bounds, min_deltas, max_deltas
+
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return [
+            'Brush volume fraction at grafting interface',
+            'Brush length',
+            'Brush exponent',
+            'Reactive layer thickness',
+            'Reactive layer SLD',
+            'Polymer SLD',
+            'Solvent SLD',
+            'Substrate roughness',
+            'Reactive layer roughness',
+        ]
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return [
+            r'$\phi_{0}$',
+            r'$L$',
+            r'$n$',
+            r'$d_{\mathrm{rl}}$',
+            r'$\rho_{\mathrm{rl}}$',
+            r'$\rho_{\mathrm{pol}}$',
+            r'$\rho_{\mathrm{solv}}$',
+            r'$\sigma_{\mathrm{sub}}$',
+            r'$\sigma_{\mathrm{rl}}$',
+        ]
+    
+
+class LipidBilayerModel(ParametricModel):
+    """
+    """
+    NAME = "lipid_bilayer_model"
+
+    PARAMETER_NAMES = (
+        "b_h",
+        "b_t",
+        "V_h",
+        "V_t",
+        "A_pm",
+        "d_ih",
+        "d_oh",
+        "d_t",
+        "d_oxide_layer",
+        "d_solvent_cushion",
+        "sld_oxide_layer",
+        "sld_solvent",
+        "sigma_top", #ambient/oxide interface
+        "sigma", #other interfaces
+    )
+
+    def __init__(self,
+                 max_num_layers: int,
+                 refl_func: str = 'abeles',
+                 **kwargs):
+        super().__init__(max_num_layers, **kwargs)
+        self.refl_func = globals().get(refl_func)
+
+    @property
+    def param_dim(self) -> int:
+        return len(self.PARAMETER_NAMES)
+    
+    def supports_zero_ambient_sld_shift(self) -> bool:
+        return False
+
+    def _init_sampler_strategy(self,
+                               nuisance_params_dim: int = 0,
+                               **kwargs):
+            num_params = self.param_dim + nuisance_params_dim
+            V_h_mask = torch.zeros(num_params, dtype=torch.bool)
+            V_t_mask = torch.zeros(num_params, dtype=torch.bool)
+            A_pm_mask = torch.zeros(num_params, dtype=torch.bool)
+            d_ih_mask = torch.zeros(num_params, dtype=torch.bool)
+            d_oh_mask = torch.zeros(num_params, dtype=torch.bool)
+            d_t_mask = torch.zeros(num_params, dtype=torch.bool)
+
+            V_h_mask[2] = True
+            V_t_mask[3] = True
+            A_pm_mask[4] = True
+            d_ih_mask[5] = True
+            d_oh_mask[6] = True
+            d_t_mask[7] = True
+
+            return LipidBilayerSamplerStrategy(
+                V_h_mask, V_t_mask, A_pm_mask, d_ih_mask, d_oh_mask, d_t_mask, **kwargs
+            )
+
+    def to_standard_params(self, parametrized_model: torch.Tensor) -> dict:
+        (b_h,
+         b_t,
+         V_h,
+         V_t,
+         A_pm,
+         d_ih,
+         d_oh,
+         d_t,
+         d_oxide_layer,
+         d_solvent_cushion,
+         sld_oxide_layer,
+         sld_solvent,
+         sigma_top,
+         sigma) = torch.split(parametrized_model, 1, dim=-1)
+
+        thickness_list = [d_oxide_layer, d_solvent_cushion, d_ih, d_t, d_t, d_oh]
+        roughness_list = [sigma_top, sigma, sigma, sigma, sigma, sigma, sigma]
+        sld_list = [sld_oxide_layer, 999.0*torch.ones_like(sld_oxide_layer)] #999.0 is a placeholder for sld_solvent_cushion which will later be overriden to sld_solvent by solvent_vf=1.0
+        vf_list = [torch.zeros_like(sld_oxide_layer), torch.ones_like(sld_oxide_layer)]
+
+        sld_ih = b_h / (A_pm * d_ih)
+        sld_oh = b_h / (A_pm * d_oh)
+        sld_t = b_t / (A_pm * d_t)
+        sld_list.extend([sld_ih, sld_t, sld_t, sld_oh, sld_solvent])
+        
+        vf_ih = 1.0 - V_h / (A_pm * d_ih)
+        vf_oh = 1.0 - V_h / (A_pm * d_oh)
+        vf_t = 1.0 - V_t / (A_pm * d_t)
+        vf_list.extend([vf_ih, vf_t, vf_t, vf_oh])
+
+        thickness = torch.cat(thickness_list, dim=-1)
+        roughness = torch.cat(roughness_list, dim=-1)
+        sld = torch.cat(sld_list, dim=-1)
+        vf = torch.cat(vf_list, dim=-1)
+
+        params = {
+            "thickness": thickness,
+            "roughness": roughness,
+            "sld": sld,
+            "vf": vf,
+        }
+        return params
+    
+    def reflectivity(self, q, parametrized_model: Tensor, **kwargs) -> Tensor:
+        params = self.to_standard_params(parametrized_model)
+        thickness = params['thickness']
+        roughness = params['roughness']
+        sld = params['sld']
+        vf = params['vf']
+
+        conditioning_ambient_sld = kwargs.pop('conditioning_ambient_sld', None)
+
+        if conditioning_ambient_sld is not None:
+            conditioning_ambient_sld = torch.as_tensor(conditioning_ambient_sld, device=sld.device, dtype=sld.dtype)
+            sld = torch.cat([conditioning_ambient_sld, sld], dim=-1)
+
+        return reflectivity(q=q, thickness=thickness, roughness=roughness, sld=sld, 
+                            solvent_mode_single='backing', solvent_vf_single=vf, **kwargs)
+    
+    def sld_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        ambient_sld: Optional[torch.Tensor] = None,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ):
+        params = self.to_standard_params(parametrized_model)
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        sld_raw = params["sld"]
+        vf = params["vf"]
+
+        sld_solvent = sld_raw[..., [-1]]
+        sld_layers = sld_raw[..., :-1] 
+
+        sld_eff_layers = (1.0 - vf) * sld_layers + vf * sld_solvent
+        sld_eff = torch.cat([sld_eff_layers, sld_solvent], dim=-1)
+
+        ambient_sld = torch.tensor(ambient_sld).to(thickness) if ambient_sld is not None else None
+
+        z, prof, _ = get_density_profiles(
+            thicknesses=thickness,
+            roughnesses=roughness,
+            slds=sld_eff,
+            ambient_sld=ambient_sld,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, prof
+
+    def solvent_vf_profile(
+        self,
+        parametrized_model: torch.Tensor,
+        *,
+        z_axis: Optional[torch.Tensor] = None,
+        num: int = 1000,
+        padding_left: float = 0.2,
+        padding_right: float = 1.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        """
+        params = self.to_standard_params(parametrized_model)
+
+        thickness = params["thickness"]
+        roughness = params["roughness"]
+        vf_layers = params["vf"]
+
+        B, n_layers = thickness.shape
+
+        # append backing vf = 1.0 (solvent)
+        vf_for_profiles = torch.cat(
+            [vf_layers, torch.ones(B, 1, device=thickness.device, dtype=thickness.dtype)],
+            dim=-1
+        )
+
+        z, prof, _ = get_density_profiles(
+            thickness,
+            roughness,
+            vf_for_profiles,
+            z_axis=z_axis,
+            num=num,
+            padding_left=padding_left,
+            padding_right=padding_right,
+        )
+        return z, prof
+    
+    def available_profile_types(self) -> List[str]:
+        return ["sld", "solvent_vf"]
+    
+    def get_param_labels(self, **kwargs) -> List[str]:
+        return [
+            'Headgroup scattering length',
+            'Tail scattering length',
+            'Headgroup volume',
+            'Tail volume',
+            'Area per molecule',
+            'Inner headgroup thickness',
+            'Outer headgroup thickness',
+            'Tail thickness',
+            'Oxide layer thickness',
+            'Solvent cushion thickness',
+            'Oxide layer SLD',
+            'Solvent SLD',
+            'Top roughness',
+            'Interface roughness',
+        ]
+
+    def get_param_labels_latex(self, **kwargs) -> List[str]:
+        return [
+            r'$b_{h}$',
+            r'$b_{t}$',
+            r'$V_{h}$',
+            r'$V_{t}$',
+            r'$A_{\mathrm{pm}}$',
+            r'$d_{\mathrm{ih}}$',
+            r'$d_{\mathrm{oh}}$',
+            r'$d_{t}$',
+            r'$d_{\mathrm{ox}}$',
+            r'$d_{\mathrm{cush}}$',
+            r'$\rho_{\mathrm{ox}}$',
+            r'$\rho_{\mathrm{solv}}$',
+            r'$\sigma_{\mathrm{top}}$',
+            r'$\sigma$',
+        ] 
+    
 class AnalyticSldProfileModel(ParametricModel):
     """
     Film SLD is given by an analytic formula sld(z, params...) loaded from config.
@@ -929,11 +1873,17 @@ class AnalyticSldProfileModel(ParametricModel):
 MULTILAYER_MODELS = {
     'standard_model': StandardModel,
     'model_with_absorption': ModelWithAbsorption,
+    'model_with_magnetization_nonspinflip': ModelWithNonspinflipMagnetization,
+    'model_with_magnetization_nonspinflip_alpha': ModelWithNonspinflipMagnetizationAlpha,
+    'model_with_magnetization_spinflip': ModelWithSpinflipMagnetization,
+    'model_with_magnetization_spinflip_no_roughness': ModelWithSpinflipMagnetizationNoRoughness,
     'model_with_solvent_backing': ModelWithSolventBacking,
     'no_fresnel_model': NoFresnelModel,
     'repeating_multilayer_v1': BasicMultilayerModel1,
     'repeating_multilayer_v2': BasicMultilayerModel2,
     'repeating_multilayer_v3': BasicMultilayerModel3,
+    'polymer_brush_model': PolymerBrushModel,
+    'lipid_bilayer_model': LipidBilayerModel,
     'analytic_sld_profile': AnalyticSldProfileModel,
 }
 

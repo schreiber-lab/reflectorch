@@ -10,6 +10,7 @@ from reflectorch.models.encoders.conv_encoder import ConvEncoder
 from reflectorch.models.encoders.integral_kernel_embedding import IntegralConvEmbedding
 from reflectorch.models.encoders.fno import FnoEncoder
 from reflectorch.models.activations import activation_by_name
+from reflectorch.models.fourier_features import DeterministicFourierFeatures, RandomFourierTimeEmbedding, SinusoidalPositionalTimeEmbedding, IdentityTimeEmbedding
 
 class NetworkWithPriors(nn.Module):
     """MLP network with an embedding network
@@ -193,6 +194,247 @@ class NetworkWithPriorsFnoEmb(NetworkWithPriors):
             embedding_net_type='fno',
             embedding_net_kwargs=embedding_net_kwargs,
             **kwargs
+        )
+
+class NeuralOdeNetwork(nn.Module):
+    def __init__(
+        self,
+        embedding_net_type: str,
+        embedding_net_kwargs: dict,
+        pretrained_embedding_net: str = None,
+        dim_out: int = 8,
+        dim_conditioning_params: int = 0,
+        prior_bounds_input: bool = False,
+        layer_width: int = 512,
+        num_blocks: int = 4,
+        repeats_per_block: int = 2,
+        mlp_activation: str = 'gelu',
+        use_batch_norm: bool = False,
+        use_layer_norm: bool = False,
+        dropout_rate: float = 0.0,
+        residual: bool = True,
+        tanh_output: bool = False,
+        adaptive_activation: bool = False,
+        conditioning: str = 'concat',   # "concat", "glu", or "film"
+        concat_condition_first_layer: bool = True,
+        film_with_tanh: bool = False,
+        zero_init_last: bool = False,
+        zero_init_blocks: bool = False,
+        n_freq_x_t: int = 0,
+        n_freq_bounds: int = 0,
+        n_freq_t: int = 0,
+        ff_type: str = "none", # "deterministic_fourier" | "random_fourier" | "sinusoidal_positional" | "none"
+        ff_kwargs: Optional[dict] = None,
+        use_selu_init: bool = False,
+        dim_params = None,
+    ):
+        super().__init__()
+
+        self.nfe = 0
+
+        self.conditioning = conditioning
+        self.prior_bounds_input = prior_bounds_input
+        self.tanh_output = tanh_output
+
+        if embedding_net_type == 'conv':
+            self.embedding_net = ConvEncoder(**embedding_net_kwargs)
+        elif embedding_net_type == 'fno':
+            self.embedding_net = FnoEncoder(**embedding_net_kwargs)
+        elif embedding_net_type == 'integral_conv':
+            self.embedding_net = IntegralConvEmbedding(**embedding_net_kwargs)
+        elif embedding_net_type == 'no_embedding_net':
+            self.embedding_net = nn.Identity()
+        else:
+            raise ValueError(f"Unsupported embedding_net_type: {embedding_net_type}")
+
+        if pretrained_embedding_net:
+            self.embedding_net.load_weights(pretrained_embedding_net)
+
+        self.dim_embedding = embedding_net_kwargs['dim_embedding']
+
+        if dim_params is None:
+            dim_params = dim_out
+
+        dim_x_t = 2 * n_freq_x_t * dim_params if n_freq_x_t else dim_params
+        dim_bounds = 2 * dim_params if prior_bounds_input else 0
+        if n_freq_bounds:
+            dim_bounds = dim_bounds * (2 * n_freq_bounds)
+        
+        self.x_t_embedder = DeterministicFourierFeatures(n_freq_x_t, scale=math.pi, ff_type="linear", half_shift=True) if n_freq_x_t else nn.Identity()
+        self.bounds_embedder = DeterministicFourierFeatures(n_freq_bounds, scale=math.pi, ff_type="linear", half_shift=True) if (n_freq_bounds and prior_bounds_input) else nn.Identity()
+
+        dim_t = 2 * n_freq_t if (n_freq_t > 0 and ff_type != 'none') else 1
+        
+        ff_kwargs = ff_kwargs or {}
+        if ff_type == 'linear':
+            self.t_embedder = DeterministicFourierFeatures(n_freq_t, **ff_kwargs) if n_freq_t else nn.Identity()
+        elif ff_type == "random_fourier":
+            self.t_embedder = RandomFourierTimeEmbedding(embed_dim=2*n_freq_t, **ff_kwargs) if n_freq_t else nn.Identity()
+        elif ff_type == "sinusoidal_positional":
+            self.t_embedder = SinusoidalPositionalTimeEmbedding(embed_dim=2*n_freq_t, **ff_kwargs) if n_freq_t else nn.Identity()
+        elif ff_type == "none":
+            self.t_embedder = nn.Identity()
+
+        if conditioning == 'concat':
+            dim_mlp_in = self.dim_embedding + dim_x_t + dim_t + dim_bounds + dim_conditioning_params
+            dim_condition = 0
+        elif conditioning in ('glu', 'film'):
+            dim_mlp_in = self.dim_embedding
+            dim_condition = dim_x_t + dim_t + dim_bounds + dim_conditioning_params
+        else:
+            raise NotImplementedError(f"Conditioning={conditioning} not supported.")
+
+        self.mlp = ResidualMLP(
+            dim_in=dim_mlp_in,
+            dim_out=dim_out,
+            dim_condition=dim_condition,
+            layer_width=layer_width,
+            num_blocks=num_blocks,
+            repeats_per_block=repeats_per_block,
+            activation=mlp_activation,
+            use_batch_norm=use_batch_norm,
+            use_layer_norm=use_layer_norm,
+            dropout_rate=dropout_rate,
+            residual=residual,
+            adaptive_activation=adaptive_activation,
+            conditioning=conditioning,
+            concat_condition_first_layer=concat_condition_first_layer,
+            film_with_tanh=film_with_tanh,
+            zero_init_last=zero_init_last,
+            zero_init_blocks=zero_init_blocks,
+        )
+
+        if use_selu_init and embedding_net_kwargs.get('activation', None) == 'selu':
+            self.embedding_net.apply(selu_init)
+        if use_selu_init and mlp_activation == 'selu':
+            self.mlp.apply(selu_init)
+
+    def compute_embedding(
+        self,
+        *,
+        curves: torch.Tensor,
+        q_values: Optional[torch.Tensor] = None,
+        sigmas: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
+        unscaled_q_values: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        """
+        if curves.dim() == 2:
+            curves = curves.unsqueeze(1)  # (B,1,L)
+
+        additional_channels = []
+
+        if q_values is not None and not isinstance(self.embedding_net, IntegralConvEmbedding):
+            if q_values.dim() == 1:
+                q_values = q_values.unsqueeze(0).expand(curves.shape[0], -1)
+            additional_channels.append(q_values.unsqueeze(1))
+
+        if sigmas is not None:
+            if sigmas.dim() == 1:
+                sigmas = sigmas.unsqueeze(0).expand(curves.shape[0], -1)
+            additional_channels.append(sigmas.unsqueeze(1))
+
+        if additional_channels:
+            curves = torch.cat([curves] + additional_channels, dim=1)
+
+        if isinstance(self.embedding_net, IntegralConvEmbedding):
+            if unscaled_q_values is None:
+                raise ValueError("IntegralConvEmbedding requires unscaled_q_values.")
+            embedding = self.embedding_net(
+                q=unscaled_q_values.float(),
+                y=curves.permute(0, 2, 1),
+                drop_mask=key_padding_mask,
+            )
+        else:
+            embedding = self.embedding_net(curves)
+
+        return embedding
+
+    def forward_with_embedding(
+        self,
+        *,
+        embedding: torch.Tensor,
+        x_t: torch.Tensor,
+        t: torch.Tensor,
+        bounds: Optional[torch.Tensor] = None,
+        conditioning_params: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        """
+        self.nfe += 1
+
+        x_t_features = self.x_t_embedder(x_t)
+
+        if t.dim() == 0:
+            t = t.expand(x_t.shape[0], 1)
+        elif t.dim() == 1:
+            if t.shape[0] == x_t.shape[0]:
+                t = t[:, None]
+            else:
+                t = t.expand(x_t.shape[0], 1)
+
+        t_features = self.t_embedder(t)
+
+        bounds_features = None
+        if self.prior_bounds_input and bounds is not None:
+            bounds_features = self.bounds_embedder(bounds)
+
+        if self.conditioning == "concat":
+            cat_input = [embedding, x_t_features, t_features]
+            if bounds_features is not None:
+                cat_input.append(bounds_features)
+            if conditioning_params is not None:
+                cat_input.append(conditioning_params)
+            mlp_in = torch.cat(cat_input, dim=-1)
+            out = self.mlp(mlp_in)
+
+        elif self.conditioning in ("glu", "film"):
+            cond_parts = [x_t_features, t_features]
+            if bounds_features is not None:
+                cond_parts.append(bounds_features)
+            if conditioning_params is not None:
+                cond_parts.append(conditioning_params)
+            condition = torch.cat(cond_parts, dim=-1)
+            out = self.mlp(embedding, condition=condition)
+
+        else:
+            raise NotImplementedError(f"Conditioning type {self.conditioning} not recognized.")
+
+        if self.tanh_output:
+            out = torch.tanh(out)
+
+        return out
+
+    def forward(
+        self,
+        curves: torch.Tensor,
+        x_t: torch.Tensor,
+        t: torch.Tensor,
+        bounds: Optional[torch.Tensor] = None,
+        q_values: Optional[torch.Tensor] = None,
+        sigmas: Optional[torch.Tensor] = None,
+        conditioning_params: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
+        unscaled_q_values=None,
+        *,
+        embedding: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if embedding is None:
+            embedding = self.compute_embedding(
+                curves=curves,
+                q_values=q_values,
+                sigmas=sigmas,
+                key_padding_mask=key_padding_mask,
+                unscaled_q_values=unscaled_q_values,
+            )
+
+        return self.forward_with_embedding(
+            embedding=embedding,
+            x_t=x_t,
+            t=t,
+            bounds=bounds,
+            conditioning_params=conditioning_params,
         )
 
 def selu_init(m):
