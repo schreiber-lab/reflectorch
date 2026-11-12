@@ -44,6 +44,7 @@ dependencies = [
     "nflows",
     "torchdiffeq",
     "chainconsumer",
+    "h5py",
 ]
 
 [project.optional-dependencies]
