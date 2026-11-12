@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflectorch"
-version = "1.5.1"
+version = "1.6.0"
 authors = [{name = "Vladimir Starostin", email = "vladimir.starostin@uni-tuebingen.de"},
            {name = "Valentin Munteanu", email = "valentin.munteanu@uni-tuebingen.de"}
 ]
@@ -41,9 +41,9 @@ dependencies = [
     "safetensors",
     "tensorboard",
     "anywidget",
-    "joblib",
-    "h5py",
     "nflows",
+    "torchdiffeq",
+    "chainconsumer",
 ]
 
 [project.optional-dependencies]
